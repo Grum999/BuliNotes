@@ -15,11 +15,11 @@ It allows to add notes to Krita documents.
 
 *A screenshot of Krita with* Buli Notes *docker and a pinned  note*
 
-![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_fullscreen_example.png)
+![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_fullscreen_example.jpg)
 
 *Editor*
 
-![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_edit_note.png)
+![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_edit_note.jpg)
 
 
 ## Functionalities
@@ -71,8 +71,7 @@ Currently don't kwow if plugin works on Windows and MacOs, but as plugin don't u
 
 ### What's new?
 
-_[2020-11-13] Version 0.1.0a_ *
-
+_[2020-11-13] Version 0.1.0a_
 - First implemented/released version
 (Release not yet published)
 
@@ -86,7 +85,7 @@ Which software doesn't have any bugs? :)
 
 ### What’s next?
 
-Some idea:
+Some ideas, don't know if I'll implement them and if implemented, when:
 - Add tasks
 - Add links to layers
 - Add a scratchpad
