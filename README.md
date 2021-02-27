@@ -7,25 +7,40 @@ An plugin for [Krita](https://krita.org).
 *Buli Notes* is a Python plugin made for [Krita](https://krita.org) (free professional and open-source painting program).
 
 
-It allows to add free comments to Krita documents.
+It allows to add notes to Krita documents.
 
 
 
 ## Screenshots
 
-![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/main.png)
+*A screenshot of Krita with* Buli Notes *docker and a pinned  note*
+
+![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_fullscreen_example.png)
+
+*Editor*
+
+![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_edit_note.png)
 
 
 ## Functionalities
 
+Currently, notes have:
+- Title
+- Description
+- Color
+- Text Content
 
-![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r1-0-0_main_example.png)
+Editor allows to define rich text content (font family, font size, color, style...)
+
+Notes can be resized/moved on screen.
+
+All notes are available from a docker.
 
 
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v1.0.0](https://github.com/Grum999/BuliNotes/releases/download/1.0.0/bulinotes.zip)**
++ **ZIP ARCHIVE - v0.0.0 (no release yet available)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 
@@ -41,12 +56,12 @@ Plugin installation in [Krita](https://krita.org) is not intuitive and needs som
 
 ### Execute
 
-When you want to execute *Buli Notes*, simply go to **Tools** -> **Scripts** and select **Buli Notes**.
+When you want to execute *Buli Notes*, simply go to menu **Settings** -> **Dockers** and select **Buli Notes**.
 
 
 ### Tested platforms
-Plugin has been tested with Krita 5.0.0-prealpha (appimage) on Linux Debian 10
 > note: plugin can't work on version 4.x.x
+Plugin has been tested with Krita 5.0.0-prealpha (appimage) on Linux Debian 10
 
 Currently don't kwow if plugin works on Windows and MacOs, but as plugin don't use specific OS functionalities and/resources, it should be ok.
 
@@ -56,9 +71,10 @@ Currently don't kwow if plugin works on Windows and MacOs, but as plugin don't u
 
 ### What's new?
 
-_[2020-11-13] Version 1.0.0_ *[Show detailed release content](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-1.0.0.md)*
+_[2020-11-13] Version 0.1.0a_ *
 
-- First implemented/released version!
+- First implemented/released version
+(Release not yet published)
 
 
 
@@ -70,8 +86,10 @@ Which software doesn't have any bugs? :)
 
 ### What’s next?
 
-Currently, nothing :-)
-Any idea are welcome.
+Some idea:
+- Add tasks
+- Add links to layers
+- Add a scratchpad
 
 
 ## License
