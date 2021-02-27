@@ -33,6 +33,7 @@ from .bnnotes import (
                 BNNotePostIt
             )
 
+from pktk.modules.utils import tsToStr
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 
 
@@ -174,6 +175,23 @@ class BNNotesModel(QAbstractTableModel):
             if item:
                 if column==BNNotesModel.COLNUM_TITLE:
                     return item.title()
+        elif role == Qt.ToolTipRole:
+            id=self.__items[row]
+            item = self.__notes.get(id)
+            if item:
+                tooltip=''
+                description=f"<p>{item.description()}</p>"
+
+                if description!='':
+                    tooltip=description+"<hr/>"
+
+                tooltip+=f"<p>Created: {tsToStr(item.timestampCreated())}"
+                if item.timestampCreated()!=item.timestampUpdated():
+                    tooltip+=f"<br>Updated: {tsToStr(item.timestampUpdated())}"
+                tooltip+="</p>"
+
+
+                return tooltip
         elif role == BNNotesModel.ROLE_ID:
             return self.__items[row]
         elif role == BNNotesModel.ROLE_NOTE:
