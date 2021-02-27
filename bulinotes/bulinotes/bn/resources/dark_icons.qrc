@@ -1,0 +1,29 @@
+<RCC>
+  <qresource prefix="images">
+    <file alias="close">svg/dark/32dp/close.svg</file>
+    <file alias="locked">svg/dark/32dp/locked.svg</file>
+    <file alias="unlocked">svg/dark/32dp/unlocked.svg</file>
+    <file alias="move_down">svg/dark/32dp/move_down.svg</file>
+    <file alias="move_up">svg/dark/32dp/move_up.svg</file>
+    <file alias="add_comment">svg/dark/32dp/add_comment.svg</file>
+    <file alias="delete_comment">svg/dark/32dp/delete_comment.svg</file>
+    <file alias="edit_comment">svg/dark/32dp/edit_comment.svg</file>
+    <file alias="about_info">svg/dark/32dp/info.svg</file>
+    <file alias="pinned">svg/dark/32dp/pinned.svg</file>
+  </qresource>
+  <qresource prefix="white">
+    <file alias="close">svg/dark/32dp/close.svg</file>
+    <file alias="compact_off">svg/dark/32dp/compact_off.svg</file>
+    <file alias="compact_on">svg/dark/32dp/compact_on.svg</file>
+  </qresource>
+  <qresource prefix="images_d">
+    <file alias="locked">svg/dark/32dp-disabled/locked.svg</file>
+    <file alias="unlocked">svg/dark/32dp-disabled/unlocked.svg</file>
+    <file alias="add_comment">svg/dark/32dp-disabled/add_comment.svg</file>
+    <file alias="move_down">svg/dark/32dp-disabled/move_down.svg</file>
+    <file alias="move_up">svg/dark/32dp-disabled/move_up.svg</file>
+    <file alias="delete_comment">svg/dark/32dp-disabled/delete_comment.svg</file>
+    <file alias="edit_comment">svg/dark/32dp-disabled/edit_comment.svg</file>
+    <file alias="pinned">svg/dark/32dp-disabled/pinned.svg</file>
+  </qresource>
+</RCC>

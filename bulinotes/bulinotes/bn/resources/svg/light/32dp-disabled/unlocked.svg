@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="unlocked.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   width="32"
+   height="32">
+  <metadata
+     id="metadata9">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2413"
+     inkscape:window-height="1997"
+     id="namedview7"
+     showgrid="false"
+     inkscape:zoom="16"
+     inkscape:cx="40.87816"
+     inkscape:cy="-5.480011"
+     inkscape:window-x="1920"
+     inkscape:window-y="59"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg5"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-page="true"
+     inkscape:snap-bbox-edge-midpoints="true" />
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#232629;
+      }
+      </style>
+  </defs>
+  <path
+     style="fill:#000000;fill-opacity:0.49803922;stroke:none;stroke-width:13.85640717"
+     d="M 26 6 A 6 6.0000004 0 0 0 20 12 L 20 14 L 10 14 C 8.9 14 8 14.9 8 16 L 8 24 C 8 25.1 8.9 26 10 26 L 22 26 C 23.1 26 24 25.1 24 24 L 24 16 C 24 14.9 23.1 14 22 14 L 22 12 A 4 4.0000004 0 0 1 26 8 A 4 4.0000004 0 0 1 30 12 L 32 12 A 6 6.0000004 0 0 0 26 6 z M 16 16 A 1.9999998 2 0 0 1 18 18 A 1.9999998 2 0 0 1 17 19.728516 L 17 22 L 15 22 L 15 19.730469 A 1.9999998 2 0 0 1 14 18 A 1.9999998 2 0 0 1 16 16 z "
+     transform="scale(0.5)"
+     id="path99" />
+</svg>
