@@ -15,11 +15,11 @@ It allows to add notes to Krita documents.
 
 *A screenshot of Krita with* Buli Notes *docker and a pinned  note*
 
-![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_fullscreen_example.jpg)
+![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_fullscreen_example.jpg)
 
 *Editor*
 
-![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r-0-1-0a_edit_note.jpg)
+![Export file list](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note.jpg)
 
 
 ## Functionalities
