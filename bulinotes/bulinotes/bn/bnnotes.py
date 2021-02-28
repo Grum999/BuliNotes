@@ -71,7 +71,7 @@ class BNNote(QObject):
         self.__emitUpdated=True
 
     def __repr__(self):
-        return f'<BNNote({self.__id}, {self.__pinned}, {self.__locked}, {self.__windowPostItCompact})>'
+        return f'<BNNote({self.__id}, {self.__title}, {self.__pinned}, {self.__locked}, {self.__windowPostItCompact})>'
 
     def __updated(self, property):
         """Emit updated signal when a property has been changed"""
@@ -105,7 +105,7 @@ class BNNote(QObject):
         return self.__description
 
     def setDescription(self, description):
-        """Set note dimportDataescription"""
+        """Set note description"""
         if not self.__locked and (description is None or isinstance(description, str)):
             self.__description=description
             self.__timestampUpdated=time.time()
@@ -224,7 +224,7 @@ class BNNote(QObject):
             self.setPinned(False)
 
 
-    def exportData(self):
+    def exportData(self, asQByteArray=True):
         """Export current note as internal format
 
         Export is made as a QByteArray:
@@ -416,13 +416,15 @@ class BNNote(QObject):
         writeBlock(0x000B, 'qrect', self.__windowPostItGeometry)
         writeBlock(0x000C, 'bool', self.__windowPostItCompact)
 
-        return QByteArray(dataWrite.getvalue())
+        if asQByteArray:
+            return QByteArray(dataWrite.getvalue())
+        else:
+            return dataWrite.getvalue()
 
-
-    def importData(self, data):
+    def importData(self, data, importId=True):
         """Import current note from internal format (QByteArray)"""
 
-        if not isinstance(data, QByteArray):
+        if not isinstance(data, (bytes, QByteArray)):
             return False
 
         dataRead=BytesRW(data)
@@ -446,7 +448,9 @@ class BNNote(QObject):
                 break
 
             if blockType==0x0001:
-                self.__setId(dataRead.readStr(blockContentSize))
+                newId=dataRead.readStr(blockContentSize)
+                if importId:
+                    self.__setId(newId)
             elif blockType==0x0002:
                 self.setTitle(dataRead.readStr(blockContentSize))
             elif blockType==0x0003:
@@ -497,6 +501,8 @@ class BNNotes(QObject):
     updateRemoved = Signal(list)
     updateMoved = Signal(list)
 
+    MIME_TYPE='application/x-kritaplugin-bulinotes'
+
     def __init__(self):
         """Initialize object"""
         super(BNNotes, self).__init__(None)
@@ -521,11 +527,13 @@ class BNNotes(QObject):
     def __itemUpdated(self, item, property):
         """A note have been updated"""
         self.__setAnnotation(item)
-        self.updated.emit(item, property)
+        if not self.__temporaryDisabled:
+            self.updated.emit(item, property)
 
     def __emitUpdateReset(self):
         """List have been cleared/loaded"""
-        self.updateReset.emit()
+        if not self.__temporaryDisabled:
+            self.updateReset.emit()
 
     def __emitUpdateAdded(self):
         """Emit update signal with list of id to update
@@ -534,7 +542,8 @@ class BNNotes(QObject):
         """
         items=self.__updateAdd.copy()
         self.__updateAdd=[]
-        self.updateAdded.emit(items)
+        if not self.__temporaryDisabled:
+            self.updateAdded.emit(items)
 
     def __emitUpdateRemoved(self):
         """Emit update signal with list of id to update
@@ -543,7 +552,8 @@ class BNNotes(QObject):
         """
         items=self.__updateRemove.copy()
         self.__updateRemove=[]
-        self.updateRemoved.emit(items)
+        if not self.__temporaryDisabled:
+            self.updateRemoved.emit(items)
 
     def __setAnnotation(self, note):
         """Set annotation for given note"""
@@ -659,6 +669,74 @@ class BNNotes(QObject):
 
             self.__temporaryDisabled=False
             self.__emitUpdateReset()
+
+    def clipboardCopy(self, notes):
+        """Copy selected notes to clipboard"""
+
+        binaryList=[]
+        htmlList=[]
+        plainTextList=[]
+
+        if isinstance(notes, list):
+            for note in notes:
+                if isinstance(note, BNNote):
+                    binaryList.append(note.exportData(False))
+                    #htmlList.append(note.toHtml())
+                    #plainTextList.append(note.toPlainText())
+
+        if len(binaryList)>0:
+            dataWrite=BytesRW()
+            dataWrite.writeUInt2(len(binaryList))
+            for data in binaryList:
+                dataWrite.writeUInt4(len(data))
+                dataWrite.write(data)
+
+            mimeContent=QMimeData()
+            mimeContent.setData(BNNotes.MIME_TYPE, QByteArray(dataWrite.getvalue()))
+
+            clipboard = QGuiApplication.clipboard()
+            clipboard.setMimeData(mimeContent)
+
+            return True
+        return False
+
+    def clipboardCut(self, notes):
+        """Copy selected notes to clipboard and remove them"""
+        if self.clipboardCopy(notes):
+            # remove items only if copied to clipooard
+            self.remove(notes)
+
+    def clipboardPaste(self, items=None):
+        """Paste notes from clipboard, if any"""
+        clipboardMimeContent = QGuiApplication.clipboard().mimeData(QClipboard.Clipboard)
+        if clipboardMimeContent.hasFormat(BNNotes.MIME_TYPE):
+            self.__temporaryDisabled=True
+            data=bytes(clipboardMimeContent.data(BNNotes.MIME_TYPE))
+
+            dataRead=BytesRW(data)
+            nbNotes=dataRead.readUInt2()
+            for noteNumber in range(nbNotes):
+                dataLength=dataRead.readUInt4()
+                dataNote=dataRead.read(dataLength)
+
+                note=BNNote()
+                if note.importData(dataNote, False):
+                    self.add(note)
+                    if note.pinned():
+                        note.openWindowPostIt()
+
+            self.__temporaryDisabled=False
+            self.__emitUpdateReset()
+
+
+
+
+    def clipboardPastable(self):
+        """Return True if there's pastable notes in clipboard"""
+        clipboardMimeContent = QGuiApplication.clipboard().mimeData(QClipboard.Clipboard)
+        return clipboardMimeContent.hasFormat(BNNotes.MIME_TYPE)
+
+
 
 
 
@@ -801,10 +879,11 @@ class BNNotePostIt(QWidget):
     def __updateUi(self):
         """Update UI content according to note content"""
         self.__titleBar.setNote(self.__note)
+        text=self.__note.text()
         if self.__note.windowPostItCompact():
-            self.__textEdit.setHtml(re.sub(r"font-size:\s*(\d+)pt;", self.__applyCompactFactor, self.__note.text()))
-        else:
-            self.__textEdit.setHtml(self.__note.text())
+            text=re.sub(r"font-size:\s*(\d+)pt;", self.__applyCompactFactor, text)
+
+        self.__textEdit.setHtml(text)
 
     def eventFilter(self, source, event):
         if source==self.__textEdit and isinstance(event, QMouseEvent) and (event.modifiers() & Qt.ControlModifier):

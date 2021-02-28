@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="images">
+    <file alias="copy">svg/light/32dp/copy.svg</file>
+    <file alias="cut">svg/light/32dp/cut.svg</file>
+    <file alias="paste">svg/light/32dp/paste.svg</file>
     <file alias="close">svg/light/32dp/close.svg</file>
     <file alias="locked">svg/light/32dp/locked.svg</file>
     <file alias="unlocked">svg/light/32dp/unlocked.svg</file>
@@ -17,6 +20,9 @@
     <file alias="compact_on">svg/dark/32dp/compact_on.svg</file>
   </qresource>
   <qresource prefix="images_d">
+    <file alias="copy">svg/light/32dp-disabled/copy.svg</file>
+    <file alias="cut">svg/light/32dp-disabled/cut.svg</file>
+    <file alias="paste">svg/light/32dp-disabled/paste.svg</file>
     <file alias="locked">svg/light/32dp-disabled/locked.svg</file>
     <file alias="unlocked">svg/light/32dp-disabled/unlocked.svg</file>
     <file alias="add_comment">svg/light/32dp-disabled/add_comment.svg</file>

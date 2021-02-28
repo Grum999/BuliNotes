@@ -29,7 +29,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 from PyQt5.QtWidgets import (
-        QPushButton,
+        QPushButton
     )
 
 class WStandardColorSelector(QWidget):
@@ -201,7 +201,22 @@ class WStandardColorSelector(QWidget):
 
     def setColorIndex(self, colorIndex):
         """Set current button color"""
-        if colorIndex >= WStandardColorSelector.COLOR_NONE and colorIndex <= WStandardColorSelector.COLOR_GRAY:
+        if colorIndex is None:
+            self.__colorIndex = colorIndex
+            self.update()
+        elif colorIndex >= WStandardColorSelector.COLOR_NONE and colorIndex <= WStandardColorSelector.COLOR_GRAY:
             self.__colorIndex = colorIndex
             self.update()
             self.colorChanged.emit(self.__colorIndex)
+
+class WMenuStandardColorSelector(QWidgetAction):
+    """Encapsulate a WStandardColorSelector as a menu item"""
+    def __init__(self, parent=None):
+        super(WMenuStandardColorSelector, self).__init__(parent)
+
+        self.__stdColorSelector = WStandardColorSelector()
+
+        self.setDefaultWidget(self.__stdColorSelector)
+
+    def colorSelector(self):
+        return self.__stdColorSelector

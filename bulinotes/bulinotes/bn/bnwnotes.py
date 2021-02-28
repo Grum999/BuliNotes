@@ -34,7 +34,10 @@ from .bnnotes import (
             )
 
 from pktk.modules.utils import tsToStr
-from pktk.widgets.wstandardcolorselector import WStandardColorSelector
+from pktk.widgets.wstandardcolorselector import (
+        WStandardColorSelector,
+        WMenuStandardColorSelector
+    )
 
 
 
@@ -215,6 +218,9 @@ class BNNotesModel(QAbstractTableModel):
     def setIconSize(self, value):
         self.__iconSize=QSize(value, value)
 
+    def notes(self):
+        """Expose BNNotes object"""
+        return self.__notes
 
 
 class BNNotesModelDelegate(QStyledItemDelegate):
@@ -233,7 +239,7 @@ class BNNotesModelDelegate(QStyledItemDelegate):
                 if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                     painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
 
-                painter.drawPixmap(QPoint(0,0), index.data(Qt.DecorationRole).pixmap(BNNotesModel.ICON_SIZE))
+                painter.drawPixmap(option.rect.topLeft(), index.data(Qt.DecorationRole).pixmap(BNNotesModel.ICON_SIZE))
                 painter.restore()
                 return
         QStyledItemDelegate.paint(self, painter, option, index)
@@ -249,10 +255,14 @@ class BNWNotes(QTreeView):
 
     def __init__(self, parent=None):
         super(BNWNotes, self).__init__(parent)
+        self.__parent=parent
         self.__model = None
         self.__proxyModel = None
         self.clicked.connect(self.__itemClicked)
         self.setAutoScroll(False)
+
+        self.__contextMenu=QMenu()
+        self.__initMenu()
 
         delegate=BNNotesModelDelegate(self)
         self.setItemDelegateForColumn(BNNotesModel.COLNUM_COLOR, delegate)
@@ -271,6 +281,57 @@ class BNWNotes(QTreeView):
             if item:
                 item.setLocked(not item.locked())
 
+    def __initMenu(self):
+        """Initialise context menu"""
+        self.__actionColorIndex = WMenuStandardColorSelector()
+        self.__actionColorIndex.colorSelector().colorUpdated.connect(self.__actionSetNoteColorIndex)
+
+        self.__actionCopy = QAction(QIcon(':/images/copy'), i18n('Copy'), self)
+        self.__actionCopy.triggered.connect(self.__actionCopyNote)
+        self.__actionCut = QAction(QIcon(':/images/cut'), i18n('Cut'), self)
+        self.__actionCut.triggered.connect(self.__actionCutNote)
+        self.__actionPaste = QAction(QIcon(':/images/paste'), i18n('Paste'), self)
+        self.__actionPaste.triggered.connect(self.__actionPasteNote)
+
+
+        self.__actionAdd = QAction(QIcon(':/images/add_comment'), i18n('Add note'), self)
+        self.__actionAdd.triggered.connect(self.__parent.btAddNote.click)
+        self.__actionEdit = QAction(QIcon(':/images/edit_comment'), i18n('Edit note'), self)
+        self.__actionEdit.triggered.connect(self.__parent.btEditNote.click)
+        self.__actionDelete = QAction(QIcon(':/images/delete_comment'), i18n('Delete note'), self)
+        self.__actionDelete.triggered.connect(self.__parent.btRemoveNote.click)
+
+        self.__contextMenu.addAction(self.__actionColorIndex)
+        self.__contextMenu.addSeparator()
+        self.__contextMenu.addAction(self.__actionCopy)
+        self.__contextMenu.addAction(self.__actionCut)
+        self.__contextMenu.addAction(self.__actionPaste)
+        self.__contextMenu.addSeparator()
+        self.__contextMenu.addAction(self.__actionAdd)
+        self.__contextMenu.addAction(self.__actionEdit)
+        self.__contextMenu.addAction(self.__actionDelete)
+
+    def __actionSetNoteColorIndex(self, value):
+        for note in self.selectedItems():
+            note.setColorIndex(value)
+
+    def __actionCopyNote(self):
+        """Copy selected notes to clipboardCut
+
+        If nothing is selected, do nothing
+        """
+        self.__model.notes().clipboardCopy(self.selectedItems())
+
+    def __actionCutNote(self):
+        """Cut selected notes to clipboardCut
+
+        If nothing is selected, do nothing
+        """
+        self.__model.notes().clipboardCut(self.selectedItems())
+
+    def __actionPasteNote(self):
+        """Paste notes from clipboard (if any)"""
+        self.__model.notes().clipboardPaste()
 
     def __resizeColumns(self):
         """Resize columns"""
@@ -304,6 +365,29 @@ class BNWNotes(QTreeView):
         #self.setItemDelegateForColumn(BNNotesModel.COLNUM_PERSISTENT, delegate)
 
         self.__model.updateWidth.connect(self.__resizeColumns)
+
+    def contextMenuEvent(self, event):
+        """Display context menu, updated according to current options"""
+        selectedItems=self.selectedItems()
+        nbSelectedItems=len(selectedItems)
+
+        if nbSelectedItems>0:
+            self.__actionColorIndex.setVisible(True)
+            if nbSelectedItems==1:
+                self.__actionColorIndex.colorSelector().setColorIndex(selectedItems[0].colorIndex())
+            else:
+                self.__actionColorIndex.colorSelector().setColorIndex(None)
+
+        self.__actionCopy.setEnabled(nbSelectedItems>0)
+        self.__actionCut.setEnabled(nbSelectedItems>0)
+        self.__actionPaste.setEnabled(self.__model.notes().clipboardPastable())
+
+        self.__actionAdd.setEnabled(self.__parent.btAddNote.isEnabled())
+        self.__actionEdit.setEnabled(self.__parent.btEditNote.isEnabled())
+        self.__actionDelete.setEnabled(self.__parent.btRemoveNote.isEnabled())
+
+
+        self.__contextMenu.exec_(event.globalPos())
 
     def keyPressEvent(self, event):
         super(BNWNotes, self).keyPressEvent(event)
