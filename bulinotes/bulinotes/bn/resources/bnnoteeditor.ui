@@ -108,6 +108,34 @@
        <number>0</number>
       </property>
       <item>
+       <widget class="QLabel" name="lblTimestampLabel">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+          <italic>true</italic>
+         </font>
+        </property>
+        <property name="text">
+         <string>Created:
+Updated:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblTimestamp">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+          <italic>true</italic>
+         </font>
+        </property>
+        <property name="text">
+         <string>-
+-</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -126,8 +154,7 @@
          <string>Ok</string>
         </property>
         <property name="icon">
-         <iconset theme="0">
-          <normaloff>.</normaloff>.</iconset>
+         <iconset theme="dialog-ok"/>
         </property>
        </widget>
       </item>
@@ -135,6 +162,9 @@
        <widget class="QPushButton" name="btCancel">
         <property name="text">
          <string>Cancel</string>
+        </property>
+        <property name="icon">
+         <iconset theme="dialog-cancel"/>
         </property>
        </widget>
       </item>

@@ -32,7 +32,11 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import BCTimer
+from pktk.modules.utils import (
+                        secToStrTime,
+                        tsToStr,
+                        BCTimer
+                    )
 from pktk.modules.edialog import EDialog
 from pktk.modules.bytesrw import BytesRW
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
@@ -774,6 +778,16 @@ class BNNoteEditor(EDialog):
         self.pteDescription.setPlainText(self.__note.description())
         self.wColorIndex.setColorIndex(self.__note.colorIndex())
         self.wteText.setHtml(self.__note.text())
+
+        currentTime=time.time()
+        delayCreated=currentTime - note.timestampCreated()
+        delayUpdated=currentTime - note.timestampUpdated()
+
+        if delayCreated<1:
+            self.lblTimestampLabel.setVisible(False)
+            self.lblTimestamp.setVisible(False)
+        else:
+            self.lblTimestamp.setText(f'{tsToStr(note.timestampCreated())} ({secToStrTime(delayCreated)} ago)\n{tsToStr(note.timestampUpdated())} ({secToStrTime(delayUpdated)} ago)')
 
         self.btOk.clicked.connect(self.__accept)
         self.btCancel.clicked.connect(self.__reject)
