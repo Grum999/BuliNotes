@@ -85,7 +85,7 @@ class BNUiDocker(QWidget):
 
     def __addNote(self):
         """Add a new note in notes"""
-        note=BNNoteEditor.edit(BNNote(title=f"test--{QUuid.createUuid().toString()}"))
+        note=BNNoteEditor.edit(BNNote())
         if note:
             note.setPosition(self.__notes.length())
             self.__notes.add(note)
