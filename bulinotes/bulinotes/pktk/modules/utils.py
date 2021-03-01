@@ -666,6 +666,16 @@ def regExIsValid(regex):
         return False
     return True
 
+def qImageToPngQByteArray(image):
+    """Convert a QImage as PNG and return a QByteArray"""
+    if isinstance(image, QImage):
+        ba=QByteArray()
+        buffer=QBuffer(ba)
+        buffer.open(QIODevice.WriteOnly)
+        image.save(buffer, "PNG")
+        buffer.close()
+        return ba
+
 # ------------------------------------------------------------------------------
 class BCTimer(object):
 

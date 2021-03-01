@@ -1,5 +1,11 @@
 <RCC>
   <qresource prefix="images">
+    <file alias="btText">svg/dark/32dp/text_bt.svg</file>
+    <file alias="btDraw">svg/dark/32dp/draw_bt.svg</file>
+    <file alias="btBrushes">svg/dark/32dp/brushes_bt.svg</file>
+    <file alias="tabBrushes">svg/dark/32dp/brushes_tab.svg</file>
+    <file alias="tabDraw">svg/dark/32dp/draw_tab.svg</file>
+    <file alias="tabText">svg/dark/32dp/text_tab.svg</file>
     <file alias="copy">svg/dark/32dp/copy.svg</file>
     <file alias="cut">svg/dark/32dp/cut.svg</file>
     <file alias="paste">svg/dark/32dp/paste.svg</file>
