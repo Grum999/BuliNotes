@@ -50,6 +50,7 @@ from pktk.modules.bytesrw import BytesRW
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 from pktk.widgets.wmenuitem import WMenuBrushesPresetSelector
 from pktk.widgets.wcolorselector import WMenuColorPicker
+from pktk.widgets.wtoolbox import WToolBox
 
 
 class BNNote(QObject):
@@ -916,7 +917,6 @@ class BNNotes(QObject):
         return clipboardMimeContent.hasFormat(BNNotes.MIME_TYPE)
 
 
-
 class BNNoteEditor(EDialog):
 
     @staticmethod
@@ -1162,26 +1162,11 @@ class BNNoteEditor(EDialog):
 
 
 # ----  this part is in a mess :-)  ------
-class BNNotePostIt(QWidget):
-
-    __BBAR_TOOLBUTTON_CSS="""
-QToolButton {
-border-radius: 2px;
-}
-QToolButton:hover {
-border: none;
-background-color: rgba(255,255,255,50);
-}
-QToolButton:checked {
-border: none;
-background-color: rgba(0,0,0,50);
-}            """
-
+class BNNotePostIt(WToolBox):
 
     def __init__(self, note=None):
         super(BNNotePostIt, self).__init__(Krita.instance().activeWindow().qwindow())
 
-        # os.path.join(os.path.dirname(__file__), 'resources', 'bnnoteeditor.ui')
         if not isinstance(note, BNNote):
             self.__note=BNNote()
         else:
@@ -1189,38 +1174,19 @@ background-color: rgba(0,0,0,50);
 
         self.__note.updated.connect(self.__updatedNote)
 
-        self.__globalPos = None
-        self.__moving=False
+        self.compactModeUpdated.connect(self.__updateNoteCompact)
+        self.geometryUpdated.connect(self.__updateNoteGeometry)
 
-        self.__factor=0.85
-
-        self.__buildUi()
+        self.__initUi()
 
         self.show()
 
-    def __buildUi(self):
+    def __initUi(self):
         """Build window interface"""
-        self.setAutoFillBackground(True)
-        self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint)
-
-        self.__inInit=True
-
         if self.__note.windowPostItGeometry():
             self.setGeometry(self.__note.windowPostItGeometry())
         else:
-            tmpFrameGeometry = self.frameGeometry()
-            # center window on current screen
-            #tmpFrameGeometry.moveCenter(QDesktopWidget().availableGeometry().center())
-            # center window on Krita window
-            tmpFrameGeometry.moveCenter(Krita.instance().activeWindow().qwindow().geometry().center())
-            self.move(tmpFrameGeometry.topLeft())
-
-        self.__layout=QVBoxLayout(self)
-        self.__layout.setContentsMargins(0,0,0,0)
-        self.__layout.setSpacing(1)
-
-        self.__titleBar=BNWNotePostItTitleBar(self, self.__note.windowPostItCompact())
-        self.__titleBar.compactModeChanged.connect(self.__setCompact)
+            self.setCenteredPosition()
 
         self.__stackedWidgets=QStackedWidget(self)
 
@@ -1228,76 +1194,55 @@ background-color: rgba(0,0,0,50);
         self.__scratchpadImg=BNWLabelScratch("scratchpad")
         self.__brushesList=QLabel("brushes")
 
-        #self.__scratchpadImg.setScaledContents(True)
-        #self.__scratchpadImg.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.__stackedWidgets.addWidget(self.__textEdit)
+        self.__stackedWidgets.addWidget(self.__scratchpadImg)
+        self.__stackedWidgets.addWidget(self.__brushesList)
+        self.__stackedWidgets.setCurrentIndex(0)
 
-        self.__bottomBar=QWidget(self)
-        bbLayout=QHBoxLayout(self.__bottomBar)
-        bbLayout.setContentsMargins(1,1,1,1)
-        bbLayout.setSpacing(1)
+        self.setCentralWidget(self.__stackedWidgets)
 
         self.__btShowText=QToolButton(self)
         self.__btShowText.clicked.connect(self.__showNotePage)
-        self.__btShowText.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
         self.__btShowText.setToolTip(i18n('Text note'))
-        self.__btShowText.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
+        #self.__btShowText.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
+        #self.__btShowText.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
         self.__btShowText.setIcon(QIcon(':/images/btText'))
         self.__btShowText.setFocusPolicy(Qt.NoFocus)
         self.__btShowText.setAutoRaise(True)
         self.__btShowText.setCheckable(True)
-        self.__btShowText.setStyleSheet(BNNotePostIt.__BBAR_TOOLBUTTON_CSS)
 
         self.__btShowScratchpad=QToolButton(self)
         self.__btShowScratchpad.clicked.connect(self.__showNotePage)
         self.__btShowScratchpad.setToolTip(i18n('Handwritten note'))
-        self.__btShowScratchpad.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        self.__btShowScratchpad.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
+        #self.__btShowScratchpad.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
+        #self.__btShowScratchpad.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
         self.__btShowScratchpad.setIcon(QIcon(':/images/btDraw'))
         self.__btShowScratchpad.setFocusPolicy(Qt.NoFocus)
         self.__btShowScratchpad.setAutoRaise(True)
         self.__btShowScratchpad.setCheckable(True)
-        self.__btShowScratchpad.setStyleSheet(BNNotePostIt.__BBAR_TOOLBUTTON_CSS)
 
         self.__btShowBrushes=QToolButton(self)
         self.__btShowBrushes.clicked.connect(self.__showNotePage)
         self.__btShowBrushes.setToolTip(i18n('Brushes note'))
-        self.__btShowBrushes.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        self.__btShowBrushes.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
+        #self.__btShowBrushes.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
+        #self.__btShowBrushes.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
         self.__btShowBrushes.setIcon(QIcon(':/images/btBrushes'))
         self.__btShowBrushes.setFocusPolicy(Qt.NoFocus)
         self.__btShowBrushes.setAutoRaise(True)
         self.__btShowBrushes.setCheckable(True)
-        self.__btShowBrushes.setStyleSheet(BNNotePostIt.__BBAR_TOOLBUTTON_CSS)
 
         self.__buttonGroup=QButtonGroup()
         self.__buttonGroup.addButton(self.__btShowText)
         self.__buttonGroup.addButton(self.__btShowScratchpad)
         self.__buttonGroup.addButton(self.__btShowBrushes)
 
-        self.__sizeGrip=QSizeGrip(self)
+        self.bottomBarAddWidget(self.__btShowText)
+        self.bottomBarAddWidget(self.__btShowScratchpad)
+        self.bottomBarAddWidget(self.__btShowBrushes)
 
-        bbLayout.addWidget(self.__btShowText)
-        bbLayout.addWidget(self.__btShowScratchpad)
-        bbLayout.addWidget(self.__btShowBrushes)
-        bbLayout.addWidget(self.__sizeGrip, 0, Qt.AlignBottom|Qt.AlignRight)
-        self.__bottomBar.setLayout(bbLayout)
-
-        self.__stackedWidgets.addWidget(self.__textEdit)
-        self.__stackedWidgets.addWidget(self.__scratchpadImg)
-        self.__stackedWidgets.addWidget(self.__brushesList)
-        self.__stackedWidgets.setCurrentIndex(0)
-
-        self.__layout.addWidget(self.__titleBar)
-        self.__layout.addWidget(self.__stackedWidgets)
-        self.__layout.addWidget(self.__bottomBar)
-
-        self.setLayout(self.__layout)
-
-        self.__sizeGrip.installEventFilter(self)
         # -1 because note type start from 1 and page from 0
         self.__showNotePage(self.__note.selectedType()-1)
         self.__updateUi()
-        self.__inInit=False
 
     def __applyCompactFactor(self, subResult):
         return f'font-size: {round(0.8*int(subResult.group(1)))}pt;'
@@ -1322,7 +1267,8 @@ background-color: rgba(0,0,0,50);
 
     def __updateUi(self):
         """Update UI content according to note content"""
-        self.__titleBar.setNote(self.__note)
+        self.setTitle(self.__note.title())
+
         text=self.__note.text()
         if self.__note.windowPostItCompact():
             text=re.sub(r"font-size:\s*(\d+)pt;", self.__applyCompactFactor, text)
@@ -1368,49 +1314,20 @@ background-color: rgba(0,0,0,50);
 
         self.__stackedWidgets.setCurrentIndex(pageNumber)
 
+    def __updateNoteCompact(self, value):
+        """Update note compact"""
+        self.__note.setWindowPostItCompact(value)
 
-    def eventFilter(self, source, event):
-        if source==self.__sizeGrip and isinstance(event, QMouseEvent):
-            if event.type()==QEvent.MouseButtonRelease:
-                self.__note.setWindowPostItGeometry(self.geometry())
-
-        return super(BNNotePostIt, self).eventFilter(source, event)
+    def __updateNoteGeometry(self, value):
+        """Update note geometry"""
+        self.__note.setWindowPostItGeometry(value)
 
     def closeEvent(self, event):
         """About to close window"""
         self.__note.setWindowPostIt(None)
         self.__note.closeWindowPostIt()
 
-    def mousePressEvent(self, event):
-        """User press anywhere on note window, so enter on drag mode"""
-        self.__globalPos=event.globalPos()
-        self.setCursor(Qt.ClosedHandCursor)
 
-    def mouseMoveEvent(self, event):
-        """If in drag mode, move current note window"""
-        if self.__globalPos and not self.__moving:
-            self.__moving=True
-            delta = QPoint(event.globalPos() - self.__globalPos)
-
-            # -- the really dirty trick...
-            # Don't really know why but without it, when moving window on my
-            # secondary screen there's a really weird "shake" effect and
-            # defined position sometime gets out of hand...
-            #
-            # having a 1ms timer is enough to fix the problem
-            # suspecting something with too much event or something like that...
-            BCTimer.sleep(1)
-            # --
-
-            self.move(self.x() + delta.x(), self.y() + delta.y())
-            self.__globalPos = event.globalPos()
-            self.__moving=False
-
-    def mouseReleaseEvent(self, event):
-        """Exit drag mode"""
-        self.__note.setWindowPostItGeometry(self.geometry())
-        self.__globalPos=None
-        self.setCursor(Qt.ArrowCursor)
 
 
 class BNNotePostItText(QTextEdit):
@@ -1544,139 +1461,6 @@ QScrollBar:horizontal {
             super(BNNotePostItText, self).mouseReleaseEvent(event)
 
 
-class BNWNotePostItTitleBar(QWidget):
-    compactModeChanged=Signal(bool)
-
-    def __init__(self, parent, compact=False):
-        super(BNWNotePostItTitleBar, self).__init__(parent)
-        self.__parent=parent
-        self.__layout=QHBoxLayout()
-        self.__layout.setContentsMargins(1,1,1,1)
-        self.__layout.setSpacing(1)
-
-        self.__inInit=True
-
-        self.__factor=0.95
-        self.__height=0
-
-        self.__lblTitle = QLabel("")
-        self.__lblTitle.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.__lblTitle.minimumSizeHint=self.minimumSizeHint
-
-        self.__font = self.font()
-        self.__originalFontSizePt=self.__font.pointSizeF()
-        self.__originalFontSizePx=self.__font.pixelSize()
-
-        self.__fntMetric=QFontMetrics(self.__font)
-
-        self.__btClose = QToolButton()
-        self.__btClose.clicked.connect(self.__parent.close)
-        self.__btClose.setToolTip(i18n('Close note'))
-        self.__btClose.setIcon(QIcon(':/white/close'))
-        self.__btClose.setFocusPolicy(Qt.NoFocus)
-        self.__btClose.setAutoRaise(True)
-        self.__btClose.setStyleSheet("""
-QToolButton {
-    border-radius: 2px;
-}
-QToolButton:hover {
-    border: none;
-    background-color: rgba(255,255,255,50);
-}
-            """)
-
-        self.__btCompact = QToolButton()
-        self.__btCompact.clicked.connect(self.__setCompact)
-        self.__btClose.setToolTip(i18n('Compact view'))
-        self.__btCompact.setIcon(QIcon(':/white/compact_on'))
-        self.__btCompact.setFocusPolicy(Qt.NoFocus)
-        self.__btCompact.setAutoRaise(True)
-        self.__btCompact.setCheckable(True)
-        self.__btCompact.setStyleSheet("""
-QToolButton {
-    border-radius: 2px;
-}
-QToolButton:hover {
-    border: none;
-    background-color: rgba(255,255,255,50);
-}
-            """)
-
-        self.__title=''
-        self.__color=None
-
-        self.__setCompact(compact)
-
-
-        self.__layout.addWidget(self.__lblTitle)
-        self.__layout.addWidget(self.__btCompact)
-        self.__layout.addWidget(self.__btClose)
-        self.setLayout(self.__layout)
-        self.__inInit=False
-
-    def minimumSizeHint(self):
-        return QSize(0, self.__height)
-
-    def __setCompact(self, value):
-        if value:
-            self.__factor=0.65
-            self.__btCompact.setChecked(True)
-            self.__btCompact.setIcon(QIcon(':/white/compact_off'))
-            self.__btClose.setToolTip(i18n('Normal view'))
-        else:
-            self.__factor=0.95
-            self.__btCompact.setChecked(False)
-            self.__btCompact.setIcon(QIcon(':/white/compact_on'))
-            self.__btClose.setToolTip(i18n('Compact view'))
-
-        if self.__originalFontSizePt>-1:
-            self.__font.setPointSizeF(self.__originalFontSizePt*self.__factor)
-        else:
-            self.__font.setPixelSize(int(self.__originalFontSizePx*self.__factor))
-
-        self.__fntMetric=QFontMetrics(self.__font)
-        self.__height=self.__fntMetric.height()
-
-        self.__lblTitle.setFont(self.__font)
-        self.__btClose.setFixedSize(self.__height, self.__height)
-        self.__btClose.setIconSize(QSize(self.__height-2,self.__height-2))
-        self.__btCompact.setFixedSize(self.__height, self.__height)
-        self.__btCompact.setIconSize(QSize(self.__height-2,self.__height-2))
-
-        if not self.__inInit:
-            self.compactModeChanged.emit(value)
-
-    def __updateTitle(self):
-        """Update title ellipsis"""
-        self.__lblTitle.setText(self.__fntMetric.elidedText(self.__title, Qt.ElideRight, self.__lblTitle.width() - 2))
-
-    def setNote(self, note):
-        """Set title bar content"""
-        colorIndex=note.colorIndex()
-        if colorIndex==WStandardColorSelector.COLOR_NONE:
-            self.setAutoFillBackground(False)
-        else:
-            palette=self.__lblTitle.palette()
-            self.setAutoFillBackground(True)
-            palette.setColor(QPalette.Window, WStandardColorSelector.getColor(colorIndex).darker(200))
-            palette.setColor(QPalette.WindowText, Qt.white)
-            self.setPalette(palette)
-
-        self.__inInit=True
-        self.__title=note.title()
-        self.__setCompact(note.windowPostItCompact())
-        self.__updateTitle()
-        self.__inInit=False
-
-    def resizeEvent(self, event):
-        """Update title ellipsis when resized"""
-        self.__updateTitle()
-
-    def height(self):
-        """Return current applied height"""
-        return self.__height
-
-
 class BNWLabelScratch(QLabel):
     """A label to display a streched pixmap that keep pixmap ratio"""
     def __init__(self, parent=None):
@@ -1716,3 +1500,12 @@ class BNWLabelScratch(QLabel):
         if not self.__pixmap is None:
             QLabel.setPixmap(self, self.__scaledPixmap())
             self.setContentsMargins(max(0, int((self.width()-self.height()*self.__ratio)/2)),0,0,0)
+
+    def mousePressEvent(self, event):
+        """Pick color on click"""
+        if event.modifiers() & Qt.ControlModifier or event.buttons() & Qt.MidButton:
+            return super(BNWLabelScratch, self).mousePressEvent(event)
+        else:
+            view=Krita.instance().activeWindow().activeView()
+            color=QApplication.primaryScreen().grabWindow(self.winId()).toImage().pixelColor(event.pos().x(), event.pos().y())
+            view.setForeGroundColor(ManagedColor.fromQColor(color, view.canvas()))
