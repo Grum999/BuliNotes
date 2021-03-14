@@ -46,11 +46,10 @@ class BNBrushesModel(QAbstractTableModel):
     COLNUM_COMMENT = 2
     COLNUM_LAST = 2
 
-    def __init__(self, note, parent=None):
+    def __init__(self, brushes, parent=None):
         """Initialise list"""
         super(BNBrushesModel, self).__init__(parent)
-        self.__note=note
-        self.__brushes=self.__note.brushes()
+        self.__brushes=brushes
         self.__brushes.updated.connect(self.__dataUpdated)
         self.__brushes.updateReset.connect(self.__dataUpdateReset)
         self.__brushes.updateAdded.connect(self.__dataUpdatedAdd)
@@ -75,7 +74,6 @@ class BNBrushesModel(QAbstractTableModel):
 
     def __dataUpdatedAdd(self, items):
         # if nb items is the same, just update... ?
-        #self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.__note.length()-1, BNBrushesModel.COLNUM_LAST) )
         print('TODO: need to update only for added items')
         self.__items=self.__brushes.idList()
         self.modelReset.emit()
@@ -83,7 +81,6 @@ class BNBrushesModel(QAbstractTableModel):
 
     def __dataUpdateRemove(self, items):
         # if nb items is the same, just update... ?
-        #self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.__note.length()-1, BNBrushesModel.COLNUM_LAST) )
         print('TODO: need to update only for removed items')
         self.__items=self.__brushes.idList()
         self.modelReset.emit()
@@ -139,9 +136,9 @@ class BNBrushesModel(QAbstractTableModel):
         return None
 
 
-    def note(self):
-        """Expose BNNotes object"""
-        return self.__note
+    def brushes(self):
+        """Expose BNBrushes object"""
+        return self.__brushes
 
 
 class BNWBrushes(QTreeView):
@@ -232,9 +229,9 @@ class BNWBrushes(QTreeView):
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
 
 
-    def setNote(self, note):
+    def setBrushes(self, brushes):
         """Initialise treeview header & model"""
-        self.__model = BNBrushesModel(note)
+        self.__model = BNBrushesModel(brushes)
 
         self.__proxyModel = QSortFilterProxyModel(self)
         self.__proxyModel.setSourceModel(self.__model)

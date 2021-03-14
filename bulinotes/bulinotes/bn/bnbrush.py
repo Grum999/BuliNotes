@@ -40,7 +40,7 @@ class BNBrush(QObject):
     """A brush definition"""
     updated=Signal(QObject, str)
 
-    def __init__(self):
+    def __init__(self, brush=None):
         super(BNBrush, self).__init__(None)
         self.__name=''
         self.__size=0
@@ -57,6 +57,9 @@ class BNBrush(QObject):
 
         self.__brushNfoFull=''
         self.__brushNfoShort=''
+
+        if isinstance(brush, BNBrush):
+            self.importData(brush.exportData())
 
 
     def __updated(self, property):
@@ -324,7 +327,7 @@ class BNBrushes(QObject):
     updateAdded = Signal(list)
     updateRemoved = Signal(list)
 
-    def __init__(self):
+    def __init__(self, brushes=None):
         """Initialize object"""
         super(BNBrushes, self).__init__(None)
 
@@ -333,11 +336,17 @@ class BNBrushes(QObject):
         # value = BNNotes
         self.__brushes = {}
 
-        self.__temporaryDisabled=False
+        self.__temporaryDisabled=True
 
         # list of added hash
         self.__updateAdd=[]
         self.__updateRemove=[]
+
+        if isinstance(brushes, BNBrushes):
+            for brushId in brushes.idList():
+                self.add(BNBrush(brushes.get(brushId)))
+
+        self.__temporaryDisabled=False
 
     def __repr__(self):
         return f"<BNBrushes()>"
@@ -454,3 +463,13 @@ class BNBrushes(QObject):
                 self.__itemUpdated(item, '*')
             return True
         return False
+
+    def copyFrom(self, brushes):
+        """Copy brushes from another brushes"""
+        if isinstance(brushes, BNBrushes):
+            self.__temporaryDisabled=True
+            self.clear()
+            for brushId in brushes.idList():
+                self.add(BNBrush(brushes.get(brushId)))
+        self.__temporaryDisabled=False
+        self.__emitUpdateReset()

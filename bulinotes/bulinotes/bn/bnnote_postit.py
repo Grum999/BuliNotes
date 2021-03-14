@@ -154,7 +154,7 @@ width: 0px;
         self.__textEdit=BNNotePostItText(self)
         self.__scratchpadImg=BNWLabelScratch("scratchpad")
         self.__brushesList=BNWBrushes(self)
-        self.__brushesList.setNote(self.__note)
+        self.__brushesList.setBrushes(self.__note.brushes())
         self.__brushesList.setColumnHidden(BNBrushesModel.COLNUM_COMMENT, True)
         self.__brushesList.setHeaderHidden(True)
         self.__brushesList.setIndentation(0)
@@ -164,6 +164,7 @@ width: 0px;
         self.__brushesList.setUniformRowHeights(False)
         self.__brushesList.setIconSizeIndex(self.__note.windowPostItBrushIconSizeIndex())
         self.__brushesList.selectionModel().selectionChanged.connect(self.__brushesListSelectionChanged)
+        self.__brushesList.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.__brushesList.iconSizeIndexChanged.connect(self.__brushesListIconSizeIndexChanged)
         header = self.__brushesList.header()
         header.setStretchLastSection(False)
@@ -212,6 +213,8 @@ width: 0px;
 
         # -1 because note type start from 1 and page from 0
         self.__showNotePage(self.__note.selectedType()-1)
+
+        self.__setCompact(self.__note.windowPostItCompact())
         self.__updateUi()
 
     def __applyCompactFactor(self, subResult):
@@ -247,7 +250,6 @@ width: 0px;
         else:
             self.__brushesList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_NORMAL_CSS)
             self.__brushesList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_NORMAL_CSS)
-
 
     def __updateUi(self):
         """Update UI content according to note content"""

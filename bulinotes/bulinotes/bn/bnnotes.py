@@ -354,6 +354,12 @@ class BNNote(QObject):
         """Return brush list"""
         return self.__brushes
 
+    def setBrushes(self, brushes):
+        """Return brush list"""
+        if isinstance(brushes, BNBrushes):
+            self.__brushes.copyFrom(brushes)
+            self.__updated('brushes')
+
     def exportData(self, asQByteArray=True):
         """Export current note as internal format
 
@@ -1033,6 +1039,7 @@ class BNNoteEditor(EDialog):
         else:
             self.__note=note
 
+        self.__tmpBrushes=BNBrushes(self.__note.brushes())
 
         self.__activeView=Krita.instance().activeWindow().activeView()
         self.__activeViewCurrentConfig={}
@@ -1055,7 +1062,6 @@ class BNNoteEditor(EDialog):
         self.__saveViewConfig()
         self.__buildUi()
         self.__initViewConfig()
-
 
     def __buildUi(self):
         """Build/Initialise dialog widgets"""
@@ -1148,7 +1154,7 @@ class BNNoteEditor(EDialog):
 
 
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
-        self.tvBrushes.setNote(self.__note)
+        self.tvBrushes.setBrushes(self.__tmpBrushes)
 
         self.tabWidget.setCurrentIndex(0)
         self.tabWidget.currentChanged.connect(self.__tabChanged)
@@ -1175,7 +1181,7 @@ class BNNoteEditor(EDialog):
     def __updateBrushUi(self):
         """Update brushes UI (enable/disable buttons...)"""
         nbSelectedBrush=self.tvBrushes.nbSelectedItems()
-        self.tbBrushAdd.setEnabled(self.__note.brushes().getFromFingerPrint(self.__currentUiBrush.fingerPrint()) is None)
+        self.tbBrushAdd.setEnabled(self.__tmpBrushes.getFromFingerPrint(self.__currentUiBrush.fingerPrint()) is None)
         self.tbBrushEdit.setEnabled(nbSelectedBrush==1)
         self.tbBrushDelete.setEnabled(nbSelectedBrush==1)
 
@@ -1206,8 +1212,6 @@ class BNNoteEditor(EDialog):
         # need to apply a factor to be sure to reapply the right zoom
         self.__activeViewCurrentConfig['zoom']=self.__activeView.canvas().zoomLevel()/(self.__activeView.document().resolution()*1/72)
 
-
-
     def __initViewConfig(self):
         """Initialise view for Scratchpad"""
         self.__actionSelectBrush.presetChooser().setCurrentPreset(self.__allBrushesPreset[self.__note.scratchpadBrushName()])
@@ -1217,8 +1221,6 @@ class BNNoteEditor(EDialog):
 
         self.__actionSelectColor.colorPicker().setColor(self.__note.scratchpadBrushColor())
         self.hsBrushSize.setValue(self.__note.scratchpadBrushSize())
-
-
 
     def __restoreViewConfig(self):
         """Restore view properties"""
@@ -1238,8 +1240,6 @@ class BNNoteEditor(EDialog):
 
         self.__activeView.canvas().setZoomLevel(self.__activeViewCurrentConfig['zoom'])
 
-
-
     def __accept(self):
         """Accept modifications and return result"""
         self.__note.beginUpdate()
@@ -1252,6 +1252,7 @@ class BNNoteEditor(EDialog):
         self.__note.setScratchpadBrushSize(int(self.__activeView.brushSize()))
         self.__note.setScratchpadBrushColor(self.__activeView.foregroundColor().colorForCanvas(self.__activeView.canvas()))
 
+        self.__note.setBrushes(self.__tmpBrushes)
 
         img=self.__scratchpadHandWritting.copyScratchpadImageData()
         self.__note.setScratchpadImage(self.__scratchpadHandWritting.copyScratchpadImageData())
@@ -1260,28 +1261,23 @@ class BNNoteEditor(EDialog):
         self.__note.endUpdate()
         self.accept()
 
-
     def __reject(self):
         """reject modifications and return None"""
         self.__restoreViewConfig()
         self.reject()
-
 
     def __actionScratchpadSetBrushPreset(self, resource):
         """Set current brush"""
         self.__activeView.setCurrentBrushPreset(resource)
         self.hsBrushSize.setValue(round(self.__activeView.brushSize()))
 
-
     def __actionScratchpadClear(self):
         """Clear Scratchpad content"""
         self.__scratchpadHandWritting.clear()
 
-
     def __actionScratchpadSetBrushSize(self, value):
         """Set brush size"""
         self.__activeView.setBrushSize(value)
-
 
     def __actionScratchpadSetBrushDefault(self):
         """Set brush size"""
@@ -1292,7 +1288,6 @@ class BNNoteEditor(EDialog):
         self.__activeView.setPaintingFlow(1)
         self.hsBrushSize.setValue(5)
 
-
     def __actionScratchpadSetBrushCurrent(self):
         """Set brush size"""
         self.__activeView.setCurrentBrushPreset(self.__activeViewCurrentConfig['brushPreset'])
@@ -1302,28 +1297,24 @@ class BNNoteEditor(EDialog):
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
         self.hsBrushSize.setValue(round(self.__activeViewCurrentConfig['brushSize']))
 
-
     def __actionScratchpadSetColor(self, color):
         """Set brush color"""
         self.__activeView.setForeGroundColor(ManagedColor.fromQColor(color, self.__activeView.canvas()))
-
 
     def __actionScratchpadSetZoom(self, value):
         """Set zoom value on scratchpad"""
         self.__activeView.canvas().setZoomLevel(value/100.0)
 
-
     def __actionBrushScratchpadSetColor(self, color):
         """Set brush testing scrathcpad color"""
         self.__activeView.setForeGroundColor(ManagedColor.fromQColor(color, self.__activeView.canvas()))
-
 
     def __actionBrushAdd(self):
         """Add current brush definition to brushes list"""
         result=WTextEditDialog.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "")
         if not result is None:
             self.__currentUiBrush.setComments(result)
-            self.__note.brushes().add(self.__currentUiBrush)
+            self.__tmpBrushes.add(self.__currentUiBrush)
             self.__updateBrushUi()
 
     def __actionBrushEdit(self):
@@ -1339,19 +1330,17 @@ class BNNoteEditor(EDialog):
         """Add current brush definition to brushes list"""
         selection=self.tvBrushes.selectedItems()
         if len(selection)>0:
-            self.__note.brushes().remove(selection)
+            self.__tmpBrushes.remove(selection)
             self.__updateBrushUi()
 
     def __actionBrushScratchpadClear(self):
         """Clear Scratchpad content"""
         self.__scratchpadTestBrush.clear()
 
-
     def closeEvent(self, event):
         """Dialog is about to be closed..."""
         self.__restoreViewConfig()
         event.accept()
-
 
     def note(self):
         """Return current note"""
