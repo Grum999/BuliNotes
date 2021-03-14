@@ -400,13 +400,13 @@ class BNWLabelScratch(QLabel):
             self.__ratio=self.__pixmap.width()/self.__pixmap.height()
             super(BNWLabelScratch, self).setPixmap(self.__scaledPixmap())
         else:
-            super(BNWLabelScratch, self).setPixmap(None)
+            super(BNWLabelScratch, self).clear()
 
     def __height(self, width):
         """Calculate height according to width"""
         if self.__pixmap is None or self.__pixmap.width()==0:
-            self.__nWidth=this.height()*self.__ratio
-            return this.height()
+            self.__nWidth=self.height()*self.__ratio
+            return self.height()
         else:
             return self.__pixmap.height()*width/self.__pixmap.width()
 
