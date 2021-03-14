@@ -10,8 +10,8 @@
    viewBox="0 0 16 16"
    version="1.1"
    id="svg5"
-   sodipodi:docname="add_comment.svg"
-   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   sodipodi:docname="note_edit.svg"
+   inkscape:version="1.0.2 (e86c870, 2021-01-15)"
    width="32"
    height="32">
   <metadata
@@ -35,24 +35,21 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1912"
-     inkscape:window-height="1514"
+     inkscape:window-width="1319"
+     inkscape:window-height="1067"
      id="namedview7"
      showgrid="false"
-     inkscape:zoom="22.627417"
-     inkscape:cx="25.009519"
-     inkscape:cy="7.9425611"
-     inkscape:window-x="2205"
-     inkscape:window-y="309"
+     inkscape:zoom="11.313709"
+     inkscape:cx="23.016049"
+     inkscape:cy="15.599098"
+     inkscape:window-x="3115"
+     inkscape:window-y="989"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg5"
      inkscape:snap-bbox="true"
      inkscape:bbox-nodes="true"
      inkscape:snap-page="true"
-     inkscape:snap-bbox-edge-midpoints="false"
-     inkscape:bbox-paths="false"
-     inkscape:snap-global="true"
-     inkscape:snap-nodes="true" />
+     inkscape:document-rotation="0" />
   <defs
      id="defs3051">
     <style
@@ -64,8 +61,8 @@
       </style>
   </defs>
   <path
-     style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2"
-     d="M 6 6 C 4.9 6 4 6.9 4 8 L 4 14 L 4 16 L 4 22 C 4 23.1 4.9 24 6 24 L 8 24 L 8 26 L 8 28 L 10 26 L 12 24 L 14 24 L 18 24 L 18 22 L 14 22 L 12 22 L 8 22 L 7.2480469 22 L 6 22 L 6 16 L 6 14 L 6 8 L 7.2480469 8 L 8 8 L 12 8 L 14 8 L 18 8 L 22 8 L 22.607422 8 L 24 8 L 24 14 L 24 16 L 26 16 L 26 14 L 26 8 C 26 6.9 25.1 6 24 6 L 18 6 L 14 6 L 12 6 L 6 6 z M 24 18 L 24 22 L 22 22 L 20 22 L 20 24 L 24 24 L 24 28 L 26 28 L 26 24 L 30 24 L 30 22 L 26 22 L 26 18 L 24 18 z "
-     transform="scale(0.5)"
-     id="path741" />
+     id="path10-3"
+     style="color:#232629;fill:#000000;fill-opacity:1;stroke:none;stroke-width:2"
+     d="M 4 4 L 4 6 L 4 18 L 6 20 L 10 24 L 12 26 L 14 26 L 14 24 L 14 18 L 14 16 L 12 16 L 6 16 L 6 6 L 24 6 L 24 13.171875 L 26 11.171875 L 26 4 L 24 4 L 6 4 L 4 4 z M 27.078125 12.921875 L 25.078125 14.914062 L 25.082031 14.917969 L 24 16 L 16 24 L 16 24.816406 L 16 28 L 20 28 L 20.003906 27.996094 L 20.011719 28 L 21.414062 26.59375 L 21.40625 26.585938 L 29.65625 18.316406 L 31.070312 16.902344 L 27.078125 12.921875 z M 26.472656 16.300781 L 27.636719 17.464844 L 27.6875 17.511719 L 20.011719 25.1875 L 18.605469 26.59375 L 18.601562 26.601562 L 18.5625 26.5625 L 17.398438 25.398438 L 26.472656 16.300781 z M 6.828125 18 L 12 18 L 12 23.171875 L 6.828125 18 z "
+     transform="scale(0.5)" />
 </svg>
