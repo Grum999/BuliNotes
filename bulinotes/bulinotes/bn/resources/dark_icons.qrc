@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="images">
+    <file alias="btBrushEdit">svg/dark/32dp/brushes_btedit.svg</file>
+    <file alias="btBrushAdd">svg/dark/32dp/brushes_btadd.svg</file>
+    <file alias="btBrushDel">svg/dark/32dp/brushes_btdel.svg</file>
     <file alias="btText">svg/dark/32dp/text_bt.svg</file>
     <file alias="btDraw">svg/dark/32dp/draw_bt.svg</file>
     <file alias="btBrushes">svg/dark/32dp/brushes_bt.svg</file>
@@ -26,6 +29,9 @@
     <file alias="compact_on">svg/dark/32dp/compact_on.svg</file>
   </qresource>
   <qresource prefix="images_d">
+    <file alias="btBrushEdit">svg/dark/32dp-disabled/brushes_btedit.svg</file>
+    <file alias="btBrushAdd">svg/dark/32dp-disabled/brushes_btadd.svg</file>
+    <file alias="btBrushDel">svg/dark/32dp-disabled/brushes_btdel.svg</file>
     <file alias="copy">svg/dark/32dp-disabled/copy.svg</file>
     <file alias="cut">svg/dark/32dp-disabled/cut.svg</file>
     <file alias="paste">svg/dark/32dp-disabled/paste.svg</file>

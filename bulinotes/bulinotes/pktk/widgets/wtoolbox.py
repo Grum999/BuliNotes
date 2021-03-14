@@ -42,6 +42,7 @@ class WToolBox(QWidget):
     compactModeUpdated=Signal(bool) # when color is changed from user interface
     compactModeChanged=Signal(bool) # when color is changed programmatically
     geometryUpdated=Signal(QRect)   # when geometry has been modified (no tracking)
+    activeStatusChanged=Signal(bool)
 
 
     __BBAR_TOOLBUTTON_CSS="""
@@ -222,6 +223,16 @@ background-color: rgba(0,0,0,50);
         """Set title"""
         self.__titleBar.setTitle(value)
 
+    def colorIndex(self):
+        """Return current title color index"""
+        return self.__colorIndex
+
+    def setColorIndex(self, colorIndex):
+        """Set title color index content"""
+        if WStandardColorSelector.isValidColorIndex(colorIndex) and colorIndex!=self.__colorIndex:
+            self.__colorIndex=colorIndex
+            self.__titleBar.setColorIndex(self.__colorIndex)
+
 
 class WToolBoxTitleBar(QWidget):
     compactModeUpdated=Signal(bool) # when color is changed from user interface
@@ -239,6 +250,8 @@ class WToolBoxTitleBar(QWidget):
         self.__factor=0.95
         self.__height=0
         self.__compact=None
+
+        self.__colorIndex=WStandardColorSelector.COLOR_NONE
 
         self.__lblTitle = QLabel("")
         self.__lblTitle.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)

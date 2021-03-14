@@ -50,8 +50,11 @@ from pktk.modules.bytesrw import BytesRW
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 from pktk.widgets.wmenuitem import WMenuBrushesPresetSelector
 from pktk.widgets.wcolorselector import WMenuColorPicker
-from pktk.widgets.wtoolbox import WToolBox
+from pktk.widgets.wtextedit import WTextEditDialog
 
+from .bnbrush import (BNBrush, BNBrushes)
+from .bnwbrushes import BNBrushesModel
+from .bnnote_postit import BNNotePostIt
 
 class BNNote(QObject):
     """A note"""
@@ -78,11 +81,18 @@ class BNNote(QObject):
 
         self.__windowPostItGeometry=None
         self.__windowPostItCompact=False
+        self.__windowPostItBrushIconSizeIndex=1
 
         self.__scratchpadBrushName='b)_Basic-5_Size'
         self.__scratchpadBrushSize=5
         self.__scratchpadBrushColor=QColor(Qt.black)
         self.__scratchpadImage=None
+
+        self.__brushes=BNBrushes()
+        self.__brushes.updated.connect(self.__updatedBrushes)
+        self.__brushes.updateReset.connect(self.__updatedBrushes)
+        self.__brushes.updateAdded.connect(self.__updatedBrushes)
+        self.__brushes.updateRemoved.connect(self.__updatedBrushes)
 
         self.__selectedType=BNNote.CONTENT_TEXT
 
@@ -100,6 +110,10 @@ class BNNote(QObject):
 
     def __repr__(self):
         return f'<BNNote({self.__id}, {self.__title}, {self.__pinned}, {self.__locked}, {self.__windowPostItCompact})>'
+
+    def __updatedBrushes(self, property=None):
+        """Brushes have been udpated"""
+        self.__updated('brushes')
 
     def __updated(self, property):
         """Emit updated signal when a property has been changed"""
@@ -230,6 +244,16 @@ class BNNote(QObject):
             self.__windowPostItCompact=compact
             self.__updated('compact')
 
+    def windowPostItBrushIconSizeIndex(self):
+        """Return current size index for post-it brushes icon list"""
+        return self.__windowPostItBrushIconSizeIndex
+
+    def setWindowPostItBrushIconSizeIndex(self, index):
+        """Set window note compact"""
+        if isinstance(index, int) and index>=0 and index<=4:
+            self.__windowPostItBrushIconSizeIndex=index
+            self.__updated('brushIconSizeIndex')
+
     def windowPostIt(self):
         """Return note compact mode active or not"""
         return self.__windowPostIt
@@ -314,7 +338,7 @@ class BNNote(QObject):
 
     def hasBrushes(self):
         """Return True if note has brushes content"""
-        return False
+        return self.__brushes.length()>0
 
     def selectedType(self):
         """Return current selected type"""
@@ -325,6 +349,10 @@ class BNNote(QObject):
         if isinstance(value, int) and value>=1 and value<=BNNote.__CONTENT_LAST:
             self.__selectedType=value
             self.__updated('selectedType')
+
+    def brushes(self):
+        """Return brush list"""
+        return self.__brushes
 
     def exportData(self, asQByteArray=True):
         """Export current note as internal format
@@ -341,8 +369,9 @@ class BNNote(QObject):
 
 
         > Values are stored in big-endian
-        > If a block is not available in data, default value have to be applied
-        > on import
+        > All blocks are optional; if a block is not available, default value
+        > have to be applied on import
+        > Unknown block number are ignored
 
 
         Blocks definition
@@ -367,8 +396,25 @@ class BNNote(QObject):
             ---------+---------+-----------------+------------------------------
             0        | N       | UTF8 String     | Unique Id
 
+        *** Block type [0x0002 - Timestamp created]
 
-        *** Block type [0x0002 - Title]
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | 8       | double          | Timestamp at which note has
+                     |         |                 | been created
+
+
+        *** Block type [0x0003 - Timestamp updated]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | 8       | double          | Timestamp for last modification
+                     |         |                 | made on note
+
+
+        *** Block type [0x0010 - Title]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -376,7 +422,7 @@ class BNNote(QObject):
             0        | N       | UTF8 String     | Note title
 
 
-        *** Block type [0x0003 - Description]
+        *** Block type [0x0011 - Description]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -384,7 +430,7 @@ class BNNote(QObject):
             0        | N       | UTF8 String     | Note description
 
 
-        *** Block type [0x0004 - Color index]
+        *** Block type [0x0012 - Color index]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -402,7 +448,7 @@ class BNNote(QObject):
                      |         |                 |
 
 
-        *** Block type [0x0005 - Pinned]
+        *** Block type [0x0020 - Pinned]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -410,7 +456,7 @@ class BNNote(QObject):
             0        | 1       | ushort          | 0: not pinned
                      |         |                 | 1: pinned
 
-        *** Block type [0x0006 - Locked]
+        *** Block type [0x0021 - Locked]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -418,32 +464,7 @@ class BNNote(QObject):
             0        | 1       | ushort          | 0: unlocked
                      |         |                 | 1: locked
 
-        *** Block type [0x0007 - Content text]
-
-            position | size    | format          | description
-                     | (bytes) |                 |
-            ---------+---------+-----------------+------------------------------
-            0        | N       | UTF8 String     | Note text content
-
-
-        *** Block type [0x0008 - Timestamp created]
-
-            position | size    | format          | description
-                     | (bytes) |                 |
-            ---------+---------+-----------------+------------------------------
-            0        | 8       | double          | Timestamp at which note has
-                     |         |                 | been created
-
-        *** Block type [0x0009 - Timestamp updated]
-
-            position | size    | format          | description
-                     | (bytes) |                 |
-            ---------+---------+-----------------+------------------------------
-            0        | 8       | double          | Timestamp for last modification
-                     |         |                 | made on note
-
-
-        *** Block type [0x000A - Position]
+        *** Block type [0x0022 - Position]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -451,7 +472,7 @@ class BNNote(QObject):
             0        | 2       | uint            | position number
 
 
-        *** Block type [0x000B - Window geometry]
+        *** Block type [0x0030 - Window geometry]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -461,7 +482,8 @@ class BNNote(QObject):
             4        | 2       | uint            | window width
             8        | 2       | uint            | window height
 
-        *** Block type [0x000C - Window compact]
+
+        *** Block type [0x0031 - Window compact]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -470,7 +492,40 @@ class BNNote(QObject):
                      |         |                 | 1: compact
 
 
-        *** Block type [0x000D - Scratchpad:BrushName]
+        *** Block type [0x0032 - Selected type]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | 1       | ushort          | Current selected type
+                     |         |                 | Text=0x01
+                     |         |                 | Scratchpad=0x02
+                     |         |                 | Brushes=0x03
+                     |         |                 |
+
+
+        *** Block type [0x0033 - Window brushes icon size index]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | 1       | ushort          | 0x00: 32px
+                     |         |                 | 0x01: 64px
+                     |         |                 | 0x02: 96px
+                     |         |                 | 0x03: 128px
+                     |         |                 | 0x04: 192px
+                     |         |                 |
+
+
+        *** Block type [0x0100 - Content text]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | N       | UTF8 String     | Note text content
+
+
+        *** Block type [0x0200 - Scratchpad:BrushName]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -479,7 +534,8 @@ class BNNote(QObject):
                      |         |                 | used on scratchpad
                      |         |                 | (resource 'preset')
 
-        *** Block type [0x000E - Scratchpad:BrushSize]
+
+        *** Block type [0x0201 - Scratchpad:BrushSize]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -488,7 +544,8 @@ class BNNote(QObject):
                      |         |                 | that has been used on scratchpad
                      |         |                 | available range is 1 - 200
 
-        *** Block type [0x000F - Scratchpad:BrushColor]
+
+        *** Block type [0x0202 - Scratchpad:BrushColor]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -497,7 +554,8 @@ class BNNote(QObject):
                      |         |                 | values
                      |         |                 |
 
-        *** Block type [0x0010 - Scratchpad:Data]
+
+        *** Block type [0x0203 - Scratchpad:Data]
 
             position | size    | format          | description
                      | (bytes) |                 |
@@ -506,16 +564,20 @@ class BNNote(QObject):
                      |         |                 | PNG file data
                      |         |                 |
 
-        *** Block type [0x0011 - Selected type]
+
+        *** Block type [0x0300 - brush]
 
             position | size    | format          | description
                      | (bytes) |                 |
             ---------+---------+-----------------+------------------------------
-            0        | 1       | ushort          | Cuurent selected type
-                     |         |                 | Text=0x01
-                     |         |                 | Scratchpad=0x02
-                     |         |                 | Brushes=0x03
+            0        | N       | bytes           | An exported brush definition
+                     |         |                 | note: 0 to N brushes definition
+                     |         |                 | can be defined
                      |         |                 |
+                     |         |                 |
+
+
+
 
                      |         |                 |
 
@@ -557,25 +619,33 @@ class BNNote(QObject):
             dataWrite.write(buffer.getvalue())
             buffer.close()
 
-
         writeBlock(0x0001, 'str', self.__id)
-        writeBlock(0x0002, 'str', self.__title)
-        writeBlock(0x0003, 'str', self.__description)
-        writeBlock(0x0004, 'ushort', self.__colorIndex)
-        writeBlock(0x0005, 'bool', self.__pinned)
-        writeBlock(0x0006, 'bool', self.__locked)
-        writeBlock(0x0007, 'str', self.__text)
-        writeBlock(0x0008, 'float8', self.__timestampCreated)
-        writeBlock(0x0009, 'float8', self.__timestampUpdated)
-        writeBlock(0x000A, 'uint4', self.__position)
-        writeBlock(0x000B, 'qrect', self.__windowPostItGeometry)
-        writeBlock(0x000C, 'bool', self.__windowPostItCompact)
-        writeBlock(0x000D, 'str', self.__scratchpadBrushName)
-        writeBlock(0x000E, 'ushort', self.__scratchpadBrushSize)
-        writeBlock(0x000F, 'uint4', self.__scratchpadBrushColor.rgba())
+        writeBlock(0x0002, 'float8', self.__timestampCreated)
+        writeBlock(0x0003, 'float8', self.__timestampUpdated)
+
+        writeBlock(0x0010, 'str', self.__title)
+        writeBlock(0x0011, 'str', self.__description)
+        writeBlock(0x0012, 'ushort', self.__colorIndex)
+
+        writeBlock(0x0020, 'bool', self.__pinned)
+        writeBlock(0x0021, 'bool', self.__locked)
+        writeBlock(0x0022, 'uint4', self.__position)
+
+        writeBlock(0x0030, 'qrect', self.__windowPostItGeometry)
+        writeBlock(0x0031, 'bool', self.__windowPostItCompact)
+        writeBlock(0x0032, 'ushort', self.__selectedType)
+        writeBlock(0x0033, 'ushort', self.__windowPostItBrushIconSizeIndex)
+
+        writeBlock(0x0100, 'str', self.__text)
+
+        writeBlock(0x0200, 'str', self.__scratchpadBrushName)
+        writeBlock(0x0201, 'ushort', self.__scratchpadBrushSize)
+        writeBlock(0x0202, 'uint4', self.__scratchpadBrushColor.rgba())
         if not self.__scratchpadImage is None:
-            writeBlock(0x0010, 'bytes', bytes(qImageToPngQByteArray(self.__scratchpadImage)))
-        writeBlock(0x0012, 'ushort', self.__selectedType)
+            writeBlock(0x0203, 'bytes', bytes(qImageToPngQByteArray(self.__scratchpadImage)))
+
+        for brush in self.__brushes.idList():
+            writeBlock(0x0300, 'bytes', self.__brushes.get(brush).exportData())
 
         if asQByteArray:
             return QByteArray(dataWrite.getvalue())
@@ -597,6 +667,9 @@ class BNNote(QObject):
         self.setLocked(False)
         timestampUpdated=None
 
+        #self.__brushes.beginUpdate()
+        self.__brushes.clear()
+
         nextBlock=1
 
         while dataRead.tell()==nextBlock and (blockContentSize:=dataRead.readUInt4()):
@@ -613,44 +686,55 @@ class BNNote(QObject):
                 if importId:
                     self.__setId(newId)
             elif blockType==0x0002:
-                self.setTitle(dataRead.readStr(blockContentSize))
-            elif blockType==0x0003:
-                self.setDescription(dataRead.readStr(blockContentSize))
-            elif blockType==0x0004:
-                self.setColorIndex(dataRead.readUShort())
-            elif blockType==0x0005:
-                self.setPinned(dataRead.readBool())
-            elif blockType==0x0006:
-                #self.setLocked(bytesUShort(block[1])==1)
-                locked=dataRead.readBool()
-            elif blockType==0x0007:
-                self.setText(dataRead.readStr(blockContentSize))
-            elif blockType==0x0008:
                 self.setTimestampCreated(dataRead.readFloat8())
-            elif blockType==0x0009:
-                #self.setTimestampUpdated(bytesDouble(block[1]))
+            elif blockType==0x0003:
+                #self.setTimestampUpdated(dataRead.readFloat8())
+                # ==> keep value in memory and set it at the end, otherwise will
+                #     be changed when other properties are loaded
                 timestampUpdated=dataRead.readFloat8()
-            elif blockType==0x000A:
+            elif blockType==0x0010:
+                self.setTitle(dataRead.readStr(blockContentSize))
+            elif blockType==0x0011:
+                self.setDescription(dataRead.readStr(blockContentSize))
+            elif blockType==0x0012:
+                self.setColorIndex(dataRead.readUShort())
+            elif blockType==0x0020:
+                self.setPinned(dataRead.readBool())
+            elif blockType==0x0021:
+                #self.setLocked(dataRead.readBool())
+                # ==> keep value in memory and set it at the end, otherwise it
+                #     will be impossible to update other values :-)
+                locked=dataRead.readBool()
+            elif blockType==0x0022:
                 self.setPosition(dataRead.readUInt4())
-            elif blockType==0x000B:
+            elif blockType==0x0030:
                 self.setWindowPostItGeometry(QRect(dataRead.readInt4(),
                                              dataRead.readInt4(),
                                              dataRead.readUInt4(),
                                              dataRead.readUInt4()))
-            elif blockType==0x000C:
+            elif blockType==0x0031:
                 self.setWindowPostItCompact(dataRead.readBool())
-            elif blockType==0x000D:
-                self.setScratchpadBrushName(dataRead.readStr(blockContentSize))
-            elif blockType==0x000E:
-                self.setScratchpadBrushSize(dataRead.readUShort())
-            elif blockType==0x000F:
-                self.setScratchpadBrushColor(dataRead.readUInt4())
-            elif blockType==0x0010:
-                self.setScratchpadImage(QImage.fromData(QByteArray(dataRead.read(blockContentSize))))
-            elif blockType==0x0012:
+            elif blockType==0x0032:
                 self.setSelectedType(dataRead.readUShort())
+            elif blockType==0x0033:
+                self.setWindowPostItBrushIconSizeIndex(dataRead.readUShort())
+            elif blockType==0x0100:
+                self.setText(dataRead.readStr(blockContentSize))
+            elif blockType==0x0200:
+                self.setScratchpadBrushName(dataRead.readStr(blockContentSize))
+            elif blockType==0x0201:
+                self.setScratchpadBrushSize(dataRead.readUShort())
+            elif blockType==0x0202:
+                self.setScratchpadBrushColor(dataRead.readUInt4())
+            elif blockType==0x0203:
+                self.setScratchpadImage(QImage.fromData(QByteArray(dataRead.read(blockContentSize))))
+            elif blockType==0x0300:
+                brush=BNBrush()
+                brush.importData(dataRead.read(blockContentSize))
+                self.__brushes.add(brush)
 
         dataRead.close()
+        #self.__brushes.endUpdate()
 
         # must be done at the end..
         # - get real timestamp update saved in data
@@ -678,6 +762,7 @@ class BNNote(QObject):
 
 
 class BNNotes(QObject):
+    """Collection of notes"""
     updated = Signal(BNNote, str)
     updateReset = Signal()
     updateAdded = Signal(list)
@@ -782,7 +867,7 @@ class BNNotes(QObject):
             self.__emitUpdateReset()
 
     def add(self, item):
-        """Add BCClipboardItem to pool"""
+        """Add Note to list"""
         if isinstance(item, BNNote):
             item.updated.connect(self.__itemUpdated)
             self.__updateAdd.append(item.id())
@@ -793,7 +878,7 @@ class BNNotes(QObject):
         return False
 
     def remove(self, item):
-        """Add BCClipboardItem to pool"""
+        """Remove Note from list"""
         removedNote=None
 
         if isinstance(item, list) and len(item)>0:
@@ -939,6 +1024,7 @@ class BNNoteEditor(EDialog):
         elif Krita.instance().activeWindow().activeView() is None:
             self.reject()
 
+        self.__name=name
         self.setWindowTitle(name)
         self.setSizeGripEnabled(True)
 
@@ -952,9 +1038,19 @@ class BNNoteEditor(EDialog):
         self.__activeViewCurrentConfig={}
         self.__allBrushesPreset = Krita.instance().resources("preset")
 
-        self.__scratchpad=Scratchpad(self.__activeView, QColor(Qt.white), self)
-        self.__scratchpad.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
-        self.__scratchpad.linkCanvasZoom(True)
+        self.__scratchpadHandWritting=Scratchpad(self.__activeView, QColor(Qt.white), self)
+        self.__scratchpadHandWritting.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
+        self.__scratchpadHandWritting.linkCanvasZoom(True)
+
+        self.__currentUiBrush=BNBrush()
+        self.__currentUiBrush.fromBrush()
+
+        self.__scratchpadTestBrush=Scratchpad(self.__activeView, QColor(Qt.white), self)
+        self.__scratchpadTestBrush.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.__scratchpadTestBrush.linkCanvasZoom(False)
+        self.__scratchpadTestBrush.setModeManually(False)
+        #self.__scratchpadTestBrush.setMode('painting')
+        self.wBrushScratchpad.layout().addWidget(self.__scratchpadTestBrush)
 
         self.__saveViewConfig()
         self.__buildUi()
@@ -968,9 +1064,30 @@ class BNNoteEditor(EDialog):
         self.wColorIndex.setColorIndex(self.__note.colorIndex())
         self.wteText.setHtml(self.__note.text())
 
+
+        self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
+        self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorRGB(False)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCMYK(False)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSV(True)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSL(False)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorAlpha(False)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionCompactUi(True)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionPreviewColor(True)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCombination(False)
+
+        menuBrushScratchpadColor = QMenu(self.tbColor)
+        menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
+
+        self.tbBrushAdd.clicked.connect(self.__actionBrushAdd)
+        self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
+        self.tbBrushDelete.clicked.connect(self.__actionBrushDelete)
+        self.tbBrushScratchpadClear.clicked.connect(self.__actionBrushScratchpadClear)
+        self.tbBrushScratchpadColor.setMenu(menuBrushScratchpadColor)
+
         img=self.__note.scratchpadImage()
         if not img is None:
-            self.__scratchpad.loadScratchpadImage(img)
+            self.__scratchpadHandWritting.loadScratchpadImage(img)
 
         currentTime=time.time()
         delayCreated=currentTime - self.__note.timestampCreated()
@@ -988,7 +1105,7 @@ class BNNoteEditor(EDialog):
         layout=self.tabScratchpad.layout()
         layout.setSpacing(0)
         layout.setContentsMargins(QMargins(6,6,6,6))
-        layout.addWidget(self.__scratchpad)
+        layout.addWidget(self.__scratchpadHandWritting)
 
         layout=self.wToolBar.layout()
         layout.setSpacing(6)
@@ -1029,6 +1146,44 @@ class BNNoteEditor(EDialog):
         self.hsBrushSize.valueChanged.connect(self.__actionScratchpadSetBrushSize)
         self.hsZoom.valueChanged.connect(self.__actionScratchpadSetZoom)
 
+
+        self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
+        self.tvBrushes.setNote(self.__note)
+
+        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.currentChanged.connect(self.__tabChanged)
+
+        self.__updateBrushUi()
+
+    def showEvent(self, event):
+        self.tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
+
+    def __tabChanged(self, index):
+        """Current tab has been modified"""
+        if index==1:
+            # handwritten note
+            self.__actionScratchpadSetBrushDefault()
+        elif index==2:
+            # brushes notes
+            selectedBrushes=self.tvBrushes.selectedItems()
+            if len(selectedBrushes)==1:
+                selectedBrushes[0].toBrush()
+            else:
+                self.__currentUiBrush.toBrush()
+
+    def __updateBrushUi(self):
+        """Update brushes UI (enable/disable buttons...)"""
+        nbSelectedBrush=self.tvBrushes.nbSelectedItems()
+        self.tbBrushAdd.setEnabled(self.__note.brushes().getFromFingerPrint(self.__currentUiBrush.fingerPrint()) is None)
+        self.tbBrushEdit.setEnabled(nbSelectedBrush==1)
+        self.tbBrushDelete.setEnabled(nbSelectedBrush==1)
+
+    def __brushesSelectionChanged(self, selected, deselected):
+        """Selection in treeview has changed, update UI"""
+        self.__updateBrushUi()
+        selectedBrushes=self.tvBrushes.selectedItems()
+        if len(selectedBrushes)==1:
+            selectedBrushes[0].toBrush()
 
     def __saveViewConfig(self):
         """Save current view properties"""
@@ -1097,8 +1252,8 @@ class BNNoteEditor(EDialog):
         self.__note.setScratchpadBrushColor(self.__activeView.foregroundColor().colorForCanvas(self.__activeView.canvas()))
 
 
-        img=self.__scratchpad.copyScratchpadImageData()
-        self.__note.setScratchpadImage(self.__scratchpad.copyScratchpadImageData())
+        img=self.__scratchpadHandWritting.copyScratchpadImageData()
+        self.__note.setScratchpadImage(self.__scratchpadHandWritting.copyScratchpadImageData())
 
         self.__restoreViewConfig()
         self.__note.endUpdate()
@@ -1119,7 +1274,7 @@ class BNNoteEditor(EDialog):
 
     def __actionScratchpadClear(self):
         """Clear Scratchpad content"""
-        self.__scratchpad.clear()
+        self.__scratchpadHandWritting.clear()
 
 
     def __actionScratchpadSetBrushSize(self, value):
@@ -1131,6 +1286,9 @@ class BNNoteEditor(EDialog):
         """Set brush size"""
         self.__activeView.setCurrentBrushPreset(self.__allBrushesPreset['b)_Basic-5_Size'])
         self.__activeView.setBrushSize(5.0)
+        self.__activeView.setCurrentBlendingMode('normal')
+        self.__activeView.setPaintingOpacity(1)
+        self.__activeView.setPaintingFlow(1)
         self.hsBrushSize.setValue(5)
 
 
@@ -1138,6 +1296,9 @@ class BNNoteEditor(EDialog):
         """Set brush size"""
         self.__activeView.setCurrentBrushPreset(self.__activeViewCurrentConfig['brushPreset'])
         self.__activeView.setBrushSize(self.__activeViewCurrentConfig['brushSize'])
+        self.__activeView.setCurrentBlendingMode(self.__activeViewCurrentConfig['blendingMode'])
+        self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
+        self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
         self.hsBrushSize.setValue(round(self.__activeViewCurrentConfig['brushSize']))
 
 
@@ -1147,7 +1308,43 @@ class BNNoteEditor(EDialog):
 
 
     def __actionScratchpadSetZoom(self, value):
+        """Set zoom value on scratchpad"""
         self.__activeView.canvas().setZoomLevel(value/100.0)
+
+
+    def __actionBrushScratchpadSetColor(self, color):
+        """Set brush testing scrathcpad color"""
+        self.__activeView.setForeGroundColor(ManagedColor.fromQColor(color, self.__activeView.canvas()))
+
+
+    def __actionBrushAdd(self):
+        """Add current brush definition to brushes list"""
+        result=WTextEditDialog.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "")
+        if not result is None:
+            self.__currentUiBrush.setComments(result)
+            self.__note.brushes().add(self.__currentUiBrush)
+            self.__updateBrushUi()
+
+    def __actionBrushEdit(self):
+        """Edit comment for current selected brush"""
+        selection=self.tvBrushes.selectedItems()
+        if len(selection)==1:
+            result=WTextEditDialog.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments())
+            if not result is None:
+                selection[0].setComments(result)
+                self.__updateBrushUi()
+
+    def __actionBrushDelete(self):
+        """Add current brush definition to brushes list"""
+        selection=self.tvBrushes.selectedItems()
+        if len(selection)>0:
+            self.__note.brushes().remove(selection)
+            self.__updateBrushUi()
+
+    def __actionBrushScratchpadClear(self):
+        """Clear Scratchpad content"""
+        self.__scratchpadTestBrush.clear()
+
 
     def closeEvent(self, event):
         """Dialog is about to be closed..."""
@@ -1158,354 +1355,3 @@ class BNNoteEditor(EDialog):
     def note(self):
         """Return current note"""
         return self.__note
-
-
-
-# ----  this part is in a mess :-)  ------
-class BNNotePostIt(WToolBox):
-
-    def __init__(self, note=None):
-        super(BNNotePostIt, self).__init__(Krita.instance().activeWindow().qwindow())
-
-        if not isinstance(note, BNNote):
-            self.__note=BNNote()
-        else:
-            self.__note=note
-
-        self.__note.updated.connect(self.__updatedNote)
-
-        self.compactModeUpdated.connect(self.__updateNoteCompact)
-        self.geometryUpdated.connect(self.__updateNoteGeometry)
-
-        self.__initUi()
-
-        self.show()
-
-    def __initUi(self):
-        """Build window interface"""
-        if self.__note.windowPostItGeometry():
-            self.setGeometry(self.__note.windowPostItGeometry())
-        else:
-            self.setCenteredPosition()
-
-        self.__stackedWidgets=QStackedWidget(self)
-
-        self.__textEdit=BNNotePostItText(self)
-        self.__scratchpadImg=BNWLabelScratch("scratchpad")
-        self.__brushesList=QLabel("brushes")
-
-        self.__stackedWidgets.addWidget(self.__textEdit)
-        self.__stackedWidgets.addWidget(self.__scratchpadImg)
-        self.__stackedWidgets.addWidget(self.__brushesList)
-        self.__stackedWidgets.setCurrentIndex(0)
-
-        self.setCentralWidget(self.__stackedWidgets)
-
-        self.__btShowText=QToolButton(self)
-        self.__btShowText.clicked.connect(self.__showNotePage)
-        self.__btShowText.setToolTip(i18n('Text note'))
-        #self.__btShowText.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        #self.__btShowText.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
-        self.__btShowText.setIcon(QIcon(':/images/btText'))
-        self.__btShowText.setFocusPolicy(Qt.NoFocus)
-        self.__btShowText.setAutoRaise(True)
-        self.__btShowText.setCheckable(True)
-
-        self.__btShowScratchpad=QToolButton(self)
-        self.__btShowScratchpad.clicked.connect(self.__showNotePage)
-        self.__btShowScratchpad.setToolTip(i18n('Handwritten note'))
-        #self.__btShowScratchpad.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        #self.__btShowScratchpad.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
-        self.__btShowScratchpad.setIcon(QIcon(':/images/btDraw'))
-        self.__btShowScratchpad.setFocusPolicy(Qt.NoFocus)
-        self.__btShowScratchpad.setAutoRaise(True)
-        self.__btShowScratchpad.setCheckable(True)
-
-        self.__btShowBrushes=QToolButton(self)
-        self.__btShowBrushes.clicked.connect(self.__showNotePage)
-        self.__btShowBrushes.setToolTip(i18n('Brushes note'))
-        #self.__btShowBrushes.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        #self.__btShowBrushes.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
-        self.__btShowBrushes.setIcon(QIcon(':/images/btBrushes'))
-        self.__btShowBrushes.setFocusPolicy(Qt.NoFocus)
-        self.__btShowBrushes.setAutoRaise(True)
-        self.__btShowBrushes.setCheckable(True)
-
-        self.__buttonGroup=QButtonGroup()
-        self.__buttonGroup.addButton(self.__btShowText)
-        self.__buttonGroup.addButton(self.__btShowScratchpad)
-        self.__buttonGroup.addButton(self.__btShowBrushes)
-
-        self.bottomBarAddWidget(self.__btShowText)
-        self.bottomBarAddWidget(self.__btShowScratchpad)
-        self.bottomBarAddWidget(self.__btShowBrushes)
-
-        # -1 because note type start from 1 and page from 0
-        self.__showNotePage(self.__note.selectedType()-1)
-        self.__updateUi()
-
-    def __applyCompactFactor(self, subResult):
-        return f'font-size: {round(0.8*int(subResult.group(1)))}pt;'
-
-    def __updatedNote(self, note, property):
-        self.__updateUi()
-
-    def __setCompact(self, value):
-        if not self.__inInit:
-            self.__note.setWindowPostItCompact(value)
-        if self.__note.windowPostItCompact():
-            self.__textEdit.setHtml(re.sub(r"font-size\s*:\s*(\d+)pt;", self.__applyCompactFactor, self.__note.text()))
-        else:
-            self.__textEdit.setHtml(self.__note.text())
-        self.__textEdit.setCompact(value)
-        self.__btShowText.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        self.__btShowText.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
-        self.__btShowScratchpad.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        self.__btShowScratchpad.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
-        self.__btShowBrushes.setFixedSize(self.__titleBar.height(), self.__titleBar.height())
-        self.__btShowBrushes.setIconSize(QSize(self.__titleBar.height()-2, self.__titleBar.height()-2))
-
-    def __updateUi(self):
-        """Update UI content according to note content"""
-        self.setTitle(self.__note.title())
-
-        text=self.__note.text()
-        if self.__note.windowPostItCompact():
-            text=re.sub(r"font-size:\s*(\d+)pt;", self.__applyCompactFactor, text)
-
-        # display buttons only if more than one button to display, otherwise all are hidden
-        nb=0
-        if self.__note.hasText():
-            self.__textEdit.setHtml(text)
-            nb+=1
-        else:
-            self.__textEdit.setHtml('')
-        if self.__note.hasScratchpad():
-            self.__scratchpadImg.setPixmap(QPixmap.fromImage(self.__note.scratchpadImage()))
-            nb+=1
-        else:
-            self.__scratchpadImg.setPixmap(None)
-        if self.__note.hasBrushes():
-            nb+=1
-
-        self.__btShowText.setVisible(self.__note.hasText() and nb>1)
-        self.__btShowScratchpad.setVisible(self.__note.hasScratchpad() and nb>1)
-        self.__btShowBrushes.setVisible(self.__note.hasBrushes() and nb>1)
-
-    def __showNotePage(self, pageNumber=None):
-        if isinstance(pageNumber, bool):
-            # button clicked
-            if self.__btShowText.isChecked():
-                pageNumber=0
-            elif self.__btShowScratchpad.isChecked():
-                pageNumber=1
-            if self.__btShowBrushes.isChecked():
-                pageNumber=2
-
-            # +1 because types start from 1 and pages from 0
-            self.__note.setSelectedType(pageNumber+1)
-        else:
-            if pageNumber==0:
-                self.__btShowText.setChecked(True)
-            elif pageNumber==1:
-                self.__btShowScratchpad.setChecked(True)
-            elif pageNumber==2:
-                self.__btShowBrushes.setChecked(True)
-
-        self.__stackedWidgets.setCurrentIndex(pageNumber)
-
-    def __updateNoteCompact(self, value):
-        """Update note compact"""
-        self.__note.setWindowPostItCompact(value)
-
-    def __updateNoteGeometry(self, value):
-        """Update note geometry"""
-        self.__note.setWindowPostItGeometry(value)
-
-    def closeEvent(self, event):
-        """About to close window"""
-        self.__note.setWindowPostIt(None)
-        self.__note.closeWindowPostIt()
-
-
-
-
-class BNNotePostItText(QTextEdit):
-    def __init__(self, parent):
-        super(BNNotePostItText, self).__init__(parent)
-        self.setWordWrapMode(QTextOption.WordWrap)
-        self.setReadOnly(True)
-        self.setWindowFlags(Qt.SubWindow)
-        self.__parent=parent
-        self.__moving=False
-        self.__globalPos=None
-        self.setCompact(False)
-
-    def setCompact(self, value):
-        if value:
-            self.verticalScrollBar().setStyleSheet("""
-QScrollBar:vertical {
-     background-color: palette(base);
-     width: 8px;
-     margin: 0px;
-     border: 1px transparent #000000;
- }
-
- QScrollBar::handle:vertical {
-     background-color: palette(text);
-     min-height: 8px;
-     border-radius: 4px;
- }
-
- QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {
-     margin: 0px 0px 0px 0px;
-     height: 0px;
- }
-        """)
-            self.horizontalScrollBar().setStyleSheet("""
-QScrollBar:horizontal {
-     background-color: palette(base);
-     width: 8px;
-     margin: 0px;
-     border: 1px transparent #000000;
- }
-
- QScrollBar::handle:horizontal {
-     background-color: palette(text);
-     min-height: 8px;
-     border-radius: 4px;
- }
-
- QScrollBar::sub-line:horizontal, QScrollBar::add-line:horizontal {
-     margin: 0px 0px 0px 0px;
-     width: 0px;
- }
-        """)
-        else:
-            self.verticalScrollBar().setStyleSheet("""
-QScrollBar:vertical {
-     background-color: palette(base);
-     width: 14px;
-     margin: 0px;
-     border: 1px transparent #000000;
- }
-
- QScrollBar::handle:vertical {
-     background-color: palette(text);
-     min-height: 14px;
-     border-radius: 7px;
- }
-
- QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {
-     margin: 0px 0px 0px 0px;
-     height: 0px;
- }
-        """)
-            self.horizontalScrollBar().setStyleSheet("""
-QScrollBar:horizontal {
-     background-color: palette(base);
-     width: 14px;
-     margin: 0px;
-     border: 1px transparent #000000;
- }
-
- QScrollBar::handle:horizontal {
-     background-color: palette(text);
-     min-height: 14px;
-     border-radius: 7px;
- }
-
- QScrollBar::sub-line:horizontal, QScrollBar::add-line:horizontal {
-     margin: 0px 0px 0px 0px;
-     width: 0px;
- }
-        """)
-
-    def mousePressEvent(self, event):
-        """User press anywhere on note window, so enter on drag mode"""
-        if event.modifiers() & Qt.ControlModifier or event.buttons() & Qt.MidButton:
-            self.__globalPos=event.globalPos()
-            self.setCursor(Qt.ClosedHandCursor)
-        else:
-            super(BNNotePostItText, self).mousePressEvent(event)
-
-    def mouseMoveEvent(self, event):
-        """If in drag mode, move current note window"""
-        if self.__globalPos:
-            if not self.__moving:
-                self.__moving=True
-                delta = QPoint(event.globalPos() - self.__globalPos)
-
-                # -- the really dirty trick...
-                # Don't really know why but without it, when moving window on my
-                # secondary screen there's a really weird "shake" effect and
-                # defined position sometime gets out of hand...
-                #
-                # having a 1ms timer is enough to fix the problem
-                # suspecting something with too much event or something like that...
-                BCTimer.sleep(1)
-                # --
-
-                self.__parent.move(self.__parent.x() + delta.x(), self.__parent.y() + delta.y())
-                self.__globalPos = event.globalPos()
-                self.__moving=False
-        else:
-            super(BNNotePostItText, self).mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        """Exit drag mode"""
-        if self.__globalPos:
-            self.__globalPos=None
-            self.setCursor(Qt.ArrowCursor)
-        else:
-            super(BNNotePostItText, self).mouseReleaseEvent(event)
-
-
-class BNWLabelScratch(QLabel):
-    """A label to display a streched pixmap that keep pixmap ratio"""
-    def __init__(self, parent=None):
-        super(BNWLabelScratch, self).__init__(parent)
-        self.__pixmap=None
-        self.__ratio=1
-        self.setMinimumSize(1,1)
-        self.setScaledContents(False)
-        self.setStyleSheet("background-color: #ffffff;")
-
-    def setPixmap(self, pixmap):
-        """Set label pixmap"""
-        self.__pixmap=pixmap
-        if self.__pixmap:
-            self.__ratio=self.__pixmap.width()/self.__pixmap.height()
-            super(BNWLabelScratch, self).setPixmap(self.__scaledPixmap())
-        else:
-            super(BNWLabelScratch, self).setPixmap(None)
-
-    def __height(self, width):
-        """Calculate height according to width"""
-        if self.__pixmap is None or self.__pixmap.width()==0:
-            self.__nWidth=this.height()*self.__ratio
-            return this.height()
-        else:
-            return self.__pixmap.height()*width/self.__pixmap.width()
-
-    def __scaledPixmap(self):
-        """Scale pixmap to current size"""
-        return self.__pixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
-    def sizeHint(self):
-        width = self.width()
-        return QSize(width, self.__height(width))
-
-    def resizeEvent(self, event):
-        if not self.__pixmap is None:
-            QLabel.setPixmap(self, self.__scaledPixmap())
-            self.setContentsMargins(max(0, int((self.width()-self.height()*self.__ratio)/2)),0,0,0)
-
-    def mousePressEvent(self, event):
-        """Pick color on click"""
-        if event.modifiers() & Qt.ControlModifier or event.buttons() & Qt.MidButton:
-            return super(BNWLabelScratch, self).mousePressEvent(event)
-        else:
-            view=Krita.instance().activeWindow().activeView()
-            color=QApplication.primaryScreen().grabWindow(self.winId()).toImage().pixelColor(event.pos().x(), event.pos().y())
-            view.setForeGroundColor(ManagedColor.fromQColor(color, view.canvas()))

@@ -32,9 +32,9 @@ from pktk.modules.uitheme import UITheme
 from .bnutils import loadXmlUi
 from .bnnotes import (BNNote,
                       BNNotes,
-                      BNNoteEditor,
-                      BNNotePostIt
+                      BNNoteEditor
                     )
+from .bnnote_postit import BNNotePostIt
 
 
 # signals:
