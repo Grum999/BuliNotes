@@ -29,8 +29,7 @@ from PyQt5.QtCore import (
 
 from .bnnotes import (
                 BNNote,
-                BNNotes,
-                BNNotePostIt
+                BNNotes
             )
 
 from pktk.modules.utils import tsToStr

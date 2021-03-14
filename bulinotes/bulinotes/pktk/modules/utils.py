@@ -619,6 +619,11 @@ def stripTags(value):
                 .replace('&', '')           \
                 .replace(chr(1), '&')
 
+def stripHtml(value):
+    """Return HTML plain text"""
+    return QTextDocumentFragment.fromHtml(value).toPlainText();
+
+
 def loadXmlUi(fileName, parent):
     """Load a ui file PyQt5.uic.loadUi()
 
