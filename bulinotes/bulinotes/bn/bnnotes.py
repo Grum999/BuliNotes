@@ -1170,6 +1170,7 @@ class BNNoteEditor(EDialog):
                 selectedBrushes[0].toBrush()
             else:
                 self.__currentUiBrush.toBrush()
+            self.tvBrushes.resizeColumns()
 
     def __updateBrushUi(self):
         """Update brushes UI (enable/disable buttons...)"""

@@ -226,6 +226,9 @@ width: 0px;
             if not self.isActiveWindow():
                 self.__brushesList.selectionModel().clearSelection()
 
+    def showEvent(self, event):
+        """Need to update treeview columns size..."""
+        self.__brushesList.resizeColumns()
 
     def __setCompact(self, value):
         """Set post-it as compact"""

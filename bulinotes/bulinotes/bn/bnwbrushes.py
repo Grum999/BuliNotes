@@ -176,12 +176,13 @@ class BNWBrushes(QTreeView):
 
         header=self.header()
         header.sectionResized.connect(self.__sectionResized)
+        self.resizeColumns()
 
     def __initMenu(self):
         """Initialise context menu"""
         pass
 
-    def __resizeColumns(self):
+    def resizeColumns(self):
         """Resize columns"""
         self.resizeColumnToContents(BNBrushesModel.COLNUM_ICON)
         self.resizeColumnToContents(BNBrushesModel.COLNUM_BRUSH)
@@ -224,10 +225,12 @@ class BNWBrushes(QTreeView):
         if index is None or self.__iconSize.setIndex(index):
             # new size defined
             self.setIconSize(self.__iconSize.value(True))
+            self.resizeColumns()
 
             header = self.header()
             header.resizeSection(BNBrushesModel.COLNUM_ICON, self.__iconSize.value())
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
+
 
     def setNote(self, note):
         """Initialise treeview header & model"""
@@ -245,9 +248,8 @@ class BNWBrushes(QTreeView):
         header.setSectionResizeMode(BNBrushesModel.COLNUM_BRUSH, QHeaderView.Fixed)
         header.setSectionResizeMode(BNBrushesModel.COLNUM_COMMENT, QHeaderView.Stretch)
 
-        self.__resizeColumns()
-
-        self.__model.updateWidth.connect(self.__resizeColumns)
+        self.resizeColumns()
+        self.__model.updateWidth.connect(self.resizeColumns)
 
     def selectedItems(self):
         """Return a list of selected brushes items"""
@@ -341,6 +343,7 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
 
             textDocument=QTextDocument()
             textDocument.setDocumentMargin(1)
+            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
             textDocument.setHtml(self.__getTextInformation(brush))
             textDocument.setPageSize(QSizeF(rectTxt.size()))
             textDocument.setDefaultFont(option.font)
@@ -402,6 +405,7 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             textDocument=QTextDocument()
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)
+            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
             textDocument.setHtml(self.__getTextInformation(brush))
             textDocument.setPageSize(QSizeF(4096, 1000)) # set 1000px size height arbitrary
             textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000)) # set 1000px size height arbitrary
