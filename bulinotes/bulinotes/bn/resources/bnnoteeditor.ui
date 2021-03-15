@@ -719,7 +719,8 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset theme="gtk-color-picker"/>
+                    <iconset theme="gtk-color-picker">
+                     <normaloff>.</normaloff>.</iconset>
                    </property>
                    <property name="popupMode">
                     <enum>QToolButton::InstantPopup</enum>

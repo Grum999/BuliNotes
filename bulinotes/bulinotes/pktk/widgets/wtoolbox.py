@@ -41,8 +41,9 @@ class WToolBox(QWidget):
     """
     compactModeUpdated=Signal(bool) # when color is changed from user interface
     compactModeChanged=Signal(bool) # when color is changed programmatically
+    pinnedModeUpdated=Signal(bool) # when pinned mode is changed programmatically
+    pinnedModeChanged=Signal(bool) # when pinned mode is changed programmatically
     geometryUpdated=Signal(QRect)   # when geometry has been modified (no tracking)
-    activeStatusChanged=Signal(bool)
 
 
     __BBAR_TOOLBUTTON_CSS="""
@@ -73,6 +74,7 @@ background-color: rgba(0,0,0,50);
         self.__moved=False
         self.__factor=0.85
         self.__isCompact=False
+        self.__isPinned=False
         self.__colorIndex=WStandardColorSelector.COLOR_NONE
         self.__centralDefaultWidget=QLabel(self)
         self.__centralWidget=self.__centralDefaultWidget
@@ -92,6 +94,7 @@ background-color: rgba(0,0,0,50);
 
         self.__titleBar=WToolBoxTitleBar(self, self.__isCompact)
         self.__titleBar.compactModeUpdated.connect(self.__setCompact)
+        self.__titleBar.pinnedModeUpdated.connect(self.__setPinned)
 
         self.__sizeGrip=QSizeGrip(self)
         self.__sizeGrip.installEventFilter(self)
@@ -117,6 +120,12 @@ background-color: rgba(0,0,0,50);
             self.__isCompact=value
             self.__updateUi()
             self.compactModeUpdated.emit(value)
+
+    def __setPinned(self, value):
+        """Slot from title bar pinnedModeUpdated()"""
+        if isinstance(value, bool) and value!=self.__isPinned:
+            self.__isPinned=value
+            self.pinnedModeUpdated.emit(value)
 
     def __updateUi(self):
         #self.__bottomBar.resize(self.__bottomBar.width(), self.__titleBar.height())
@@ -185,6 +194,17 @@ background-color: rgba(0,0,0,50);
             self.__updateUi()
             self.compactModeChanged.emit(value)
 
+    def isPinned(self):
+        """Is pinned mode activated"""
+        return self.__isPinned
+
+    def setPinned(self, value):
+        """Set pinned mode"""
+        if isinstance(value, bool) and value!=self.__isPinned:
+            self.__isPinned=value
+            self.__titleBar.setPinned(value)
+            self.pinnedModeChanged.emit(value)
+
     def centralWidget(self):
         """Return current central widget"""
         return self.__centralWidget
@@ -235,10 +255,20 @@ background-color: rgba(0,0,0,50);
 
 
 class WToolBoxTitleBar(QWidget):
-    compactModeUpdated=Signal(bool) # when color is changed from user interface
-    compactModeChanged=Signal(bool) # when color is changed programmatically
+    compactModeUpdated=Signal(bool) # when compact mode is changed from user interface
+    pinnedModeUpdated=Signal(bool) # when pinned mode is changed programmatically
 
-    def __init__(self, parent, compact=False):
+    __TOOLBUTTON_CSS="""
+QToolButton {
+border-radius: 2px;
+}
+QToolButton:hover {
+border: none;
+background-color: rgba(255,255,255,50);
+}
+        """
+
+    def __init__(self, parent, compact=False, pinned=False):
         super(WToolBoxTitleBar, self).__init__(parent)
         self.__parent=parent
         self.__layoutMain=QHBoxLayout()
@@ -250,6 +280,7 @@ class WToolBoxTitleBar(QWidget):
         self.__factor=0.95
         self.__height=0
         self.__compact=None
+        self.__pinned=None
 
         self.__colorIndex=WStandardColorSelector.COLOR_NONE
 
@@ -269,44 +300,38 @@ class WToolBoxTitleBar(QWidget):
         self.__btClose.setIcon(QIcon(':/white/close'))
         self.__btClose.setFocusPolicy(Qt.NoFocus)
         self.__btClose.setAutoRaise(True)
-        self.__btClose.setStyleSheet("""
-QToolButton {
-    border-radius: 2px;
-}
-QToolButton:hover {
-    border: none;
-    background-color: rgba(255,255,255,50);
-}
-            """)
+        self.__btClose.setStyleSheet(WToolBoxTitleBar.__TOOLBUTTON_CSS)
 
         self.__btCompact = QToolButton()
-        self.__btCompact.clicked.connect(self.__setCompact)
-        self.__btClose.setToolTip(i18n('Compact view'))
+        self.__btCompact.clicked.connect(self.setCompact)
+        self.__btCompact.setToolTip(i18n('Compact view'))
         self.__btCompact.setIcon(QIcon(':/white/compact_on'))
         self.__btCompact.setFocusPolicy(Qt.NoFocus)
         self.__btCompact.setAutoRaise(True)
         self.__btCompact.setCheckable(True)
-        self.__btCompact.setStyleSheet("""
-QToolButton {
-    border-radius: 2px;
-}
-QToolButton:hover {
-    border: none;
-    background-color: rgba(255,255,255,50);
-}
-            """)
+        self.__btCompact.setStyleSheet(WToolBoxTitleBar.__TOOLBUTTON_CSS)
+
+        self.__btPinned = QToolButton()
+        self.__btPinned.clicked.connect(self.setPinned)
+        self.__btPinned.setToolTip(i18n('Compact view'))
+        self.__btPinned.setIcon(QIcon(':/white/pinned_off'))
+        self.__btPinned.setFocusPolicy(Qt.NoFocus)
+        self.__btPinned.setAutoRaise(True)
+        self.__btPinned.setCheckable(True)
+        self.__btPinned.setStyleSheet(WToolBoxTitleBar.__TOOLBUTTON_CSS)
 
         self.__title=''
         self.__color=None
 
-        self.__setCompact(compact)
-
+        self.setCompact(compact)
+        self.setPinned(pinned)
 
         self.__layoutMain.addWidget(self.__lblTitle)
+        self.__layoutMain.addWidget(self.__btPinned)
         self.__layoutMain.addWidget(self.__btCompact)
         self.__layoutMain.addWidget(self.__btClose)
 
-        self.__setCompact(False)
+        self.setCompact(False)
 
         self.setLayout(self.__layoutMain)
         self.__inInit=False
@@ -314,7 +339,7 @@ QToolButton:hover {
     def minimumSizeHint(self):
         return QSize(0, self.__height)
 
-    def __setCompact(self, value):
+    def setCompact(self, value):
         if value==self.__compact:
             return
 
@@ -324,12 +349,12 @@ QToolButton:hover {
             self.__factor=0.65
             self.__btCompact.setChecked(True)
             self.__btCompact.setIcon(QIcon(':/white/compact_off'))
-            self.__btClose.setToolTip(i18n('Normal view'))
+            self.__btCompact.setToolTip(i18n('Normal view'))
         else:
             self.__factor=0.95
             self.__btCompact.setChecked(False)
             self.__btCompact.setIcon(QIcon(':/white/compact_on'))
-            self.__btClose.setToolTip(i18n('Compact view'))
+            self.__btCompact.setToolTip(i18n('Compact view'))
 
         if self.__originalFontSizePt>-1:
             self.__font.setPointSizeF(self.__originalFontSizePt*self.__factor)
@@ -346,9 +371,30 @@ QToolButton:hover {
         self.__btClose.setIconSize(QSize(self.__height-2,self.__height-2))
         self.__btCompact.setFixedSize(self.__height, self.__height)
         self.__btCompact.setIconSize(QSize(self.__height-2,self.__height-2))
+        self.__btPinned.setFixedSize(self.__height, self.__height)
+        self.__btPinned.setIconSize(QSize(self.__height-2,self.__height-2))
 
         if not self.__inInit:
             self.compactModeUpdated.emit(value)
+
+    def setPinned(self, value):
+        """Set toolbox pinned"""
+        if value==self.__pinned:
+            return
+
+        self.__pinned=value
+
+        if value:
+            self.__btPinned.setChecked(True)
+            self.__btPinned.setIcon(QIcon(':/white/pinned_on'))
+            self.__btPinned.setToolTip(i18n('Unpin'))
+        else:
+            self.__btPinned.setChecked(False)
+            self.__btPinned.setIcon(QIcon(':/white/pinned_off'))
+            self.__btPinned.setToolTip(i18n('Pin'))
+
+        if not self.__inInit:
+            self.pinnedModeUpdated.emit(value)
 
     def __updateTitle(self):
         """Update title ellipsis"""
