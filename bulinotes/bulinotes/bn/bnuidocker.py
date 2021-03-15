@@ -34,6 +34,7 @@ from .bnnotes import (BNNote,
                       BNNotes,
                       BNNoteEditor
                     )
+from .bnwnotes import BNNotesModel
 from .bnnote_postit import BNNotePostIt
 
 
@@ -71,6 +72,7 @@ class BNUiDocker(QWidget):
         """Initialise interface"""
         self.tvNotes.setNotes(self.__notes)
         self.tvNotes.selectionModel().selectionChanged.connect(self.__selectionChanged)
+
         self.tvNotes.doubleClicked.connect(self.__editNote)
 
         self.btAbout.clicked.connect(self.__about)
@@ -94,8 +96,12 @@ class BNUiDocker(QWidget):
         """Remove selected note from notes"""
         self.__notes.remove(self.tvNotes.selectedItems())
 
-    def __editNote(self):
+    def __editNote(self, index=None):
         """Edit selected note"""
+        if isinstance(index, QModelIndex) and not index.column() in (BNNotesModel.COLNUM_COLOR, BNNotesModel.COLNUM_TITLE):
+            # a double-click not made in valid columns does nothing
+            return
+
         selectedItem=self.tvNotes.selectedItems()
         if not selectedItem[0].locked():
             BNNoteEditor.edit(selectedItem[0])
@@ -103,9 +109,7 @@ class BNUiDocker(QWidget):
             if selectedItem[0].windowPostIt():
                 selectedItem[0].closeWindowPostIt()
             else:
-                selectedItem[0].openWindowPostIt()
-
-
+                selectedItem[0].openWindowPostIt(True)
 
     def __selectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
@@ -118,7 +122,7 @@ class BNUiDocker(QWidget):
 
         self.btAddNote.setEnabled(not(self.__kraActiveDocument is None))
         self.btEditNote.setEnabled(nbSelectedItems==1 and not selectedItems[0] is None and not selectedItems[0].locked())
-        self.btRemoveNote.setEnabled(nbSelectedItems>0)
+        self.btRemoveNote.setEnabled(nbSelectedItems>1 or nbSelectedItems==1 and not selectedItems[0] is None and not selectedItems[0].locked())
         self.btMoveNoteUp.setEnabled(nbSelectedItems>0 and not selectedItems[0] is None and selectedItems[0].position()>0)
         self.btMoveNoteDown.setEnabled(nbSelectedItems>0 and not selectedItems[-1] is None and (selectedItems[-1].position()<self.__notes.length()-1))
 

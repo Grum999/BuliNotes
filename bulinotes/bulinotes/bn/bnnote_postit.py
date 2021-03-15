@@ -136,6 +136,7 @@ width: 0px;
         self.__note.updated.connect(self.__updatedNote)
 
         self.compactModeUpdated.connect(self.__setCompact)
+        self.pinnedModeUpdated.connect(self.__setPinned)
         self.geometryUpdated.connect(self.__updateNoteGeometry)
 
         self.__initUi()
@@ -215,19 +216,25 @@ width: 0px;
         self.__showNotePage(self.__note.selectedType()-1)
 
         self.__setCompact(self.__note.windowPostItCompact())
+        self.__setPinned(self.__note.pinned())
         self.__updateUi()
 
     def __applyCompactFactor(self, subResult):
         return f'font-size: {round(0.8*int(subResult.group(1)))}pt;'
 
     def __updatedNote(self, note, property):
-        self.__updateUi()
+        if property=='pinned':
+            self.__setPinned(self.__note.pinned())
+        else:
+            self.__updateUi()
 
     def changeEvent(self, event):
         """When toolbox become inactive deselect brush"""
         if event.type() == QEvent.ActivationChange:
             if not self.isActiveWindow():
                 self.__brushesList.selectionModel().clearSelection()
+                if not self.__note.pinned():
+                    self.__note.closeWindowPostIt()
 
     def showEvent(self, event):
         """Need to update treeview columns size..."""
@@ -250,6 +257,13 @@ width: 0px;
         else:
             self.__brushesList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_NORMAL_CSS)
             self.__brushesList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_NORMAL_CSS)
+
+        self.setCompact(value)
+
+    def __setPinned(self, value):
+        """Set post-it as pinned"""
+        self.__note.setPinned(value)
+        self.setPinned(value)
 
     def __updateUi(self):
         """Update UI content according to note content"""
@@ -320,8 +334,6 @@ width: 0px;
         """About to close window"""
         self.__note.setWindowPostIt(None)
         self.__note.closeWindowPostIt()
-
-
 
 
 class BNNotePostItText(QTextEdit):

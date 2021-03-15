@@ -137,7 +137,7 @@ class BNNote(QObject):
 
     def setTitle(self, title):
         """Set note title"""
-        if title is None or isinstance(title, str):
+        if title is None or isinstance(title, str) and self.__title!=title:
             self.__title=title
             self.__timestampUpdated=time.time()
             self.__updated('title')
@@ -148,7 +148,7 @@ class BNNote(QObject):
 
     def setDescription(self, description):
         """Set note description"""
-        if not self.__locked and (description is None or isinstance(description, str)):
+        if not self.__locked and (description is None or isinstance(description, str)) and self.__description!=description:
             self.__description=description
             self.__timestampUpdated=time.time()
             self.__updated('description')
@@ -159,7 +159,7 @@ class BNNote(QObject):
 
     def setColorIndex(self, colorIndex):
         """Set note title"""
-        if isinstance(colorIndex, int) and colorIndex >= WStandardColorSelector.COLOR_NONE and  colorIndex <= WStandardColorSelector.COLOR_GRAY:
+        if isinstance(colorIndex, int) and self.__colorIndex!=colorIndex and colorIndex >= WStandardColorSelector.COLOR_NONE and colorIndex <= WStandardColorSelector.COLOR_GRAY:
             self.__colorIndex=colorIndex
             self.__updated('colorIndex')
 
@@ -169,7 +169,7 @@ class BNNote(QObject):
 
     def setPinned(self, pinned):
         """Set note pin status (boolean value)"""
-        if isinstance(pinned, bool):
+        if isinstance(pinned, bool) and self.__pinned!=pinned:
             self.__pinned=pinned
             self.__updated('pinned')
 
@@ -179,7 +179,7 @@ class BNNote(QObject):
 
     def setLocked(self, locked):
         """Set note lock status (boolean value)"""
-        if isinstance(locked, bool):
+        if isinstance(locked, bool) and self.__locked!=locked:
             self.__locked=locked
             self.__updated('locked')
 
@@ -189,7 +189,7 @@ class BNNote(QObject):
 
     def setText(self, text):
         """Set note text"""
-        if not self.__locked and isinstance(text, str):
+        if not self.__locked and isinstance(text, str) and self.__text!=text:
             self.__text=text
             self.__timestampUpdated=time.time()
             self.__updated('text')
@@ -200,7 +200,7 @@ class BNNote(QObject):
 
     def setTimestampUpdated(self, timestamp):
         """Set note timestamp"""
-        if not self.__locked and isinstance(timestamp, float):
+        if not self.__locked and isinstance(timestamp, float) and self.__timestampUpdated!=timestamp:
             self.__timestampUpdated=timestamp
             self.__updated('timestamp')
 
@@ -210,7 +210,7 @@ class BNNote(QObject):
 
     def setTimestampCreated(self, timestamp):
         """Set note timestamp"""
-        if not self.__locked and isinstance(timestamp, float):
+        if not self.__locked and isinstance(timestamp, float) and self.__timestampCreated!=timestamp:
             self.__timestampCreated=timestamp
             self.__updated('timestamp')
 
@@ -220,7 +220,7 @@ class BNNote(QObject):
 
     def setPosition(self, position):
         """Set note position"""
-        if not self.__locked and isinstance(position, int):
+        if not self.__locked and isinstance(position, int) and self.__position!=position:
             self.__position=position
             self.__updated('position')
 
@@ -230,7 +230,7 @@ class BNNote(QObject):
 
     def setWindowPostItGeometry(self, geometry):
         """Set window note geometry"""
-        if isinstance(geometry, QRect):
+        if isinstance(geometry, QRect) and self.__windowPostItGeometry!=geometry:
             self.__windowPostItGeometry=geometry
             self.__updated('geometry')
 
@@ -240,7 +240,7 @@ class BNNote(QObject):
 
     def setWindowPostItCompact(self, compact):
         """Set window note compact"""
-        if isinstance(compact, bool):
+        if isinstance(compact, bool) and self.__windowPostItCompact!=compact:
             self.__windowPostItCompact=compact
             self.__updated('compact')
 
@@ -250,12 +250,12 @@ class BNNote(QObject):
 
     def setWindowPostItBrushIconSizeIndex(self, index):
         """Set window note compact"""
-        if isinstance(index, int) and index>=0 and index<=4:
+        if isinstance(index, int) and index>=0 and index<=4 and self.__windowPostItBrushIconSizeIndex!=index:
             self.__windowPostItBrushIconSizeIndex=index
             self.__updated('brushIconSizeIndex')
 
     def windowPostIt(self):
-        """Return note compact mode active or not"""
+        """Return note windows post-it"""
         return self.__windowPostIt
 
     def setWindowPostIt(self, window):
@@ -263,15 +263,17 @@ class BNNote(QObject):
         if window is None or isinstance(window, BNNotePostIt):
             self.__windowPostIt=window
 
-    def openWindowPostIt(self):
+    def openWindowPostIt(self, activateWindow=False):
         if self.__windowPostIt is None:
             self.__windowPostIt=BNNotePostIt(self)
-        if not self.__pinned:
-            self.setPinned(True)
+            self.__updated('opened')
+        if activateWindow:
+            self.__windowPostIt.activateWindow()
 
     def closeWindowPostIt(self):
         if not self.__windowPostIt is None:
             self.__windowPostIt.close()
+            self.__updated('closed')
         if self.__pinned:
             self.setPinned(False)
 
@@ -281,8 +283,9 @@ class BNNote(QObject):
 
     def setScratchpadBrushName(self, value):
         """Set last brush name used on scratchpad"""
-        self.__scratchpadBrushName=value
-        self.__updated('scratchpadBrushName')
+        if isinstance(value, str) and self.__scratchpadBrushName!=value:
+            self.__scratchpadBrushName=value
+            self.__updated('scratchpadBrushName')
 
     def scratchpadBrushSize(self):
         """Return last brush size used on scratchpad"""
@@ -291,8 +294,10 @@ class BNNote(QObject):
     def setScratchpadBrushSize(self, value):
         """Set last brush size used on scratchpad"""
         if isinstance(value, int):
-            self.__scratchpadBrushSize=max(1, min(value, 200))
-            self.__updated('scratchpadBrushSize')
+            v=max(1, min(value, 200))
+            if self.__scratchpadBrushSize!=v:
+                self.__scratchpadBrushSize=v
+                self.__updated('scratchpadBrushSize')
 
     def scratchpadBrushColor(self):
         """Return last brush color used on scratchpad"""
@@ -300,10 +305,10 @@ class BNNote(QObject):
 
     def setScratchpadBrushColor(self, value):
         """Set last brush color used on scratchpad"""
-        if isinstance(value, QColor):
+        if isinstance(value, QColor) and self.__scratchpadBrushColor!=value:
             self.__scratchpadBrushColor=value
             self.__updated('scratchpadBrushColor')
-        elif isinstance(value, int):
+        elif isinstance(value, int) and self.__scratchpadBrushColor!=QColor(value):
             self.__scratchpadBrushColor=QColor(value)
             self.__updated('scratchpadBrushColor')
 
@@ -313,7 +318,7 @@ class BNNote(QObject):
 
     def setScratchpadImage(self, value):
         """Set last brush color used on scratchpad"""
-        if value is None:
+        if value is None and not self.__scratchpadImage is None:
             self.__scratchpadImage=None
             self.__updated('scratchpadImage')
         elif isinstance(value, QImage):
@@ -346,7 +351,7 @@ class BNNote(QObject):
 
     def setSelectedType(self, value):
         """Set current selected types"""
-        if isinstance(value, int) and value>=1 and value<=BNNote.__CONTENT_LAST:
+        if isinstance(value, int) and self.__selectedType!=value and value>=1 and value<=BNNote.__CONTENT_LAST:
             self.__selectedType=value
             self.__updated('selectedType')
 
@@ -895,9 +900,9 @@ class BNNotes(QObject):
             self.__emitUpdateRemoved()
             return True
 
-        if isinstance(item, str) and item in self.__notes:
+        if isinstance(item, str) and item in self.__notes and not self.get(item).locked():
             removedNote=self.__notes.pop(item, None)
-        elif isinstance(item, BNNote):
+        elif isinstance(item, BNNote) and not item.locked():
             removedNote=self.__notes.pop(item.id(), None)
 
         if not removedNote is None:

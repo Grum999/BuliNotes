@@ -24,7 +24,8 @@ from pktk import *
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
-        pyqtSignal as Signal
+        pyqtSignal as Signal,
+        QTimer
     )
 
 from .bnnotes import (
@@ -42,21 +43,20 @@ from pktk.widgets.wstandardcolorselector import (
 
 class BNNotesModel(QAbstractTableModel):
     """A model provided by BNNotes"""
-    updateWidth = Signal()
-
     COLNUM_COLOR = 0
     COLNUM_TITLE = 1
     COLNUM_LOCKED = 2
-    COLNUM_PINNED = 3
-    COLNUM_LAST = 3
+    COLNUM_VIEW = 3
+    COLNUM_PINNED = 4
+    COLNUM_LAST = 4
 
     ROLE_ID = Qt.UserRole + 1
     ROLE_NOTE = Qt.UserRole + 2
 
-    __ICON_WIDTH = 24
+    ICON_WIDTH = 24
     ICON_SIZE = QSize(24, 24)
 
-    HEADERS = ['', 'Title', '', '']
+    HEADERS = ['', 'Title', '', '', '']
 
     def __init__(self, notes, parent=None):
         """Initialise list"""
@@ -71,6 +71,11 @@ class BNNotesModel(QAbstractTableModel):
         self.__items=self.__notes.idList()
         self.__iconSize=BNNotesModel.ICON_SIZE
         self.__icons=[self.__buildColorIcon(colorIndex) for colorIndex in range(WStandardColorSelector.NB_COLORS)]
+        self.__isFreezed=False
+
+
+    def __unfreeze(self):
+        self.__isFreezed=False
 
     def __repr__(self):
         return f'<BNNotesModel()>'
@@ -99,7 +104,6 @@ class BNNotesModel(QAbstractTableModel):
         """Data has entirely been changed (reset/reload)"""
         self.__items=self.__notes.idList()
         self.modelReset.emit()
-        self.updateWidth.emit()
 
     def __dataUpdatedAdd(self, items):
         # if nb items is the same, just update... ?
@@ -107,7 +111,6 @@ class BNNotesModel(QAbstractTableModel):
         print('TODO: need to update only for added items')
         self.__items=self.__notes.idList()
         self.modelReset.emit()
-        self.updateWidth.emit()
 
     def __dataUpdateRemove(self, items):
         # if nb items is the same, just update... ?
@@ -120,6 +123,20 @@ class BNNotesModel(QAbstractTableModel):
         index=None
         if property=='colorIndex':
             index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_COLOR)
+        elif property=='opened':
+            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_VIEW)
+        elif property=='closed':
+            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_VIEW)
+            # --- this is tricky thing...
+            # when a postit lost focuse, it's closed automatically
+            # but if in QTreeView user click on VIEW icon to hide postit:
+            #  1) Post-it lost focus and is closed
+            #  2) When click is taken in account, note is already close and then
+            #     it's considered that post-it have to be opened...
+            # Timer will set a "freeze" status
+            # And in QTreeView, if trying to process VIEW icon, if model is currently in "freeze" then do nothing
+            self.__isFreezed=True
+            QTimer.singleShot(125, self.__unfreeze)
         elif property=='pinned':
             index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_PINNED)
         elif property=='locked':
@@ -156,6 +173,13 @@ class BNNotesModel(QAbstractTableModel):
                     id=self.__items[row]
                     item = self.__notes.get(id)
                     return self.__icons[item.colorIndex()]
+                elif column==BNNotesModel.COLNUM_VIEW:
+                    id=self.__items[row]
+                    item = self.__notes.get(id)
+                    if item.windowPostIt():
+                        return QIcon(':/images/noteView')
+                    else:
+                        return QIcon(':/images_d/noteView')
                 elif column==BNNotesModel.COLNUM_PINNED:
                     id=self.__items[row]
                     item = self.__notes.get(id)
@@ -191,17 +215,12 @@ class BNNotesModel(QAbstractTableModel):
                 if item.timestampCreated()!=item.timestampUpdated():
                     tooltip+=f"<br>Updated: {tsToStr(item.timestampUpdated())}"
                 tooltip+="</p>"
-
-
                 return tooltip
         elif role == BNNotesModel.ROLE_ID:
             return self.__items[row]
         elif role == BNNotesModel.ROLE_NOTE:
             id=self.__items[row]
             return self.__notes.get(id)
-        elif role == Qt.SizeHintRole:
-            if column in [BNNotesModel.COLNUM_LOCKED, BNNotesModel.COLNUM_PINNED]:
-                return BNNotesModel.__ICON_WIDTH
         return None
 
     def roleNames(self):
@@ -220,6 +239,10 @@ class BNNotesModel(QAbstractTableModel):
     def notes(self):
         """Expose BNNotes object"""
         return self.__notes
+
+    def isFreezed(self):
+        """Return True if freezed"""
+        return self.__isFreezed
 
 
 class BNNotesModelDelegate(QStyledItemDelegate):
@@ -244,13 +267,8 @@ class BNNotesModelDelegate(QStyledItemDelegate):
         QStyledItemDelegate.paint(self, painter, option, index)
 
 
-
 class BNWNotes(QTreeView):
     """Tree view notes"""
-    focused = Signal()
-    keyPressed = Signal(int)
-
-    __COLNUM_FULLNFO_MINSIZE = 7
 
     def __init__(self, parent=None):
         super(BNWNotes, self).__init__(parent)
@@ -268,12 +286,18 @@ class BNWNotes(QTreeView):
 
     def __itemClicked(self, index):
         """A cell has been clicked, check if it's a persistent column"""
-        if index.column()==BNNotesModel.COLNUM_PINNED:
+        if index.column()==BNNotesModel.COLNUM_VIEW:
             item=index.data(BNNotesModel.ROLE_NOTE)
             if item:
-                if item.pinned():
+                if item.windowPostIt():
                     item.closeWindowPostIt()
-                else:
+                elif not self.__model.isFreezed():
+                    item.openWindowPostIt(True)
+        elif index.column()==BNNotesModel.COLNUM_PINNED:
+            item=index.data(BNNotesModel.ROLE_NOTE)
+            if item:
+                item.setPinned(not item.pinned())
+                if item.pinned():
                     item.openWindowPostIt()
         elif index.column()==BNNotesModel.COLNUM_LOCKED:
             item=index.data(BNNotesModel.ROLE_NOTE)
@@ -293,11 +317,13 @@ class BNWNotes(QTreeView):
         self.__actionPaste.triggered.connect(self.__actionPasteNote)
 
 
-        self.__actionAdd = QAction(QIcon(':/images/add_comment'), i18n('Add note'), self)
+        self.__actionView = QAction(QIcon(':/images/noteView'), i18n('View note'), self)
+        self.__actionView.triggered.connect(self.__viewNotes)
+        self.__actionAdd = QAction(QIcon(':/images/noteAdd'), i18n('Add note'), self)
         self.__actionAdd.triggered.connect(self.__parent.btAddNote.click)
-        self.__actionEdit = QAction(QIcon(':/images/edit_comment'), i18n('Edit note'), self)
+        self.__actionEdit = QAction(QIcon(':/images/noteEdit'), i18n('Edit note'), self)
         self.__actionEdit.triggered.connect(self.__parent.btEditNote.click)
-        self.__actionDelete = QAction(QIcon(':/images/delete_comment'), i18n('Delete note'), self)
+        self.__actionDelete = QAction(QIcon(':/images/noteDelete'), i18n('Delete note'), self)
         self.__actionDelete.triggered.connect(self.__parent.btRemoveNote.click)
 
         self.__contextMenu.addAction(self.__actionColorIndex)
@@ -306,13 +332,22 @@ class BNWNotes(QTreeView):
         self.__contextMenu.addAction(self.__actionCut)
         self.__contextMenu.addAction(self.__actionPaste)
         self.__contextMenu.addSeparator()
+        self.__contextMenu.addAction(self.__actionView)
+        self.__contextMenu.addSeparator()
         self.__contextMenu.addAction(self.__actionAdd)
         self.__contextMenu.addAction(self.__actionEdit)
         self.__contextMenu.addAction(self.__actionDelete)
 
     def __actionSetNoteColorIndex(self, value):
+        """Set color index for selected notes"""
         for note in self.selectedItems():
             note.setColorIndex(value)
+
+    def __viewNotes(self):
+        """View all selected notes"""
+        notes=self.selectedItems()
+        for note in notes:
+            note.openWindowPostIt(len(notes)==1)
 
     def __actionCopyNote(self):
         """Copy selected notes to clipboardCut
@@ -332,13 +367,6 @@ class BNWNotes(QTreeView):
         """Paste notes from clipboard (if any)"""
         self.__model.notes().clipboardPaste()
 
-    def __resizeColumns(self):
-        """Resize columns"""
-        self.resizeColumnToContents(BNNotesModel.COLNUM_COLOR)
-        self.resizeColumnToContents(BNNotesModel.COLNUM_TITLE)
-        self.resizeColumnToContents(BNNotesModel.COLNUM_LOCKED)
-        self.resizeColumnToContents(BNNotesModel.COLNUM_PINNED)
-
     def setNotes(self, notes):
         """Initialise treeview header & model"""
         self.__model = BNNotesModel(notes)
@@ -354,16 +382,13 @@ class BNWNotes(QTreeView):
         header.setSectionResizeMode(BNNotesModel.COLNUM_COLOR, QHeaderView.Fixed)
         header.setSectionResizeMode(BNNotesModel.COLNUM_TITLE, QHeaderView.Stretch)
         header.setSectionResizeMode(BNNotesModel.COLNUM_LOCKED, QHeaderView.Fixed)
+        header.setSectionResizeMode(BNNotesModel.COLNUM_VIEW, QHeaderView.Fixed)
         header.setSectionResizeMode(BNNotesModel.COLNUM_PINNED, QHeaderView.Fixed)
 
-        self.__resizeColumns()
-
-        #delegate=BCClipboardDelegate(self)
-        #self.setItemDelegateForColumn(BNNotesModel.COLNUM_SRC, delegate)
-        #self.setItemDelegateForColumn(BNNotesModel.COLNUM_FULLNFO, delegate)
-        #self.setItemDelegateForColumn(BNNotesModel.COLNUM_PERSISTENT, delegate)
-
-        self.__model.updateWidth.connect(self.__resizeColumns)
+        header.resizeSection(BNNotesModel.COLNUM_COLOR, BNNotesModel.ICON_WIDTH)
+        header.resizeSection(BNNotesModel.COLNUM_LOCKED, BNNotesModel.ICON_WIDTH)
+        header.resizeSection(BNNotesModel.COLNUM_VIEW, BNNotesModel.ICON_WIDTH)
+        header.resizeSection(BNNotesModel.COLNUM_PINNED, BNNotesModel.ICON_WIDTH)
 
     def contextMenuEvent(self, event):
         """Display context menu, updated according to current options"""
@@ -381,20 +406,12 @@ class BNWNotes(QTreeView):
         self.__actionCut.setEnabled(nbSelectedItems>0)
         self.__actionPaste.setEnabled(self.__model.notes().clipboardPastable())
 
+        self.__actionView.setEnabled(nbSelectedItems>0)
         self.__actionAdd.setEnabled(self.__parent.btAddNote.isEnabled())
         self.__actionEdit.setEnabled(self.__parent.btEditNote.isEnabled())
         self.__actionDelete.setEnabled(self.__parent.btRemoveNote.isEnabled())
 
-
         self.__contextMenu.exec_(event.globalPos())
-
-    def keyPressEvent(self, event):
-        super(BNWNotes, self).keyPressEvent(event)
-        self.keyPressed.emit(event.key())
-
-    def focusInEvent(self, event):
-        super(BNWNotes, self).focusInEvent(event)
-        self.focused.emit()
 
     def selectedItems(self):
         """Return a list of selected notes items"""
