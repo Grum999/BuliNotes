@@ -63,8 +63,8 @@
         </property>
         <property name="icon">
          <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/add_comment</normaloff>
-          <disabledoff>:/images_d/add_comment</disabledoff>:/images/add_comment</iconset>
+          <normaloff>:/images/noteAdd</normaloff>
+          <disabledoff>:/images_d/noteAdd</disabledoff>:/images/noteAdd</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -84,8 +84,8 @@
         </property>
         <property name="icon">
          <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/edit_comment</normaloff>
-          <disabledoff>:/images_d/edit_comment</disabledoff>:/images/edit_comment</iconset>
+          <normaloff>:/images/noteEdit</normaloff>
+          <disabledoff>:/images_d/noteEdit</disabledoff>:/images/noteEdit</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -105,8 +105,8 @@
         </property>
         <property name="icon">
          <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/delete_comment</normaloff>
-          <disabledoff>:/images_d/delete_comment</disabledoff>:/images/delete_comment</iconset>
+          <normaloff>:/images/noteDelete</normaloff>
+          <disabledoff>:/images_d/noteDelete</disabledoff>:/images/noteDelete</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -230,6 +230,9 @@
      <property name="expandsOnDoubleClick">
       <bool>false</bool>
      </property>
+     <attribute name="headerMinimumSectionSize">
+      <number>0</number>
+     </attribute>
      <attribute name="headerStretchLastSection">
       <bool>false</bool>
      </attribute>

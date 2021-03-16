@@ -29,7 +29,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 from PyQt5.QtWidgets import (
-        QPushButton,
+        QPushButton
     )
 
 class WStandardColorSelector(QWidget):
@@ -51,6 +51,7 @@ class WStandardColorSelector(QWidget):
 
     @staticmethod
     def getColor(colorIndex):
+        """Return QColor for given color index"""
         if colorIndex==WStandardColorSelector.COLOR_BLUE:
             return QColor(98,166,207)
         elif colorIndex==WStandardColorSelector.COLOR_GREEN:
@@ -68,6 +69,13 @@ class WStandardColorSelector(QWidget):
         elif colorIndex==WStandardColorSelector.COLOR_GRAY:
             return QColor(101,103,101)
         return None
+
+    @staticmethod
+    def isValidColorIndex(colorIndex):
+        """Return is given color index is valid"""
+        if isinstance(colorIndex, int) and colorIndex >=0 and colorIndex < WStandardColorSelector.NB_COLORS:
+            return True
+        return False
 
     def __init__(self, parent=None):
         super(WStandardColorSelector, self).__init__(parent)
@@ -201,7 +209,22 @@ class WStandardColorSelector(QWidget):
 
     def setColorIndex(self, colorIndex):
         """Set current button color"""
-        if colorIndex >= WStandardColorSelector.COLOR_NONE and colorIndex <= WStandardColorSelector.COLOR_GRAY:
+        if colorIndex is None:
+            self.__colorIndex = colorIndex
+            self.update()
+        elif colorIndex >= WStandardColorSelector.COLOR_NONE and colorIndex <= WStandardColorSelector.COLOR_GRAY:
             self.__colorIndex = colorIndex
             self.update()
             self.colorChanged.emit(self.__colorIndex)
+
+class WMenuStandardColorSelector(QWidgetAction):
+    """Encapsulate a WStandardColorSelector as a menu item"""
+    def __init__(self, parent=None):
+        super(WMenuStandardColorSelector, self).__init__(parent)
+
+        self.__stdColorSelector = WStandardColorSelector()
+
+        self.setDefaultWidget(self.__stdColorSelector)
+
+    def colorSelector(self):
+        return self.__stdColorSelector

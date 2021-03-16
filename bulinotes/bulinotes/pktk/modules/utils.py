@@ -619,6 +619,11 @@ def stripTags(value):
                 .replace('&', '')           \
                 .replace(chr(1), '&')
 
+def stripHtml(value):
+    """Return HTML plain text"""
+    return QTextDocumentFragment.fromHtml(value).toPlainText();
+
+
 def loadXmlUi(fileName, parent):
     """Load a ui file PyQt5.uic.loadUi()
 
@@ -665,6 +670,16 @@ def regExIsValid(regex):
     except:
         return False
     return True
+
+def qImageToPngQByteArray(image):
+    """Convert a QImage as PNG and return a QByteArray"""
+    if isinstance(image, QImage):
+        ba=QByteArray()
+        buffer=QBuffer(ba)
+        buffer.open(QIODevice.WriteOnly)
+        image.save(buffer, "PNG")
+        buffer.close()
+        return ba
 
 # ------------------------------------------------------------------------------
 class BCTimer(object):
