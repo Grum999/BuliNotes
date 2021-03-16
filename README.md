@@ -161,7 +161,7 @@ Plugin hasn't been tested on Windows and MacOs
 
 ### What's new?
 
-_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.1.0a.md)*
+_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/releases/tag/0.1.0a)*
 - First implemented/released version
 
 
