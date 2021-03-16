@@ -151,7 +151,7 @@ Plugin installation in [Krita](https://krita.org) is not intuitive and needs som
 ### Tested platforms
 > **Notes:**
 > - Plugin is not compatible with Krita 4.x.x; you must have at least Krita 5.x.x
-> - As currently Krita 5 is still in pre-alpha version; As long as Krita 5 won't be able as a stable version, all version of plugin will be provided as alpha version too
+> - As currently Krita 5 is still in pre-alpha version, plugin is in alpha version and as long as Krita 5 won't be available as a stable version, plugin will be provided as alpha version
 
 Plugin has been tested with Krita 5.0.0-prealpha (appimage) on Linux Debian 10.
 Plugin hasn't been tested on Windows and MacOs
