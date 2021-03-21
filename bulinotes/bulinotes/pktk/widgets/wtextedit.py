@@ -216,37 +216,41 @@ class WTextEdit(QWidget):
             },
             {'type':            'button',
              'id':              'fontBold',
-             'tooltip':         i18n('Set current font style <b>Bold</b>'),
+             'tooltip':         i18n('Set current font style <b>Bold</b> (CTRL+B)'),
              'icon':            QIcon.fromTheme('format-text-bold'),
              'action':          (lambda value: self.__textEdit.setFontWeight(QFont.Bold if value else QFont.Normal)),
              'visibility':      WTextEditBtBarOption.STYLE_BOLD,
+             'shortcut':        QKeySequence("CTRL+B"),
              'checkable':       True,
              'isFormatting':    True
             },
             {'type':            'button',
              'id':              'fontItalic',
-             'tooltip':         i18n('Set current font style <i>Italic</i>'),
+             'tooltip':         i18n('Set current font style <i>Italic</i> (CTRL+I)'),
              'icon':            QIcon.fromTheme('format-text-italic'),
              'action':          self.__textEdit.setFontItalic,
              'visibility':      WTextEditBtBarOption.STYLE_ITALIC,
+             'shortcut':        QKeySequence("CTRL+I"),
              'checkable':       True,
              'isFormatting':    True
             },
             {'type':            'button',
              'id':              'fontUnderline',
-             'tooltip':         i18n('Set current font style <u>Underline</u>'),
+             'tooltip':         i18n('Set current font style <u>Underline</u> (CTRL+U)'),
              'icon':            QIcon.fromTheme('format-text-underline'),
              'action':          self.__textEdit.setFontUnderline,
              'visibility':      WTextEditBtBarOption.STYLE_UNDERLINE,
+             'shortcut':        QKeySequence("CTRL+U"),
              'checkable':       True,
              'isFormatting':    True
             },
             {'type':            'button',
              'id':              'fontStrikethrough',
-             'tooltip':         i18n('Set current font style <s>Strikethrough</s>'),
+             'tooltip':         i18n('Set current font style <s>Strikethrough</s> (CTRL+T)'),
              'icon':            QIcon.fromTheme('format-text-strikethrough'),
              'action':          self.__setFontStrikethrough,
              'visibility':      WTextEditBtBarOption.STYLE_STRIKETHROUGH,
+             'shortcut':        QKeySequence("CTRL+T"),
              'checkable':       True,
              'isFormatting':    True
             },
@@ -376,6 +380,9 @@ class WTextEdit(QWidget):
                 qItem.setAutoRaise(True)
                 qItem.setCheckable(item['checkable'])
                 qItem.setSizePolicy(policy)
+
+                if 'shortcut' in item:
+                    qItem.setShortcut(item['shortcut'])
 
                 if 'group' in item:
                     if not item['group'] in groups:
