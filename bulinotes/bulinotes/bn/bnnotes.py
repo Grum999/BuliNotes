@@ -70,6 +70,15 @@ class BNNote(QObject):
     #CONTENT_TASKS=0x04
     __CONTENT_LAST=0x03
 
+    @staticmethod
+    def clone(note):
+        """Create a new note from given note"""
+        if not isinstance(note, BNNote):
+            raise EInvalidType('Given `note` must be <BNNote> type')
+        returned=BNNote()
+        returned.importData(note.exportData(), False)
+        return returned
+
     def __init__(self, id=None, title=None, description=None):
         super(BNNote, self).__init__(None)
         self.__id=None
@@ -89,6 +98,7 @@ class BNNote(QObject):
 
         self.__scratchpadBrushName='b)_Basic-5_Size'
         self.__scratchpadBrushSize=5
+        self.__scratchpadBrushOpacity=100
         self.__scratchpadBrushColor=QColor(Qt.black)
         self.__scratchpadImage=None
 
@@ -302,6 +312,18 @@ class BNNote(QObject):
             if self.__scratchpadBrushSize!=v:
                 self.__scratchpadBrushSize=v
                 self.__updated('scratchpadBrushSize')
+
+    def scratchpadBrushOpacity(self):
+        """Return last brush opacity used on scratchpad (0-100)"""
+        return self.__scratchpadBrushOpacity
+
+    def setScratchpadBrushOpacity(self, value):
+        """Set last brush opacity used on scratchpad (0-100)"""
+        if isinstance(value, int):
+            v=max(0, min(value, 100))
+            if self.__scratchpadBrushOpacity!=v:
+                self.__scratchpadBrushOpacity=v
+                self.__updated('scratchpadBrushOpacity')
 
     def scratchpadBrushColor(self):
         """Return last brush color used on scratchpad"""
@@ -580,6 +602,16 @@ class BNNote(QObject):
                      |         |                 |
 
 
+        *** Block type [0x0204 - Scratchpad:BrushOpacity]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | 1       | ushort          | last brush opacity in percent
+                     |         |                 | (0 - 100)
+                     |         |                 |
+
+
         *** Block type [0x0300 - brush]
 
             position | size    | format          | description
@@ -658,6 +690,7 @@ class BNNote(QObject):
         writeBlock(0x0202, 'uint4', self.__scratchpadBrushColor.rgba())
         if not self.__scratchpadImage is None:
             writeBlock(0x0203, 'bytes', bytes(qImageToPngQByteArray(self.__scratchpadImage)))
+        writeBlock(0x0204, 'ushort', self.__scratchpadBrushOpacity)
 
         for brush in self.__brushes.idList():
             writeBlock(0x0300, 'bytes', self.__brushes.get(brush).exportData())
@@ -743,6 +776,8 @@ class BNNote(QObject):
                 self.setScratchpadBrushColor(dataRead.readUInt4())
             elif blockType==0x0203:
                 self.setScratchpadImage(QImage.fromData(QByteArray(dataRead.read(blockContentSize))))
+            elif blockType==0x0204:
+                self.setScratchpadBrushOpacity(dataRead.readUShort())
             elif blockType==0x0300:
                 brush=BNBrush()
                 brush.importData(dataRead.read(blockContentSize))
@@ -1048,6 +1083,7 @@ class BNNoteEditor(EDialog):
         else:
             self.__note=note
 
+        self.__tmpNote=BNNote.clone(self.__note)
         self.__tmpBrushes=BNBrushes(self.__note.brushes())
 
         self.__activeView=Krita.instance().activeWindow().activeView()
@@ -1159,6 +1195,7 @@ class BNNoteEditor(EDialog):
         self.tbColor.setMenu(menuColor)
 
         self.hsBrushSize.valueChanged.connect(self.__actionScratchpadSetBrushSize)
+        self.hsBrushOpacity.valueChanged.connect(self.__actionScratchpadSetBrushOpacity)
         self.hsZoom.valueChanged.connect(self.__actionScratchpadSetZoom)
 
 
@@ -1174,10 +1211,15 @@ class BNNoteEditor(EDialog):
         self.tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
 
     def __tabChanged(self, index):
-        """Current tab has been modified"""
+        """Current tab has been changed
+
+        Given `index` is current index
+        """
+        # 0=text
+
         if index==1:
             # handwritten note
-            self.__actionScratchpadSetBrushDefault()
+            self.__actionScratchpadSetBrushScratchpad()
         elif index==2:
             # brushes notes
             selectedBrushes=self.tvBrushes.selectedItems()
@@ -1227,6 +1269,7 @@ class BNNoteEditor(EDialog):
         self.__activeView.setCurrentBrushPreset(self.__allBrushesPreset[self.__note.scratchpadBrushName()])
         self.__activeView.setForeGroundColor(ManagedColor.fromQColor(self.__note.scratchpadBrushColor(), self.__activeView.canvas()))
         self.__activeView.setBrushSize(self.__note.scratchpadBrushSize())
+        self.__activeView.setPaintingOpacity(self.__note.scratchpadBrushOpacity()/100)
 
         self.__actionSelectColor.colorPicker().setColor(self.__note.scratchpadBrushColor())
         self.hsBrushSize.setValue(self.__note.scratchpadBrushSize())
@@ -1259,6 +1302,7 @@ class BNNoteEditor(EDialog):
 
         self.__note.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
         self.__note.setScratchpadBrushSize(int(self.__activeView.brushSize()))
+        self.__note.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
         self.__note.setScratchpadBrushColor(self.__activeView.foregroundColor().colorForCanvas(self.__activeView.canvas()))
 
         self.__note.setBrushes(self.__tmpBrushes)
@@ -1279,6 +1323,10 @@ class BNNoteEditor(EDialog):
         """Set current brush"""
         self.__activeView.setCurrentBrushPreset(resource)
         self.hsBrushSize.setValue(round(self.__activeView.brushSize()))
+        self.hsBrushOpacity.setValue(round(100*self.__activeView.paintingOpacity()))
+        self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
+        self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
+        self.__tmpNote.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
 
     def __actionScratchpadClear(self):
         """Clear Scratchpad content"""
@@ -1287,28 +1335,51 @@ class BNNoteEditor(EDialog):
     def __actionScratchpadSetBrushSize(self, value):
         """Set brush size"""
         self.__activeView.setBrushSize(value)
+        self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
+
+    def __actionScratchpadSetBrushOpacity(self, value):
+        """Set brush opacity"""
+        self.__activeView.setPaintingOpacity(value/100)
+        self.__tmpNote.setScratchpadBrushOpacity(value)
 
     def __actionScratchpadSetBrushDefault(self):
-        """Set brush size"""
+        """Set default brush"""
         self.__activeView.setCurrentBrushPreset(self.__allBrushesPreset['b)_Basic-5_Size'])
         self.__activeView.setBrushSize(5.0)
         self.__activeView.setCurrentBlendingMode('normal')
         self.__activeView.setPaintingOpacity(1)
         self.__activeView.setPaintingFlow(1)
         self.hsBrushSize.setValue(5)
+        self.hsBrushOpacity.setValue(100)
+        self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
+        self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
+        self.__tmpNote.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
 
     def __actionScratchpadSetBrushCurrent(self):
-        """Set brush size"""
+        """Set current painting brush"""
         self.__activeView.setCurrentBrushPreset(self.__activeViewCurrentConfig['brushPreset'])
         self.__activeView.setBrushSize(self.__activeViewCurrentConfig['brushSize'])
         self.__activeView.setCurrentBlendingMode(self.__activeViewCurrentConfig['blendingMode'])
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
         self.hsBrushSize.setValue(round(self.__activeViewCurrentConfig['brushSize']))
+        self.hsBrushOpacity.setValue(round(100*self.__activeViewCurrentConfig['brushOpacity']))
+        self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
+        self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
+        self.__tmpNote.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
+
+    def __actionScratchpadSetBrushScratchpad(self):
+        """Set last used scratchpad brush"""
+        self.__activeView.setCurrentBrushPreset(self.__allBrushesPreset[self.__tmpNote.scratchpadBrushName()])
+        self.__activeView.setBrushSize(self.__tmpNote.scratchpadBrushSize())
+        self.__activeView.setPaintingOpacity(self.__tmpNote.scratchpadBrushOpacity()/100)
+        self.hsBrushSize.setValue(self.__tmpNote.scratchpadBrushSize())
+        self.hsBrushOpacity.setValue(self.__tmpNote.scratchpadBrushOpacity())
 
     def __actionScratchpadSetColor(self, color):
         """Set brush color"""
         self.__activeView.setForeGroundColor(ManagedColor.fromQColor(color, self.__activeView.canvas()))
+        self.__tmpNote.setScratchpadBrushColor(self.__activeView.foregroundColor().colorForCanvas(self.__activeView.canvas()))
 
     def __actionScratchpadSetZoom(self, value):
         """Set zoom value on scratchpad"""

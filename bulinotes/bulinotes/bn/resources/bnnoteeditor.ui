@@ -175,7 +175,7 @@ Updated:</string>
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <property name="iconSize">
       <size>
@@ -389,6 +389,12 @@ Updated:</string>
           </item>
           <item>
            <widget class="QSlider" name="hsBrushSize">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="toolTip">
              <string>Brush size</string>
             </property>
@@ -422,6 +428,41 @@ Updated:</string>
             </property>
             <property name="maximum">
              <number>200</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="hsBrushOpacity">
+            <property name="toolTip">
+             <string>Brush opacity</string>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>100</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spBrushOpacity">
+            <property name="toolTip">
+             <string>Brush opacity</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="suffix">
+             <string>%</string>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>100</number>
             </property>
            </widget>
           </item>
@@ -832,12 +873,12 @@ Updated:</string>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>444</x>
-     <y>403</y>
+     <x>427</x>
+     <y>418</y>
     </hint>
     <hint type="destinationlabel">
-     <x>414</x>
-     <y>406</y>
+     <x>333</x>
+     <y>414</y>
     </hint>
    </hints>
   </connection>
@@ -848,12 +889,12 @@ Updated:</string>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>358</x>
-     <y>405</y>
+     <x>333</x>
+     <y>414</y>
     </hint>
     <hint type="destinationlabel">
-     <x>499</x>
-     <y>402</y>
+     <x>427</x>
+     <y>418</y>
     </hint>
    </hints>
   </connection>
@@ -864,8 +905,8 @@ Updated:</string>
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>768</x>
-     <y>405</y>
+     <x>896</x>
+     <y>414</y>
     </hint>
     <hint type="destinationlabel">
      <x>949</x>
@@ -886,6 +927,38 @@ Updated:</string>
     <hint type="destinationlabel">
      <x>857</x>
      <y>400</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>hsBrushOpacity</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>spBrushOpacity</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>525</x>
+     <y>397</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>595</x>
+     <y>404</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spBrushOpacity</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>hsBrushOpacity</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>614</x>
+     <y>402</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>528</x>
+     <y>404</y>
     </hint>
    </hints>
   </connection>
