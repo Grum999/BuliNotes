@@ -312,8 +312,15 @@ class WTextEdit(QWidget):
         ]
 
 
+        self.__undoAvailable=False
+        self.__redoAvailable=False
+
         self.__initTextEdit()
         self.__initToolBar()
+
+        self.__textEdit.undoAvailable.connect(self.__undoAvailableChanged)
+        self.__textEdit.redoAvailable.connect(self.__redoAvailableChanged)
+        self.__textEdit.selectionChanged.connect(self.__selectionChanged)
 
         layout = QVBoxLayout()
         layout.setSpacing(6)
@@ -409,6 +416,7 @@ class WTextEdit(QWidget):
             layout.addWidget(qItem)
 
         self.__updateToolbarBtnVisibility()
+        self.__selectionChanged()
         self.__toolBar.setLayout(layout)
 
 
@@ -423,6 +431,27 @@ class WTextEdit(QWidget):
         """Block (True) or Unblock(False) signals for formatting widgets"""
         for widget in self.__formattingWidgets:
             widget.blockSignals(blocked)
+
+
+    def __undoAvailableChanged(self, value):
+        """State for undo has been changed"""
+        self.__undoAvailable=value
+        self.__toolBarItems['undo'].setEnabled(self.__undoAvailable)
+
+
+    def __redoAvailableChanged(self, value):
+        """State for redo has been changed"""
+        self.__redoAvailable=value
+        self.__toolBarItems['redo'].setEnabled(self.__redoAvailable)
+
+
+    def __selectionChanged(self):
+        """Selection changed"""
+        textCursor=self.__textEdit.textCursor()
+        haveSelection=(textCursor.selectionStart()!=textCursor.selectionEnd())
+        self.__toolBarItems['copy'].setEnabled(haveSelection)
+        self.__toolBarItems['cut'].setEnabled(haveSelection)
+        self.__toolBarItems['paste'].setEnabled(self.__textEdit.canPaste())
 
 
     def __processFragment(self, fragment, cStart, cEnd):
@@ -622,6 +651,9 @@ class WTextEdit(QWidget):
         self.__toolBarItems['textAlignCenter'].setChecked(self.__textEdit.alignment() == Qt.AlignCenter)
         self.__toolBarItems['textAlignRight'].setChecked(self.__textEdit.alignment() == Qt.AlignRight)
         self.__toolBarItems['textAlignJustify'].setChecked(self.__textEdit.alignment() == Qt.AlignJustify)
+
+        self.__toolBarItems['undo'].setEnabled(self.__undoAvailable)
+        self.__toolBarItems['redo'].setEnabled(self.__redoAvailable)
 
         self.__blockSignals(False)
 
