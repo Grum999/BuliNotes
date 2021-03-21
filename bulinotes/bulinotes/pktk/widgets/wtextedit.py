@@ -26,10 +26,12 @@
 import PyQt5.uic
 
 import os
+import re
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
-        pyqtSignal as Signal
+        pyqtSignal as Signal,
+        pyqtSlot
     )
 from PyQt5.QtWidgets import (
         QApplication,
@@ -38,7 +40,10 @@ from PyQt5.QtWidgets import (
         QVBoxLayout,
         QWidget
     )
-from .wcolorbutton import WColorButton
+from .wcolorbutton import (
+                        WColorButton,
+                        QEColor
+                    )
 
 
 class WTextEditDialog(QDialog):
@@ -79,11 +84,14 @@ class WTextEditDialog(QDialog):
         self.__editor.setHtml(text)
 
     @staticmethod
-    def edit(title, text, textColor=None, textBackgroundColor=None):
+    def edit(title, text, textColor=None, textBackgroundColor=None, toolbarBtns=None):
         """Open a dialog box to edit text"""
         dlgBox = WTextEditDialog(None)
         dlgBox.setHtml(text)
         dlgBox.setWindowTitle(title)
+
+        if isinstance(toolbarBtns, int):
+            dlgBox.__editor.setToolbarButtons(toolbarBtns)
 
         if not textColor is None:
             dlgBox.__editor.setTextColor(textColor)
@@ -99,20 +107,210 @@ class WTextEditDialog(QDialog):
             return None
 
 
+class WTextEditBtBarOption:
+    UNDOREDO =             0b0000000000000001
+    COPYPASTE =            0b0000000000000010
+    FONT =                 0b0000000000000100
+    STYLE_BOLD =           0b0000000000001000
+    STYLE_ITALIC =         0b0000000000010000
+    STYLE_UNDERLINE =      0b0000000000100000
+    STYLE_STRIKETHROUGH =  0b0000000001000000
+    STYLE_COLOR_FG =       0b0000000010000000
+    STYLE_COLOR_BG =       0b0000000100000000
+    ALIGNMENT =            0b0000001000000000
+
+    MODE_SET =             0x01
+    MODE_ADD =             0x02
+    MODE_REMOVE =          0x03
+
+
 class WTextEdit(QWidget):
     """A small text editor widget with a basic formatting toolbar"""
 
+    DEFAULT_TOOLBAR=(WTextEditBtBarOption.UNDOREDO|
+                         WTextEditBtBarOption.COPYPASTE|
+                         WTextEditBtBarOption.FONT|
+                         WTextEditBtBarOption.STYLE_BOLD|
+                         WTextEditBtBarOption.STYLE_ITALIC|
+                         WTextEditBtBarOption.STYLE_UNDERLINE|
+                         WTextEditBtBarOption.STYLE_COLOR_FG|
+                         WTextEditBtBarOption.ALIGNMENT)
+
+
     def __init__(self, parent=None):
         super(WTextEdit, self).__init__(parent)
+
 
         self.__toolBarItems = {}
         self.__textEdit = QTextEdit()
         self.__toolBar = QWidget()
 
+        # default button bar
+        self.__toolbarBtn = WTextEdit.DEFAULT_TOOLBAR
+
         self.__formattingWidgets=[]
 
         self.__fgColor = None
         self.__bgColor = None
+
+        # define toolbar items
+        self.__itemsDef = [
+            {'type':            'button',
+             'id':              'undo',
+             'tooltip':         i18n('Undo last action'),
+             'icon':            QIcon.fromTheme('edit-undo'),
+             'action':          self.__textEdit.undo,
+             'visibility':      WTextEditBtBarOption.UNDOREDO,
+             'checkable':       False
+            },
+            {'type':            'button',
+             'id':              'redo',
+             'tooltip':         i18n('Redo last action'),
+             'icon':            QIcon.fromTheme('edit-redo'),
+             'action':          self.__textEdit.redo,
+             'visibility':      WTextEditBtBarOption.UNDOREDO,
+             'checkable':       False
+            },
+            {'type':            'separator'},
+            {'type':            'button',
+             'id':              'copy',
+             'tooltip':         i18n('Copy selection to clipboard'),
+             'icon':            QIcon.fromTheme('edit-copy'),
+             'action':          self.__textEdit.copy,
+             'visibility':      WTextEditBtBarOption.COPYPASTE,
+             'checkable':       False
+            },
+            {'type':            'button',
+             'id':              'cut',
+             'tooltip':         i18n('Cut selection to clipboard'),
+             'icon':            QIcon.fromTheme('edit-cut'),
+             'action':          self.__textEdit.cut,
+             'visibility':      WTextEditBtBarOption.COPYPASTE,
+             'checkable':       False
+            },
+            {'type':            'button',
+             'id':              'paste',
+             'tooltip':         i18n('Paste from clipboard'),
+             'icon':            QIcon.fromTheme('edit-paste'),
+             'action':          self.__textEdit.paste,
+             'visibility':      WTextEditBtBarOption.COPYPASTE,
+             'checkable':       False
+            },
+            {'type':            'separator'},
+            {'type':            'fontComboBox',
+             'id':              'fontName',
+             'tooltip':         i18n('Applied font'),
+             'action':          self.__updateSelectedTextFontFamily,
+             'visibility':      WTextEditBtBarOption.FONT,
+             'isFormatting':    True
+            },
+            {'type':            'comboBox',
+             'id':              'fontSize',
+             'tooltip':         i18n('Applied font size'),
+             'list':            [str(value) for value in [6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 36, 48, 64, 72, 96, 144]],
+             'validator':       QDoubleValidator(0.25, 512, 2),
+             'editable':        True,
+             'action':          self.__updateSelectedTextFontSize,
+             'visibility':      WTextEditBtBarOption.FONT,
+             'isFormatting':    True
+            },
+            {'type':            'button',
+             'id':              'fontBold',
+             'tooltip':         i18n('Set current font style <b>Bold</b>'),
+             'icon':            QIcon.fromTheme('format-text-bold'),
+             'action':          (lambda value: self.__textEdit.setFontWeight(QFont.Bold if value else QFont.Normal)),
+             'visibility':      WTextEditBtBarOption.STYLE_BOLD,
+             'checkable':       True,
+             'isFormatting':    True
+            },
+            {'type':            'button',
+             'id':              'fontItalic',
+             'tooltip':         i18n('Set current font style <i>Italic</i>'),
+             'icon':            QIcon.fromTheme('format-text-italic'),
+             'action':          self.__textEdit.setFontItalic,
+             'visibility':      WTextEditBtBarOption.STYLE_ITALIC,
+             'checkable':       True,
+             'isFormatting':    True
+            },
+            {'type':            'button',
+             'id':              'fontUnderline',
+             'tooltip':         i18n('Set current font style <u>Underline</u>'),
+             'icon':            QIcon.fromTheme('format-text-underline'),
+             'action':          self.__textEdit.setFontUnderline,
+             'visibility':      WTextEditBtBarOption.STYLE_UNDERLINE,
+             'checkable':       True,
+             'isFormatting':    True
+            },
+            {'type':            'button',
+             'id':              'fontStrikethrough',
+             'tooltip':         i18n('Set current font style <s>Strikethrough</s>'),
+             'icon':            QIcon.fromTheme('format-text-strikethrough'),
+             'action':          self.__setFontStrikethrough,
+             'visibility':      WTextEditBtBarOption.STYLE_STRIKETHROUGH,
+             'checkable':       True,
+             'isFormatting':    True
+            },
+            {'type':            'cbutton',
+             'id':              'fontColor',
+             'tooltip':         i18n('Set current font color'),
+             'icon':            QIcon(':/images/format_text_fgcolor'),
+             'action':          self.__updateSelectedTextFontColor,
+             'visibility':      WTextEditBtBarOption.STYLE_COLOR_FG,
+             'checkable':       False,
+             'isFormatting':    True
+            },
+            {'type':            'cbutton',
+             'id':              'bgColor',
+             'tooltip':         i18n('Set current background color'),
+             'icon':            QIcon(':/images/format_text_bgcolor'),
+             'action':          self.__updateSelectedTextBackgroundColor,
+             'visibility':      WTextEditBtBarOption.STYLE_COLOR_BG,
+             'checkable':       False,
+             'isFormatting':    True
+            },
+            {'type':            'separator'},
+            {'type':            'button',
+             'id':              'textAlignLeft',
+             'tooltip':         i18n('Set Left text alignment'),
+             'icon':            QIcon.fromTheme('format-justify-left'),
+             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignLeft)),
+             'group':           'text-align',
+             'visibility':      WTextEditBtBarOption.ALIGNMENT,
+             'checkable':       True,
+             'isFormatting':    True
+            },
+            {'type':            'button',
+             'id':              'textAlignCenter',
+             'tooltip':         i18n('Set Centered text alignment'),
+             'icon':            QIcon.fromTheme('format-justify-center'),
+             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignCenter)),
+             'group':           'text-align',
+             'visibility':      WTextEditBtBarOption.ALIGNMENT,
+             'checkable':       True,
+             'isFormatting':    True
+            },
+            {'type':            'button',
+             'id':              'textAlignRight',
+             'tooltip':         i18n('Set Right text alignment'),
+             'icon':            QIcon.fromTheme('format-justify-right'),
+             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignRight)),
+             'group':           'text-align',
+             'visibility':      WTextEditBtBarOption.ALIGNMENT,
+             'checkable':       True,
+             'isFormatting':    True
+            },
+            {'type':            'button',
+             'id':              'textAlignJustify',
+             'tooltip':         i18n('Set Justified text alignment'),
+             'icon':            QIcon.fromTheme('format-justify-fill'),
+             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignJustify)),
+             'group':           'text-align',
+             'visibility':      WTextEditBtBarOption.ALIGNMENT,
+             'checkable':       True,
+             'isFormatting':    True
+            }
+        ]
+
 
         self.__initTextEdit()
         self.__initToolBar()
@@ -139,140 +337,16 @@ class WTextEdit(QWidget):
     def __initToolBar(self):
         """Initialise toolbar widget
 
-        [Copy] [Cut] [paste] | [Font name] [Font size] [Bold] [Italic] [Underline] [Color] | [Left alignment] [Center alignment] [Right alignment] [Justfied alignment]
+        [Copy] [Cut] [paste] | [Font name] [Font size] [Bold] [Italic] [Underline] [Strikethrough] [Fg Color] [Bg Color] | [Left alignment] [Center alignment] [Right alignment] [Justfied alignment]
 
         """
         layout = QHBoxLayout()
-        layout.setSpacing(6)
+        layout.setSpacing(2)
         layout.setContentsMargins(QMargins(0,0,0,0))
-
-        items = [
-            {'type':            'button',
-             'id':              'undo',
-             'tooltip':         i18n('Undo last action'),
-             'icon':            QIcon.fromTheme('edit-undo'),
-             'action':          self.__textEdit.undo,
-             'checkable':       False
-            },
-            {'type':            'button',
-             'id':              'redo',
-             'tooltip':         i18n('Redo last action'),
-             'icon':            QIcon.fromTheme('edit-redo'),
-             'action':          self.__textEdit.redo,
-             'checkable':       False
-            },
-            {'type':            'separator'},
-            {'type':            'button',
-             'id':              'copy',
-             'tooltip':         i18n('Copy selection to clipboard'),
-             'icon':            QIcon.fromTheme('edit-copy'),
-             'action':          self.__textEdit.copy,
-             'checkable':       False
-            },
-            {'type':            'button',
-             'id':              'cut',
-             'tooltip':         i18n('Cut selection to clipboard'),
-             'icon':            QIcon.fromTheme('edit-cut'),
-             'action':          self.__textEdit.cut,
-             'checkable':       False
-            },
-            {'type':            'button',
-             'id':              'paste',
-             'tooltip':         i18n('Paste from clipboard'),
-             'icon':            QIcon.fromTheme('edit-paste'),
-             'action':          self.__textEdit.paste,
-             'checkable':       False
-            },
-            {'type':            'separator'},
-            {'type':            'fontComboBox',
-             'id':              'fontName',
-             'tooltip':         i18n('Applied font'),
-             'action':          self.__updateSelectedTextFontFamily,
-             'isFormatting':    True
-            },
-            {'type':            'comboBox',
-             'id':              'fontSize',
-             'tooltip':         i18n('Applied font size'),
-             'list':            [str(value) for value in [6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 36, 48, 64, 72, 96, 144]],
-             'validator':       QDoubleValidator(0.25, 512, 2),
-             'editable':        True,
-             'action':          self.__updateSelectedTextFontSize,
-             'isFormatting':    True
-            },
-            {'type':            'button',
-             'id':              'fontBold',
-             'tooltip':         i18n('Set current font style <b>Bold</b>'),
-             'icon':            QIcon.fromTheme('format-text-bold'),
-             'action':          (lambda value: self.__textEdit.setFontWeight(QFont.Bold if value else QFont.Normal)),
-             'checkable':       True,
-             'isFormatting':    True
-            },
-            {'type':            'button',
-             'id':              'fontItalic',
-             'tooltip':         i18n('Set current font style <i>Italic</i>'),
-             'icon':            QIcon.fromTheme('format-text-italic'),
-             'action':          self.__textEdit.setFontItalic,
-             'checkable':       True,
-             'isFormatting':    True
-            },
-            {'type':            'button',
-             'id':              'fontUnderline',
-             'tooltip':         i18n('Set current font style <u>Underline</u>'),
-             'icon':            QIcon.fromTheme('format-text-underline'),
-             'action':          self.__textEdit.setFontUnderline,
-             'checkable':       True,
-             'isFormatting':    True
-            },
-            {'type':            'cbutton',
-             'id':              'fontColor',
-             'tooltip':         i18n('Set current font color'),
-             'icon':            QIcon(':/images/format_text_color'),
-             'action':          self.__updateSelectedTextFontColor,
-             'checkable':       False,
-             'isFormatting':    True
-            },
-            {'type':            'separator'},
-            {'type':            'button',
-             'id':              'textAlignLeft',
-             'tooltip':         i18n('Set Left text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-left'),
-             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignLeft)),
-             'group':           'text-align',
-             'checkable':       True,
-             'isFormatting':    True
-            },
-            {'type':            'button',
-             'id':              'textAlignCenter',
-             'tooltip':         i18n('Set Centered text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-center'),
-             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignCenter)),
-             'group':           'text-align',
-             'checkable':       True,
-             'isFormatting':    True
-            },
-            {'type':            'button',
-             'id':              'textAlignRight',
-             'tooltip':         i18n('Set Right text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-right'),
-             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignRight)),
-             'group':           'text-align',
-             'checkable':       True,
-             'isFormatting':    True
-            },
-            {'type':            'button',
-             'id':              'textAlignJustify',
-             'tooltip':         i18n('Set Justified text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-fill'),
-             'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignJustify)),
-             'group':           'text-align',
-             'checkable':       True,
-             'isFormatting':    True
-            }
-        ]
 
         groups = {}
 
-        for item in items:
+        for item in self.__itemsDef:
             if item['type'] in ('button','cbutton'):
                 policy = QSizePolicy()
                 policy.setHorizontalPolicy(QSizePolicy.Maximum)
@@ -280,20 +354,20 @@ class WTextEdit(QWidget):
                 if item['type'] == 'cbutton':
                     qItem = WColorButton(self.__toolBar)
 
-                    qItem.setIcon(item['icon'])
-                    qItem.setAutoRaise(True)
                     qItem.colorChanged.connect(item['action'])
+                    qItem.setAlphaChannel(False)
+                    qItem.setNoneColor(True)
                 else:
                     qItem = QToolButton(self.__toolBar)
 
-                    qItem.setIcon(item['icon'])
-                    qItem.setCheckable(item['checkable'])
-                    qItem.setAutoRaise(True)
                     if item['checkable']:
                         qItem.toggled.connect(item['action'])
                     else:
                         qItem.clicked.connect(item['action'])
 
+                qItem.setIcon(item['icon'])
+                qItem.setAutoRaise(True)
+                qItem.setCheckable(item['checkable'])
                 qItem.setSizePolicy(policy)
 
                 if 'group' in item:
@@ -334,7 +408,15 @@ class WTextEdit(QWidget):
                 self.__toolBarItems[item['id']]=qItem
             layout.addWidget(qItem)
 
+        self.__updateToolbarBtnVisibility()
         self.__toolBar.setLayout(layout)
+
+
+    def __updateToolbarBtnVisibility(self):
+        """Update buttons visibility according to current configuration"""
+        for item in self.__itemsDef:
+            if 'visibility' in item:
+                self.__toolBarItems[item['id']].setVisible((self.__toolbarBtn&item['visibility'])==item['visibility'])
 
 
     def __blockSignals(self, blocked):
@@ -343,9 +425,158 @@ class WTextEdit(QWidget):
             widget.blockSignals(blocked)
 
 
+    def __processFragment(self, fragment, cStart, cEnd):
+        """Return if fragment have to be processed """
+        fs=fragment.position()
+        fe=fs+fragment.length()
+        return fs<=cStart and cStart < fe or fs<cEnd and cEnd < fe or fs >= cStart and fe <= cEnd
+
     def __updateSelectedTextFontColor(self, color):
-        """Open a color dialog-box and set color"""
-        self.__textEdit.setTextColor(color)
+        """Update font color
+
+        Given `color` is a QEColor object
+        """
+        if color.isNone():
+            cursor=self.__textEdit.textCursor()
+
+            # original cursor selection start/end
+            cStart=cursor.selectionStart()
+            cEnd=cursor.selectionEnd()
+
+            cursor.movePosition(QTextCursor.Start, QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, cEnd)
+            lastBlock=cursor.block()
+
+            cursor.movePosition(QTextCursor.Start, QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, cStart)
+            currentBlock=cursor.block()
+
+
+            cursor.beginEditBlock()
+            while currentBlock.isValid():
+
+                # iterate all fragments
+                blockIterator = QTextBlock(currentBlock).begin()
+                while not blockIterator.atEnd():
+                    fragment = blockIterator.fragment()
+                    if fragment.isValid():
+                        if self.__processFragment(fragment, cStart, cEnd):
+                            # process fragment only if impacted by selection
+
+                            # get current format
+                            fmt=fragment.charFormat()
+                            # clear color
+                            fmt.clearForeground()
+
+                            # apply selection matching to fragment on original block
+                            startPosition=max(fragment.position(), cStart)
+                            endPosition=min(fragment.position() + fragment.length(), cEnd)
+
+                            cursor.clearSelection()
+                            cursor.movePosition(QTextCursor.Start, QTextCursor.MoveAnchor)
+                            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, startPosition)
+                            cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, endPosition - startPosition)
+
+                            # and apply format
+                            cursor.setCharFormat(fmt)
+
+                            if cursor.selectionEnd()>=cEnd:
+                                # All selection processed, no need to continue
+                                cursor.endEditBlock()
+                                return
+                        elif fragment.position()+fragment.length()>=cEnd:
+                            # all processed, , no need to continue
+                            # (should not occurs?)
+                            cursor.endEditBlock()
+                            return
+
+                    blockIterator+=1
+
+                if currentBlock==lastBlock:
+                    # was last block...
+                    # (should not occurs)
+                    cursor.endEditBlock()
+                    return
+                currentBlock=currentBlock.next()
+
+            cursor.endEditBlock()
+        else:
+            # else just apply color
+            self.__textEdit.setTextColor(color)
+
+
+    def __updateSelectedTextBackgroundColor(self, color):
+        """Open a color dialog-box and set editor's background color"""
+        """Update font color
+
+        Given `color` is a QEColor object
+        """
+        if color.isNone():
+            cursor=self.__textEdit.textCursor()
+
+            # original cursor selection start/end
+            cStart=cursor.selectionStart()
+            cEnd=cursor.selectionEnd()
+
+            cursor.movePosition(QTextCursor.Start, QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, cEnd)
+            lastBlock=cursor.block()
+
+            cursor.movePosition(QTextCursor.Start, QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, cStart)
+            currentBlock=cursor.block()
+
+            cursor.beginEditBlock()
+            while currentBlock.isValid():
+
+                # iterate all fragments
+                blockIterator = QTextBlock(currentBlock).begin()
+                while not blockIterator.atEnd():
+                    fragment = blockIterator.fragment()
+                    if fragment.isValid():
+                        if self.__processFragment(fragment, cStart, cEnd):
+                            # process fragment only if impacted by selection
+
+                            # get current format
+                            fmt=fragment.charFormat()
+                            # clear color
+                            fmt.clearBackground()
+
+                            # apply selection matching to fragment on original block
+                            startPosition=max(fragment.position(), cStart)
+                            endPosition=min(fragment.position() + fragment.length(), cEnd)
+
+                            cursor.clearSelection()
+                            cursor.movePosition(QTextCursor.Start, QTextCursor.MoveAnchor)
+                            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, startPosition)
+                            cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, endPosition - startPosition)
+
+                            # and apply format
+                            cursor.setCharFormat(fmt)
+
+                            if cursor.selectionEnd()>=cEnd:
+                                # All selection processed, no need to continue
+                                cursor.endEditBlock()
+                                return
+                        elif fragment.position()+fragment.length()>=cEnd:
+                            # all processed, , no need to continue
+                            # (should not occurs?)
+                            cursor.endEditBlock()
+                            return
+
+                    blockIterator+=1
+
+                if currentBlock==lastBlock:
+                    # was last block...
+                    # (should not occurs)
+                    cursor.endEditBlock()
+                    return
+                currentBlock=currentBlock.next()
+
+            cursor.endEditBlock()
+        else:
+            # else just apply color
+            self.__textEdit.setTextBackgroundColor(color)
 
 
     def __updateSelectedTextFontSize(self, value):
@@ -379,8 +610,13 @@ class WTextEdit(QWidget):
         self.__toolBarItems['fontBold'].setChecked(self.__textEdit.fontWeight() == QFont.Bold)
         self.__toolBarItems['fontItalic'].setChecked(self.__textEdit.fontItalic())
         self.__toolBarItems['fontUnderline'].setChecked(self.__textEdit.fontUnderline())
+        self.__toolBarItems['fontStrikethrough'].setChecked(self.__isFontStrikethrough())
 
         self.__toolBarItems['fontColor'].setColor(self.__textEdit.textColor())
+        self.__toolBarItems['bgColor'].setColor(self.__textEdit.textBackgroundColor())
+
+        fg=self.__textEdit.textColor()
+        bg=self.__textEdit.textBackgroundColor()
 
         self.__toolBarItems['textAlignLeft'].setChecked(self.__textEdit.alignment() == Qt.AlignLeft)
         self.__toolBarItems['textAlignCenter'].setChecked(self.__textEdit.alignment() == Qt.AlignCenter)
@@ -404,6 +640,21 @@ class WTextEdit(QWidget):
                 self.__textEdit.setTextColor(Qt.white)
 
         self.__textEdit.setStyleSheet(style)
+
+
+    def __isFontStrikethrough(self):
+        """return if text under cursor is strikethrough or not"""
+        cursor=self.__textEdit.textCursor()
+        text=cursor.charFormat()
+        return text.fontStrikeOut()
+
+
+    def __setFontStrikethrough(self):
+        """Change current selection to striketrhough"""
+        cursor=self.__textEdit.textCursor()
+        text=cursor.charFormat()
+        text.setFontStrikeOut(not text.fontStrikeOut())
+        cursor.mergeCharFormat(text)
 
 
     def toHtml(self):
@@ -446,6 +697,40 @@ class WTextEdit(QWidget):
         """Set current text background color"""
         self.__bgColor = color
         self.__updateStyleSheet()
+
+
+    def toolbarButtons(self):
+        """Return toolbar buttons visiblity"""
+        return self.__toolbarBtn
+
+
+    def setToolbarButtons(self, value, mode=None):
+        """Define buttons visible in toolbar
+
+        `value`=toolbar options combination
+        `mode`=how to apply option
+            When WTextEditBtBarOption.MODE_SET (default): apply defined buttons
+            When WTextEditBtBarOption.MODE_ADD: add given buttons
+            When WTextEditBtBarOption.MODE_REMOVE: removed given buttons
+        """
+        if not isinstance(value, int):
+            raise EInvalidType('Given `value` must be an <int>')
+
+        if mode is None:
+            mode=WTextEditBtBarOption.MODE_SET
+
+        if not mode in (WTextEditBtBarOption.MODE_SET, WTextEditBtBarOption.MODE_ADD, WTextEditBtBarOption.MODE_REMOVE):
+            raise EInvalidValue('Given `value` is not valid')
+
+        if mode==WTextEditBtBarOption.MODE_SET:
+            self.__toolbarBtn=value
+        elif mode==WTextEditBtBarOption.MODE_ADD:
+            self.__toolbarBtn|=value
+        elif mode==WTextEditBtBarOption.MODE_REMOVE:
+            self.__toolbarBtn&=(self.__toolbarBtn^value)
+
+        self.__updateToolbarBtnVisibility()
+
 
 
 class BCWSmallTextEdit(QFrame):

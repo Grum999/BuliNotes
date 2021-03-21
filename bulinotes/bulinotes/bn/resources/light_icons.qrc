@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="images">
+    <file alias="format_text_bgcolor">svg/light/32dp/format_text_bgcolor.svg</file>
+    <file alias="format_text_fgcolor">svg/light/32dp/format_text_fgcolor.svg</file>
     <file alias="noteView">svg/light/32dp/note_view.svg</file>
     <file alias="note">svg/light/32dp/note.svg</file>
     <file alias="noteEdit">svg/light/32dp/note_edit.svg</file>
