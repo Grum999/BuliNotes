@@ -175,7 +175,7 @@ Updated:</string>
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>2</number>
      </property>
      <property name="iconSize">
       <size>
@@ -861,6 +861,30 @@ Updated:</string>
    <header>bulinotes.bn.bnwbrushes</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>leTitle</tabstop>
+  <tabstop>pteDescription</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>btOk</tabstop>
+  <tabstop>btCancel</tabstop>
+  <tabstop>tbExport</tabstop>
+  <tabstop>tbClear</tabstop>
+  <tabstop>tbBrush</tabstop>
+  <tabstop>tbColor</tabstop>
+  <tabstop>spBrushSize</tabstop>
+  <tabstop>hsBrushSize</tabstop>
+  <tabstop>hsZoom</tabstop>
+  <tabstop>spZoom</tabstop>
+  <tabstop>tbBrushAdd</tabstop>
+  <tabstop>tbBrushEdit</tabstop>
+  <tabstop>tbBrushDelete</tabstop>
+  <tabstop>tvBrushes</tabstop>
+  <tabstop>tbBrushScratchpadColor</tabstop>
+  <tabstop>tbBrushScratchpadClear</tabstop>
+  <tabstop>hsBrushOpacity</tabstop>
+  <tabstop>spBrushOpacity</tabstop>
+  <tabstop>tbImport</tabstop>
+ </tabstops>
  <resources>
   <include location="dark_icons.qrc"/>
   <include location="light_icons.qrc"/>

@@ -46,15 +46,18 @@ from pktk.modules.utils import (
                         BCTimer
                     )
 from pktk.modules.edialog import EDialog
+from pktk.modules.ekrita import EKritaNode
 from pktk.modules.bytesrw import BytesRW
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 from pktk.widgets.wmenuitem import WMenuBrushesPresetSelector
 from pktk.widgets.wcolorselector import WMenuColorPicker
+from pktk.widgets.wdocnodesview import WDocNodesViewDialog
 from pktk.widgets.wtextedit import (
                                 WTextEditDialog,
                                 WTextEdit,
                                 WTextEditBtBarOption
                             )
+from pktk.widgets.wefiledialog import WEFileDialog
 
 from .bnbrush import (BNBrush, BNBrushes)
 from .bnwbrushes import BNBrushesModel
@@ -1181,6 +1184,35 @@ class BNNoteEditor(EDialog):
         self.__actionSelectColor.colorPicker().setOptionShowColorCombination(False)
 
 
+        self.__actionImportFromFile=QAction(i18n('Import from file...'), self)
+        self.__actionImportFromFile.triggered.connect(self.__actionScratchpadImportFromFile)
+        self.__actionImportFromClipboard=QAction(i18n('Import from clipboard'), self)
+        self.__actionImportFromClipboard.triggered.connect(self.__actionScratchpadImportFromClipboard)
+        self.__actionImportFromLayer=QAction(i18n('Import from layer...'), self)
+        self.__actionImportFromLayer.triggered.connect(self.__actionScratchpadImportFromLayer)
+        self.__actionImportFromDocument=QAction(i18n('Import from current document'), self)
+        self.__actionImportFromDocument.triggered.connect(self.__actionScratchpadImportFromDocument)
+
+        self.__actionExportToFile=QAction(i18n('Export to file...'), self)
+        self.__actionExportToFile.triggered.connect(self.__actionScratchpadExportToFile)
+        self.__actionExportToClipboard=QAction(i18n('Export to clipboard'), self)
+        self.__actionExportToClipboard.triggered.connect(self.__actionScratchpadExportToClipboard)
+        self.__actionExportToLayer=QAction(i18n('Export as new layer'), self)
+        self.__actionExportToLayer.triggered.connect(self.__actionScratchpadExportToLayer)
+
+        menuImport = QMenu(self.tbImport)
+        menuImport.addAction(self.__actionImportFromFile)
+        menuImport.addAction(self.__actionImportFromClipboard)
+        menuImport.addAction(self.__actionImportFromDocument)
+        menuImport.addAction(self.__actionImportFromLayer)
+        menuImport.aboutToShow.connect(self.__updateImportMenuUi)
+
+        menuExport = QMenu(self.tbExport)
+        menuExport.addAction(self.__actionExportToFile)
+        menuExport.addAction(self.__actionExportToClipboard)
+        menuExport.addAction(self.__actionExportToLayer)
+
+
         menuBrush = QMenu(self.tbBrush)
         menuBrush.addAction(self.__actionSelectDefaultBrush)
         menuBrush.addAction(self.__actionSelectCurrentBrush)
@@ -1189,10 +1221,11 @@ class BNNoteEditor(EDialog):
         menuColor = QMenu(self.tbColor)
         menuColor.addAction(self.__actionSelectColor)
 
-
         self.tbClear.clicked.connect(self.__actionScratchpadClear)
         self.tbBrush.setMenu(menuBrush)
         self.tbColor.setMenu(menuColor)
+        self.tbImport.setMenu(menuImport)
+        self.tbExport.setMenu(menuExport)
 
         self.hsBrushSize.valueChanged.connect(self.__actionScratchpadSetBrushSize)
         self.hsBrushOpacity.valueChanged.connect(self.__actionScratchpadSetBrushOpacity)
@@ -1209,6 +1242,12 @@ class BNNoteEditor(EDialog):
 
     def showEvent(self, event):
         self.tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
+        self.leTitle.setFocus()
+
+    def __updateImportMenuUi(self):
+        """Menu import is about to be displayed"""
+        clipboard=QGuiApplication.clipboard()
+        self.__actionImportFromClipboard.setEnabled(clipboard.mimeData().hasImage())
 
     def __tabChanged(self, index):
         """Current tab has been changed
@@ -1384,6 +1423,67 @@ class BNNoteEditor(EDialog):
     def __actionScratchpadSetZoom(self, value):
         """Set zoom value on scratchpad"""
         self.__activeView.canvas().setZoomLevel(value/100.0)
+
+    def __actionScratchpadImportFromFile(self):
+        """Import scratchpad content from a file"""
+        fDialog=WEFileDialog(self,
+                             i18n("Import from file"),
+                             "",
+                             i18n("All images (*.png *.jpg *.jpeg);;Portable Network Graphics (*.png);;JPEG Image (*.jpg *.jpeg)"))
+        fDialog.setFileMode(WEFileDialog.ExistingFile)
+        if fDialog.exec() == WEFileDialog.Accepted:
+            pixmap=QPixmap()
+            if pixmap.load(fDialog.file()):
+                self.__scratchpadHandWritting.loadScratchpadImage(pixmap.toImage())
+
+    def __actionScratchpadImportFromClipboard(self):
+        """Import scratchpad content from clipboard"""
+        clipboard=QGuiApplication.clipboard()
+        if clipboard.mimeData().hasImage():
+            self.__scratchpadHandWritting.loadScratchpadImage(clipboard.image())
+
+    def __actionScratchpadImportFromLayer(self):
+        """Import scratchpad content from a layer"""
+        document=Krita.instance().activeDocument()
+        nodeId=WDocNodesViewDialog.show(i18n(f"{self.__name}::Import from layer::Select layer to import"), document)
+        if nodeId:
+            node=document.nodeByUniqueID(nodeId)
+            self.__scratchpadHandWritting.loadScratchpadImage(EKritaNode.toQImage(node))
+
+    def __actionScratchpadImportFromDocument(self):
+        """Import scratchpad content from document"""
+        document=Krita.instance().activeDocument()
+        bounds=document.bounds()
+        self.__scratchpadHandWritting.loadScratchpadImage(document.projection(bounds.x(), bounds.y(), bounds.width(), bounds.height()))
+
+    def __actionScratchpadExportToFile(self):
+        """Export scratchpad content to a file"""
+        fDialog=WEFileDialog(self,
+                             i18n("Export to file"),
+                             "",
+                             i18n("Portable Network Graphics (*.png);;JPEG Image (*.jpg *jpeg)"))
+        fDialog.setFileMode(WEFileDialog.AnyFile)
+        fDialog.setAcceptMode(WEFileDialog.AcceptSave)
+        if fDialog.exec() == WEFileDialog.Accepted:
+            image=self.__scratchpadHandWritting.copyScratchpadImageData()
+            image.save(fDialog.file())
+
+    def __actionScratchpadExportToClipboard(self):
+        """Export scratchpad content to clipboard"""
+        clipboard=QGuiApplication.clipboard()
+        clipboard.setImage(self.__scratchpadHandWritting.copyScratchpadImageData())
+
+    def __actionScratchpadExportToLayer(self):
+        """Export scratchpad content as a new layer"""
+        document=Krita.instance().activeDocument()
+
+        title=self.leTitle.text()
+        if title!='':
+            title=f"{title.strip()} "
+
+        node=document.createNode(i18n(f"{title}(From Buli Notes hand written note)"), 'paintlayer')
+        EKritaNode.fromQImage(node, self.__scratchpadHandWritting.copyScratchpadImageData())
+        document.rootNode().addChildNode(node, None)
 
     def __actionBrushScratchpadSetColor(self, color):
         """Set brush testing scrathcpad color"""
