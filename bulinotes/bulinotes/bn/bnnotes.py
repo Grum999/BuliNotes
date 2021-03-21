@@ -50,7 +50,11 @@ from pktk.modules.bytesrw import BytesRW
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 from pktk.widgets.wmenuitem import WMenuBrushesPresetSelector
 from pktk.widgets.wcolorselector import WMenuColorPicker
-from pktk.widgets.wtextedit import WTextEditDialog
+from pktk.widgets.wtextedit import (
+                                WTextEditDialog,
+                                WTextEdit,
+                                WTextEditBtBarOption
+                            )
 
 from .bnbrush import (BNBrush, BNBrushes)
 from .bnwbrushes import BNBrushesModel
@@ -1073,8 +1077,8 @@ class BNNoteEditor(EDialog):
         self.leTitle.setText(self.__note.title())
         self.pteDescription.setPlainText(self.__note.description())
         self.wColorIndex.setColorIndex(self.__note.colorIndex())
+        self.wteText.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
         self.wteText.setHtml(self.__note.text())
-
 
         self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
         self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
@@ -1316,7 +1320,7 @@ class BNNoteEditor(EDialog):
 
     def __actionBrushAdd(self):
         """Add current brush definition to brushes list"""
-        result=WTextEditDialog.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "")
+        result=WTextEditDialog.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "", None, None, WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
         if not result is None:
             self.__currentUiBrush.setComments(result)
             self.__tmpBrushes.add(self.__currentUiBrush)
@@ -1326,7 +1330,7 @@ class BNNoteEditor(EDialog):
         """Edit comment for current selected brush"""
         selection=self.tvBrushes.selectedItems()
         if len(selection)==1:
-            result=WTextEditDialog.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments())
+            result=WTextEditDialog.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments(), None, None, WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
             if not result is None:
                 selection[0].setComments(result)
                 self.__updateBrushUi()
