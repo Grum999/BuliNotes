@@ -373,9 +373,31 @@ def buildIcon(icons):
         return icons
     elif isinstance(icons, list) and len(icons)>0:
         returned = QIcon()
+
+        pixmapList=[]
         for icon in icons:
-            returned.addPixmap(*icon)
+            if isinstance(icon[0], QPixmap):
+                pixmapListItem=[icon[0]]
+            elif isinstance(icon[0], str):
+                pixmapListItem=[QPixmap(icon[0])]
+
+            for index in range(1,3):
+                if index == 1:
+                    if len(icon) >= 2:
+                        pixmapListItem.append(icon[index])
+                    else:
+                        pixmapListItem.append(QIcon.Normal)
+                elif index == 2:
+                    if len(icon) >= 3:
+                        pixmapListItem.append(icon[index])
+                    else:
+                        pixmapListItem.append(QIcon.Off)
+
+            returned.addPixmap(*tuple(pixmapListItem))
         return returned
+    elif isinstance(icons, str) and (rfind:=re.match("pktk:(.*)", icons)):
+        return buildIcon([(f':/pktk/images/normal/{rfind.groups()[0]}', QIcon.Normal),
+                          (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)])
     else:
         raise EInvalidType("Given `icons` must be a list of tuples")
 

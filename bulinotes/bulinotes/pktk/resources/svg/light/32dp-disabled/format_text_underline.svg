@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="format_text_underline.svg"
+   inkscape:version="1.0.2 (e86c870, 2021-01-15)"
+   width="32"
+   height="32">
+  <metadata
+     id="metadata9">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1724"
+     inkscape:window-height="1763"
+     id="namedview7"
+     showgrid="false"
+     inkscape:zoom="22.627417"
+     inkscape:cx="16.311852"
+     inkscape:cy="22.42333"
+     inkscape:window-x="2049"
+     inkscape:window-y="79"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg5"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-page="true"
+     inkscape:document-rotation="0"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:snap-grids="false"
+     inkscape:object-nodes="true" />
+  <defs
+     id="defs3051">
+    <rect
+       x="-8.3109512"
+       y="-2.8853359"
+       width="21.977325"
+       height="23.989641"
+       id="rect837" />
+    <style
+       type="text/css"
+       id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#232629;
+      }
+      </style>
+  </defs>
+  <path
+     id="path773"
+     style="fill:#000000;fill-opacity:0.5;stroke:none;stroke-width:6"
+     d="M 8 26 L 8 28 L 24 28 L 24 26 L 8 26 z "
+     transform="scale(0.5)" />
+  <g
+     aria-label="U"
+     transform="matrix(0.66659826,0,0,0.66957127,7.9148602,1.4533578)"
+     id="text835"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:1.25;font-family:Rye;-inkscape-font-specification:Rye;letter-spacing:0px;word-spacing:0px;white-space:pre;shape-inside:url(#rect837);fill:#000000;fill-opacity:0.5;stroke:none">
+    <path
+       d="M -5.5078125,1.8613281 H -7.3730469 V 0.81640625 h 5.703125 V 1.8613281 h -1.8652344 v 7.5390625 q 0,2.7929684 0.9082032,3.8964844 0.9179687,1.103516 3.15429685,1.103516 2.23632815,0 3.14453125,-1.103516 0.9179687,-1.103516 0.9179687,-3.8964844 V 1.8613281 H 2.7246094 V 0.81640625 h 4.921875 V 1.8613281 H 5.7910156 v 7.734375 q 0,3.3300779 -1.2792969,4.7070309 -1.2792968,1.376954 -4.34570308,1.376954 -3.06640622,0 -4.37500002,-1.386719 -1.2988281,-1.386719 -1.2988281,-4.6972659 z"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;font-family:'DejaVu Serif';-inkscape-font-specification:'DejaVu Serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:0.5"
+       id="path863" />
+  </g>
+</svg>

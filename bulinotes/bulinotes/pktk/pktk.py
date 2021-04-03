@@ -38,6 +38,9 @@ class EInvalidStatus(Exception):
 class PkTk:
     __libraries = {}
 
+    PATH = os.path.dirname(__file__)
+    PATH_RESOURCES = os.path.join(os.path.dirname(__file__), 'resources')
+
     @staticmethod
     def setModuleInfo(id, version, name, description):
         """Declare informations for PkTk module"""

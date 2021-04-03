@@ -297,7 +297,7 @@ background-color: rgba(255,255,255,50);
         self.__btClose = QToolButton()
         self.__btClose.clicked.connect(self.__parent.close)
         self.__btClose.setToolTip(i18n('Close note'))
-        self.__btClose.setIcon(QIcon(':/white/close'))
+        self.__btClose.setIcon(QIcon(':/pktk/images-white/normal/close'))
         self.__btClose.setFocusPolicy(Qt.NoFocus)
         self.__btClose.setAutoRaise(True)
         self.__btClose.setStyleSheet(WToolBoxTitleBar.__TOOLBUTTON_CSS)
@@ -305,7 +305,7 @@ background-color: rgba(255,255,255,50);
         self.__btCompact = QToolButton()
         self.__btCompact.clicked.connect(self.setCompact)
         self.__btCompact.setToolTip(i18n('Compact view'))
-        self.__btCompact.setIcon(QIcon(':/white/compact_on'))
+        self.__btCompact.setIcon(QIcon(':/pktk/images-white/normal/compact_on'))
         self.__btCompact.setFocusPolicy(Qt.NoFocus)
         self.__btCompact.setAutoRaise(True)
         self.__btCompact.setCheckable(True)
@@ -314,7 +314,7 @@ background-color: rgba(255,255,255,50);
         self.__btPinned = QToolButton()
         self.__btPinned.clicked.connect(self.setPinned)
         self.__btPinned.setToolTip(i18n('Compact view'))
-        self.__btPinned.setIcon(QIcon(':/white/pinned_off'))
+        self.__btPinned.setIcon(QIcon(':/pktk/images-white/disabled/pinned'))
         self.__btPinned.setFocusPolicy(Qt.NoFocus)
         self.__btPinned.setAutoRaise(True)
         self.__btPinned.setCheckable(True)
@@ -348,12 +348,12 @@ background-color: rgba(255,255,255,50);
         if value:
             self.__factor=0.65
             self.__btCompact.setChecked(True)
-            self.__btCompact.setIcon(QIcon(':/white/compact_off'))
+            self.__btCompact.setIcon(QIcon(':/pktk/images-white/normal/compact_off'))
             self.__btCompact.setToolTip(i18n('Normal view'))
         else:
             self.__factor=0.95
             self.__btCompact.setChecked(False)
-            self.__btCompact.setIcon(QIcon(':/white/compact_on'))
+            self.__btCompact.setIcon(QIcon(':/pktk/images-white/normal/compact_on'))
             self.__btCompact.setToolTip(i18n('Compact view'))
 
         if self.__originalFontSizePt>-1:
@@ -386,11 +386,11 @@ background-color: rgba(255,255,255,50);
 
         if value:
             self.__btPinned.setChecked(True)
-            self.__btPinned.setIcon(QIcon(':/white/pinned_on'))
+            self.__btPinned.setIcon(QIcon(':/pktk/images-white/normal/pinned'))
             self.__btPinned.setToolTip(i18n('Unpin'))
         else:
             self.__btPinned.setChecked(False)
-            self.__btPinned.setIcon(QIcon(':/white/pinned_off'))
+            self.__btPinned.setIcon(QIcon(':/pktk/images-white/disabled/pinned'))
             self.__btPinned.setToolTip(i18n('Pin'))
 
         if not self.__inInit:
