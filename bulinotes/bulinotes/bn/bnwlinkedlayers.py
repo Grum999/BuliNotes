@@ -27,7 +27,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (checkerBoardBrush, stripHtml)
+from pktk.modules.utils import (checkerBoardBrush, warningAreaBrush, stripHtml)
 from pktk.modules.iconsizes import IconSizes
 from pktk.modules.edialog import EDialog
 from pktk.widgets.wtextedit import (WTextEdit, WTextEditBtBarOption)
@@ -43,16 +43,29 @@ class BNLinkedLayersModel(QAbstractTableModel):
     ROLE_ID = Qt.UserRole + 1
     ROLE_LINKEDLAYER = Qt.UserRole + 2
     ROLE_CSIZE = Qt.UserRole + 3
+    ROLE_FOUND = Qt.UserRole + 4
 
-    HEADERS = ['', 'Linked layer', 'Comment']
+    HEADERS = ['', '', 'Linked layer', 'Comment', '', '', '', '', '', '']
     COLNUM_THUMB = 0
-    COLNUM_NAME = 1
-    COLNUM_COMMENT = 2
-    COLNUM_LAST = 2
+    COLNUM_ICON_TYPE = 1
+    COLNUM_NAME = 2
+    COLNUM_COMMENT = 3
+
+    COLNUM_ICON_VISIBLE = 4
+    COLNUM_ICON_ANIMATED = 5
+    COLNUM_ICON_PINNED = 6
+    COLNUM_ICON_LOCK = 7
+    COLNUM_ICON_INHERITALPHA = 8
+    COLNUM_ICON_ALPHALOCK = 9
+
+    COLNUM_LAST = 9
+
+    ICON_SIZE = 16
 
     def __init__(self, linkedLayers, parent=None):
         """Initialise list"""
         super(BNLinkedLayersModel, self).__init__(parent)
+        self.__document=None
         self.__linkedLayers=linkedLayers
         self.__linkedLayers.updated.connect(self.__dataUpdated)
         self.__linkedLayers.updateReset.connect(self.__dataUpdateReset)
@@ -107,7 +120,112 @@ class BNLinkedLayersModel(QAbstractTableModel):
         column = index.column()
         row=index.row()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.DecorationRole:
+            # can return icons only if document is provided to model
+            document=Krita.instance().activeDocument()
+            if not document:
+                return None
+
+            item=document.nodeByUniqueID(self.__items[row])
+            if item is None:
+                if index.column()==BNLinkedLayersModel.COLNUM_ICON_TYPE:
+                    return QIcon(':/pktk/images/normal/warning')
+                else:
+                    return None
+
+            if index.column()==BNLinkedLayersModel.COLNUM_ICON_VISIBLE:
+                if item.visible():
+                    return QIcon(':/pktk/images/normal/visibility_on')
+                else:
+                    return QIcon(':/pktk/images/disabled/visibility_off')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_TYPE:
+                return item.icon()
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_PINNED:
+                if item.isPinnedToTimeline():
+                    return QIcon(':/pktk/images/normal/pinned')
+                else:
+                    return QIcon(':/pktk/images/disabled/pinned')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_ANIMATED:
+                # ideally:
+                #   - no animation: return None
+                #   - animated: return Krita.instance().icon('onionOff', QIcon.Disabled)
+                #   - animated + onion skin ON: return Krita.instance().icon('onionOn')
+                # But currently can't determinate if onion skin is active or not
+                if item.animated():
+                    return QIcon(':/pktk/images/normal/animation')
+                else:
+                    return QIcon(':/pktk/images/disabled/animation')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_LOCK:
+                if item.locked():
+                    return Krita.instance().icon('layer-locked')
+                else:
+                    return Krita.instance().icon('layer-unlocked')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA:
+                if item.inheritAlpha():
+                    return Krita.instance().icon('transparency-disabled')
+                else:
+                    return Krita.instance().icon('transparency-enabled')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK:
+                if item.type()=='grouplayer':
+                    if item.passThroughMode():
+                        return Krita.instance().icon('passthrough-enabled')
+                    else:
+                        return Krita.instance().icon('passthrough-disabled')
+                elif item.alphaLocked():
+                    return Krita.instance().icon('transparency-locked')
+                else:
+                    return Krita.instance().icon('transparency-unlocked')
+        elif role == Qt.ToolTipRole:
+            # can return icons only if document is provided to model
+            document=Krita.instance().activeDocument()
+            if not document:
+                return None
+
+            item=document.nodeByUniqueID(self.__items[row])
+            if item is None:
+                return i18n('Layer not found in document!')
+
+            if index.column()==BNLinkedLayersModel.COLNUM_ICON_VISIBLE:
+                if item.visible():
+                    return i18n('Layer is visible')
+                else:
+                    return i18n('Layer is not visible')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_PINNED:
+                if item.isPinnedToTimeline():
+                    return i18n('Layer is pinned to timeline')
+                else:
+                    return i18n('Layer is not pinned to timeline')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_ANIMATED:
+                # ideally:
+                #   - no animation: return None
+                #   - animated: return Krita.instance().icon('onionOff', QIcon.Disabled)
+                #   - animated + onion skin ON: return Krita.instance().icon('onionOn')
+                # But currently can't determinate if onion skin is active or not
+                if item.animated():
+                    return i18n('Layer is animated')
+                else:
+                    return i18n('Layer is not animated')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_LOCK:
+                if item.locked():
+                    return i18n('Layer is locked')
+                else:
+                    return i18n('Layer is not locked')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA:
+                if item.inheritAlpha():
+                    return i18n('Layer inherit alpha channel')
+                else:
+                    return i18n('Layer doesn''t inherit alpha channel')
+            elif index.column()==BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK:
+                if item.type()=='grouplayer':
+                    if item.passThroughMode():
+                        return i18n('Passthrough mode is enabled')
+                    else:
+                        return i18n('Passthrough mode is disabled')
+                elif item.alphaLocked():
+                    return i18n('Alpha channel is locked')
+                else:
+                    return i18n('Alpha channel is unlocked')
+        elif role == Qt.DisplayRole:
             id=self.__items[row]
             item = self.__linkedLayers.get(id)
 
@@ -121,6 +239,15 @@ class BNLinkedLayersModel(QAbstractTableModel):
         elif role == BNLinkedLayersModel.ROLE_LINKEDLAYER:
             id=self.__items[row]
             return self.__linkedLayers.get(id)
+        elif role == BNLinkedLayersModel.ROLE_FOUND:
+            document=Krita.instance().activeDocument()
+            if not document:
+                return False
+
+            item=document.nodeByUniqueID(self.__items[row])
+            return (not item is None)
+
+
         #elif role == Qt.SizeHintRole:
         #    if column==BNLinkedLayersModel.COLNUM_THUMB:
         #        return
@@ -130,7 +257,6 @@ class BNLinkedLayersModel(QAbstractTableModel):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal and section>0:
             return BNLinkedLayersModel.HEADERS[section]
         return None
-
 
     def linkedLayers(self):
         """Expose BNLinkedLayers object"""
@@ -154,14 +280,17 @@ class BNWLinkedLayers(QTreeView):
         self.__isCompact=False
         self.__proxyModel = None
 
+        self.setIconSize(QSize(BNLinkedLayersModel.ICON_SIZE,BNLinkedLayersModel.ICON_SIZE))
+
+        self.__delegate=BNLinkedLayersModelDelegate(self)
+        self.setItemDelegate(self.__delegate)
+
         self.__iconSize = IconSizes([24, 32, 64, 96, 128, 192])
         self.setIconSizeIndex(4)
 
         self.__contextMenu=QMenu()
         self.__initMenu()
 
-        self.__delegate=BNLinkedLayersModelDelegate(self)
-        self.setItemDelegate(self.__delegate)
 
         header=self.header()
         header.sectionResized.connect(self.__sectionResized)
@@ -214,11 +343,9 @@ class BNWLinkedLayers(QTreeView):
         """Set icon size from index value"""
         if index is None or self.__iconSize.setIndex(index):
             # new size defined
-            self.setIconSize(self.__iconSize.value(True))
-            self.resizeColumns()
-
             header = self.header()
             header.resizeSection(BNLinkedLayersModel.COLNUM_THUMB, self.__iconSize.value())
+            self.__delegate.setTSize(self.__iconSize.value())
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
 
     def setLinkedLayers(self, linkedLayers):
@@ -233,10 +360,26 @@ class BNWLinkedLayers(QTreeView):
 
         # set colums size rules
         header = self.header()
+        header.setMinimumSectionSize(BNLinkedLayersModel.ICON_SIZE)
         header.setStretchLastSection(False)
         header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_THUMB, QHeaderView.Fixed)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_ICON_TYPE, QHeaderView.Fixed)
         header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_NAME, QHeaderView.Fixed)
         header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_COMMENT, QHeaderView.Stretch)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_ICON_VISIBLE, QHeaderView.Fixed)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_ICON_ANIMATED, QHeaderView.Fixed)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_ICON_PINNED, QHeaderView.Fixed)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_ICON_LOCK, QHeaderView.Fixed)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA, QHeaderView.Fixed)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK, QHeaderView.Fixed)
+
+        header.resizeSection(BNLinkedLayersModel.COLNUM_ICON_TYPE, BNLinkedLayersModel.ICON_SIZE+2)
+        header.resizeSection(BNLinkedLayersModel.COLNUM_ICON_VISIBLE, BNLinkedLayersModel.ICON_SIZE+2)
+        header.resizeSection(BNLinkedLayersModel.COLNUM_ICON_PINNED, BNLinkedLayersModel.ICON_SIZE+2)
+        header.resizeSection(BNLinkedLayersModel.COLNUM_ICON_ANIMATED, BNLinkedLayersModel.ICON_SIZE+2)
+        header.resizeSection(BNLinkedLayersModel.COLNUM_ICON_LOCK, BNLinkedLayersModel.ICON_SIZE+2)
+        header.resizeSection(BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA, BNLinkedLayersModel.ICON_SIZE+2)
+        header.resizeSection(BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK, BNLinkedLayersModel.ICON_SIZE+2)
 
         self.resizeColumns()
         self.__model.updateWidth.connect(self.resizeColumns)
@@ -285,6 +428,7 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
         """Constructor, nothingspecial"""
         super(BNLinkedLayersModelDelegate, self).__init__(parent)
         self.__csize=0
+        self.__tsize=QSize()
         self.__isCompact=False
 
     def __applyCompactFactor(self, subResult):
@@ -314,6 +458,10 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
         """Force size for comments column"""
         self.__csize=value
 
+    def setTSize(self, value):
+        """Force size for comments column"""
+        self.__tsize=QSize(value, value)
+
     def setCompact(self, value):
         """Set compact mode"""
         if isinstance(value, bool) and value!=self.__isCompact:
@@ -321,12 +469,18 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         """Paint list item"""
+        layerFound=index.data(BNLinkedLayersModel.ROLE_FOUND)
+        if not layerFound:
+            if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
+                option.state&=~QStyle.State_Selected
+            painter.fillRect(option.rect, warningAreaBrush())
+
         if index.column() == BNLinkedLayersModel.COLNUM_NAME:
             # render linkedLayer information
             self.initStyleOption(option, index)
 
             linkedLayer=index.data(BNLinkedLayersModel.ROLE_LINKEDLAYER)
-            rectTxt = QRect(option.rect.left() + 1, option.rect.top()+4, option.rect.width()-4, option.rect.height()-1)
+            rectTxt = QRect(option.rect.left() + 1, option.rect.top(), option.rect.width()-4, option.rect.height()-1)
 
             painter.save()
 
@@ -384,22 +538,25 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
 
-            topLeft=QPoint(option.rect.left()+(option.rect.width() - pixmap.width())//2, option.rect.top()+(option.rect.height() - pixmap.height())//2)
+            #topLeft=QPoint(option.rect.left()+(option.rect.width() - pixmap.width())//2, option.rect.top()+(option.rect.height() - pixmap.height())//2)
+            topLeft=QPoint(option.rect.left()+(option.rect.width() - pixmap.width())//2, option.rect.top())
 
             painter.fillRect(QRect(topLeft, pixmap.size()), checkerBoardBrush())
             painter.drawPixmap(topLeft, pixmap)
             painter.restore()
             return
+        else:
+            option.decorationAlignment=Qt.AlignLeft|Qt.AlignTop
+
 
         QStyledItemDelegate.paint(self, painter, option, index)
-
 
     def sizeHint(self, option, index):
         """Calculate size for items"""
         size = QStyledItemDelegate.sizeHint(self, option, index)
 
         if index.column() == BNLinkedLayersModel.COLNUM_THUMB:
-            return option.decorationSize
+            return self.__tsize
         elif index.column() == BNLinkedLayersModel.COLNUM_NAME:
             linkedLayer=index.data(BNLinkedLayersModel.ROLE_LINKEDLAYER)
             textDocument=self.__getTextDocument(linkedLayer)

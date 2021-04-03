@@ -150,7 +150,7 @@ class DocNodesModel(QAbstractItemModel):
     ROLE_NODE_COLORINDEX = Qt.UserRole + 3
     ROLE_NODE_COLLAPSED = Qt.UserRole + 4
 
-    ICON_SIZE=24
+    ICON_SIZE=16
     THUMB_SIZE=64
 
 
@@ -168,7 +168,6 @@ class DocNodesModel(QAbstractItemModel):
         self.__cachedThumb={}
 
         self.setDocument(document)
-
 
     def __repr__(self):
         return f'<DocNodesModel()>'
@@ -306,7 +305,6 @@ class DocNodesModel(QAbstractItemModel):
 
         return self.createIndex(childParent.row(), 0, childParent)
 
-
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Return label for given data section"""
         return None
@@ -331,6 +329,7 @@ class WDocNodesView(QTreeView):
 
         self.__document=None
         self.__model=None
+
         self.setAutoScroll(False)
         self.setUniformRowHeights(True)
         self.setIconSize(QSize(DocNodesModel.ICON_SIZE,DocNodesModel.ICON_SIZE))
@@ -393,7 +392,6 @@ class WDocNodesView(QTreeView):
         """Return number of selected items"""
         return len(self.selectedItems())
 
-
     def expandTo(self, item):
         """Expand tree to given item"""
         while item != self.rootIndex():
@@ -424,7 +422,6 @@ class WDocNodesView(QTreeView):
             return
 
         processNode(self.rootIndex())
-
 
     def selectItems(self, items, scrollTo=None):
         """Select items in treeview, expand and scroll if needed
@@ -476,11 +473,9 @@ class WDocNodesView(QTreeView):
             if scrollTo==WDocNodesView.SCROLLTO_LAST and not scrolled:
                 self.scrollTo(found[-1], QAbstractItemView.EnsureVisible)
 
-
     def __sectionResized(self, index, oldSize, newSize):
         """When section is resized, update rows height"""
         self.__delegate.setThumbSize(self.__thumbSize.value())
-
 
     def wheelEvent(self, event):
         """Manage zoom level through mouse wheel"""
@@ -573,7 +568,6 @@ class WDocNodesViewTBar(QWidget):
             self.__proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
             self.__proxyModel.setFilterWildcard(self.__filter)
 
-
     def expandAll(self):
         """Expand all nodes"""
         if self.__nodesView:
@@ -595,7 +589,6 @@ class WDocNodesViewTBar(QWidget):
 
         self.__leFilter.setText(filter)
         self.__setFilter(filter)
-
 
     def filter(self):
         """Return current applied filter"""
@@ -665,7 +658,6 @@ class WDocNodesModelDelegate(QStyledItemDelegate):
                 return
         QStyledItemDelegate.paint(self, painter, option, index)
 
-
     def sizeHint(self, option, index):
         """Calculate size for items"""
         if index.column() == DocNodesModel.COLNUM_THUMB:
@@ -722,7 +714,6 @@ class WDocNodesViewDialog(QDialog):
     def applyDocumentExpandCollapse(self):
         """Expand nodes as it's currently defined in document layer stack"""
         self.__tvNodes.applyDocumentExpandCollapse()
-
 
     @staticmethod
     def show(title, document, collapseAsDoc=True):
