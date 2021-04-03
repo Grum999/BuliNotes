@@ -43,7 +43,8 @@ from PyQt5.QtCore import (
         QMimeData,
         QPoint,
         QRect,
-        QTimer
+        QTimer,
+        QUuid,
     )
 from PyQt5.QtGui import (
         QGuiApplication,
@@ -71,6 +72,30 @@ PkTk.setModuleInfo(
 
 class EKritaDocument:
     """Provides methods to manage Krita Documents"""
+
+    @staticmethod
+    def findLayerById(document, layerId):
+        """Find a layer by ID in document
+        because Document.nodeByUniqueID() returns a QObject instead of a Node object... :-/
+        """
+        def find(layerId, parentLayer):
+            """sub function called recursively to search layer in document tree"""
+            for layer in parentLayer.childNodes():
+                if layerId == layer.uniqueId():
+                    return layer
+                elif len(layer.childNodes()) > 0:
+                    returned = find(layerId, layer)
+                    if not returned is None:
+                        return returned
+            return None
+
+        if not isinstance(document, Document):
+            raise EInvalidType("Given `document` must be a Krita <Document> type")
+        elif not isinstance(layerId, QUuid):
+            raise EInvalidType("Given `layerId` must be a valid <QUuid>")
+
+        return find(layerId, document.rootNode())
+
 
     @staticmethod
     def findFirstLayerByName(searchFrom, layerName):
