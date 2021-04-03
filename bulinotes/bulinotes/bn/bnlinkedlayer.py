@@ -21,7 +21,7 @@
 import os.path
 
 from pktk import *
-from krita import Node
+from krita import (Node, Document)
 
 import PyQt5.uic
 from PyQt5.Qt import *
@@ -204,6 +204,21 @@ class BNLinkedLayer(QObject):
         """Return linked layer unique id"""
         return self.__uuid
 
+    def updateFromDocument(self, document=None):
+        """Update name and thumbnail from given `document`
+
+        If `document` is None, do update from current active document
+
+        If there's no active document or if layer is not found, does nothing
+        """
+        if document is None:
+            document=Krita.instance().activeDocument()
+
+        if not isinstance(document, Document):
+            return
+
+        self.fromLayer(self.__uuid)
+
 
 class BNLinkedLayers(QObject):
     """Collection of linked layers"""
@@ -351,3 +366,26 @@ class BNLinkedLayers(QObject):
                 self.add(BNLinkedLayer(linkedLayers.get(linkedLayerId)))
         self.__temporaryDisabled=False
         self.__emitUpdateReset()
+
+    def updateFromDocument(self, document=None):
+        """Update name and thumbnail from given `document` for all layers
+
+        If `document` is None, do update from current active document
+
+        If there's no active document or if a layer is not found, does nothing
+        """
+        if document is None:
+            document=Krita.instance().activeDocument()
+
+        if not isinstance(document, Document):
+            return
+
+        state=self.__temporaryDisabled
+        self.__temporaryDisabled=True
+
+        for key in list(self.__linkedLayers.keys()):
+            self.__linkedLayers[key].updateFromDocument(document)
+
+        self.__temporaryDisabled=state
+        if not self.__temporaryDisabled:
+            self.__emitUpdateReset()

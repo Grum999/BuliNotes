@@ -1289,6 +1289,7 @@ class BNNoteEditor(EDialog):
         self.tvLinkedLayers.doubleClicked.connect(self.__actionLinkedLayerEdit)
         self.tvLinkedLayers.setLinkedLayers(self.__tmpLinkedLayers)
 
+        self.__tmpLinkedLayers.updateFromDocument()
         self.__updateLinkedLayersUi()
 
     def showEvent(self, event):
