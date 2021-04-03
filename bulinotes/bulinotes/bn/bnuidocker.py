@@ -52,7 +52,8 @@ class BNUiDocker(QWidget):
         self.__bnId=bnId
         self.__bnVersion=bnVersion
         self.__docker=docker
-        self.__uitheme=UITheme(os.path.join(os.path.dirname(__file__), 'resources'))
+        UITheme.load()
+        UITheme.load(os.path.join(os.path.dirname(__file__), 'resources'))
         self.__notes=BNNotes()
         self.__docker=docker
 

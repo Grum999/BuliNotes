@@ -28,6 +28,7 @@ from PyQt5.QtCore import (
     )
 
 from pktk.modules.iconsizes import IconSizes
+from pktk.modules.utils import stripHtml
 
 from .bnbrush import BNBrush
 
@@ -135,7 +136,6 @@ class BNBrushesModel(QAbstractTableModel):
             return BNBrushesModel.HEADERS[section]
         return None
 
-
     def brushes(self):
         """Expose BNBrushes object"""
         return self.__brushes
@@ -152,6 +152,7 @@ class BNWBrushes(QTreeView):
     def __init__(self, parent=None):
         super(BNWBrushes, self).__init__(parent)
         self.setAutoScroll(False)
+        self.setAlternatingRowColors(True)
 
         self.__parent=parent
         self.__model = None
@@ -192,6 +193,10 @@ class BNWBrushes(QTreeView):
             for rowNumber in range(self.__model.rowCount()):
                 # need to recalculate height for all rows
                 self.__delegate.sizeHintChanged.emit(self.__model.createIndex(rowNumber, index))
+        elif index==BNBrushesModel.COLNUM_BRUSH and self.isColumnHidden(BNBrushesModel.COLNUM_COMMENT):
+            for rowNumber in range(self.__model.rowCount()):
+                # need to recalculate height for all rows
+                self.__delegate.sizeHintChanged.emit(self.__model.createIndex(rowNumber, index))
 
     def setColumnHidden(self, column, hide):
         """Reimplement column hidden"""
@@ -228,7 +233,6 @@ class BNWBrushes(QTreeView):
             header.resizeSection(BNBrushesModel.COLNUM_ICON, self.__iconSize.value())
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
 
-
     def setBrushes(self, brushes):
         """Initialise treeview header & model"""
         self.__model = BNBrushesModel(brushes)
@@ -261,7 +265,6 @@ class BNWBrushes(QTreeView):
     def nbSelectedItems(self):
         """Return number of selected items"""
         return len(self.selectedItems())
-
 
     def isCompact(self):
         """Is compact mode activated"""
@@ -300,17 +303,26 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
 
     def __getTextInformation(self, brush):
         """Return text for information"""
+        textDocument=QTextDocument()
+
         if self.__csize>0:
-            return brush.information()
+            textDocument.setHtml(brush.information())
         else:
             text=brush.comments()
-            if text=='':
-                text=brush.information(False)
+            if stripHtml(text)=='':
+                textDocument.setHtml(brush.information(False))
+            else:
+                textDocument.setHtml(text)
+                cursor=QTextCursor(textDocument)
+                cursor.movePosition(QTextCursor.End, QTextCursor.MoveAnchor)
+                cursor.insertHtml(f"<br><span>{brush.information(False)}</span>")
 
-            if self.__isCompact:
-                text=re.sub(r"font-size\s*:\s*(\d+)pt;", self.__applyCompactFactor, text)
+        if self.__isCompact:
+            text=textDocument.toHtml()
+            text=re.sub(r"font-size\s*:\s*(\d+)pt;", self.__applyCompactFactor, text)
+            textDocument.setHtml(text)
 
-            return text
+        return textDocument
 
     def setCSize(self, value):
         """Force size for comments column"""
@@ -338,12 +350,11 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             else:
                 painter.setPen(QPen(option.palette.color(QPalette.Text)))
 
-            textDocument=QTextDocument()
+            textDocument=self.__getTextInformation(brush)
             textDocument.setDocumentMargin(1)
-            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
-            textDocument.setHtml(self.__getTextInformation(brush))
-            textDocument.setPageSize(QSizeF(rectTxt.size()))
             textDocument.setDefaultFont(option.font)
+            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
+            textDocument.setPageSize(QSizeF(rectTxt.size()))
 
             painter.translate(QPointF(rectTxt.topLeft()))
             textDocument.drawContents(painter, QRectF(QPointF(0,0), QSizeF(rectTxt.size()) ))
@@ -390,7 +401,6 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
 
         QStyledItemDelegate.paint(self, painter, option, index)
 
-
     def sizeHint(self, option, index):
         """Calculate size for items"""
         size = QStyledItemDelegate.sizeHint(self, option, index)
@@ -399,13 +409,15 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             return option.decorationSize
         elif index.column() == BNBrushesModel.COLNUM_BRUSH:
             brush=index.data(BNBrushesModel.ROLE_BRUSH)
-            textDocument=QTextDocument()
+            textDocument=self.__getTextInformation(brush)
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)
             textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
-            textDocument.setHtml(self.__getTextInformation(brush))
             textDocument.setPageSize(QSizeF(4096, 1000)) # set 1000px size height arbitrary
-            textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000)) # set 1000px size height arbitrary
+            if self.__csize==0:
+                textDocument.setPageSize(QSizeF(size.width(), 1000)) # set 1000px size height arbitrary
+            else:
+                textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000)) # set 1000px size height arbitrary
             size=textDocument.size().toSize()+QSize(8, 8)
         elif index.column() == BNBrushesModel.COLNUM_COMMENT:
             # size for comments cell (width is forced, calculate height of rich text)

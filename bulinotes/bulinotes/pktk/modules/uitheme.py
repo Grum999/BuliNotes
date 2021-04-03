@@ -70,9 +70,49 @@ class UITheme(object):
             }
     }
 
+    __themes={}
+    __kraActiveWindow=None
+
+    @staticmethod
+    def load(rccPath=None, autoReload=True):
+        """Initialise theme"""
+        def initThemeChanged():
+            # initialise theme when main window is created
+            if UITheme.__kraActiveWindow is None:
+                UITheme.__kraActiveWindow=Krita.instance().activeWindow()
+                if not UITheme.__kraActiveWindow is None:
+                    UITheme.__kraActiveWindow.themeChanged.connect(UITheme.reloadResources)
+
+        if rccPath is None:
+            # by default if no path is provided, load default PkTk theme
+            rccPath=PkTk.PATH_RESOURCES
+
+        if not rccPath in UITheme.__themes:
+            UITheme.__themes[rccPath]=UITheme(rccPath, autoReload)
+
+        # Initialise connector on theme changed
+        initThemeChanged()
+
+        # If not initialised (main window not yet created), initialise it when main window is created
+        if UITheme.__kraActiveWindow is None:
+            Krita.instance().notifier().windowCreated.connect(initThemeChanged)
+
+    @staticmethod
+    def reloadResources(clearPixmapCache=None):
+        """Reload resources"""
+        if clearPixmapCache is None:
+            clearPixmapCache=True
+        for theme in UITheme.__themes:
+            if UITheme.__themes[theme].autoReload():
+                # reload
+                UITheme.__themes[theme].loadResources(clearPixmapCache)
+                if clearPixmapCache:
+                    clearPixmapCache=False
+
 
     def __init__(self, rccPath, autoReload=True):
         """The given `rccPath` is full path to directory where .rcc files can be found
+        If None, default resources from PkTk will be loaded
 
         The .rcc file names must mathc the following pattern:
         - darktheme_icons.rcc
@@ -87,29 +127,15 @@ class UITheme(object):
         self.__rccPath=rccPath
         self.__autoReload=autoReload
         self.__kraActiveWindow=None
-        self.__notifier=None
 
-        if autoReload:
-            Krita.instance().notifier().windowCreated.connect(self.__windowCreated)
-
-        self.loadResources()
+        self.loadResources(False)
 
 
-    def __windowCreated(self):
-        """Krita window is created
-
-        If auto reload has been defined for theme, need to connect 'themeChanged' signal
-        """
-        if self.__kraActiveWindow is None:
-            self.__kraActiveWindow=Krita.instance().activeWindow()
-            if self.__autoReload and not self.__kraActiveWindow is None:
-                self.__kraActiveWindow.themeChanged.connect(self.loadResources)
-
-
-    def loadResources(self):
+    def loadResources(self, clearPixmapCache=True):
         """Load resources for current theme"""
         # Need to clear pixmap cache otherwise some icons are not reloaded from new resource file
-        QPixmapCache.clear()
+        if clearPixmapCache:
+            QPixmapCache.clear()
 
         if not self.__registeredResource is None:
             QResource.unregisterResource(self.__registeredResource)
@@ -139,3 +165,7 @@ class UITheme(object):
         elif self.__theme != UITheme.DARK_THEME and name in UITheme.STYLES_SHEET[UITheme.DARK_THEME]:
             return UITheme.STYLES_SHEET[UITheme.DARK_THEME][name]
         return ''
+
+    def autoReload(self):
+        """Return if autoreload is activated for theme"""
+        return self.__autoReload

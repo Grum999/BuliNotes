@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
-    <height>700</height>
+    <width>1059</width>
+    <height>736</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -175,7 +175,7 @@ Updated:</string>
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <property name="iconSize">
       <size>
@@ -191,8 +191,8 @@ Updated:</string>
      </property>
      <widget class="QWidget" name="tabText">
       <attribute name="icon">
-       <iconset resource="dark_icons.qrc">
-        <normaloff>:/images/tabText</normaloff>:/images/tabText</iconset>
+       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+        <normaloff>:/pktk/images/normal/text_t_r90</normaloff>:/pktk/images/normal/text_t_r90</iconset>
       </attribute>
       <attribute name="title">
        <string/>
@@ -227,8 +227,8 @@ Updated:</string>
      </widget>
      <widget class="QWidget" name="tabScratchpad">
       <attribute name="icon">
-       <iconset resource="dark_icons.qrc">
-        <normaloff>:/images/tabDraw</normaloff>:/images/tabDraw</iconset>
+       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+        <normaloff>:/pktk/images/normal/draw_r90</normaloff>:/pktk/images/normal/draw_r90</iconset>
       </attribute>
       <attribute name="title">
        <string/>
@@ -276,8 +276,9 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset theme="document-open">
-              <normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</iconset>
+             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+              <normaloff>:/pktk/images/normal/folder_open</normaloff>
+              <disabledoff>:/pktk/images/disabled/folder_open</disabledoff>:/pktk/images/normal/folder_open</iconset>
             </property>
             <property name="popupMode">
              <enum>QToolButton::InstantPopup</enum>
@@ -296,8 +297,9 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset theme="document-save">
-              <normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</iconset>
+             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+              <normaloff>:/pktk/images/normal/save</normaloff>
+              <disabledoff>:/pktk/images/disabled/save</disabledoff>:/pktk/images/normal/save</iconset>
             </property>
             <property name="popupMode">
              <enum>QToolButton::InstantPopup</enum>
@@ -350,8 +352,9 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset theme="draw-brush">
-              <normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</iconset>
+             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+              <normaloff>:/pktk/images/normal/brush</normaloff>
+              <disabledoff>:/pktk/images/disabled/brush</disabledoff>:/pktk/images/normal/brush</iconset>
             </property>
             <property name="popupMode">
              <enum>QToolButton::InstantPopup</enum>
@@ -373,8 +376,9 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset theme="gtk-color-picker">
-              <normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../.designer/backup</iconset>
+             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+              <normaloff>:/pktk/images/normal/color</normaloff>
+              <disabledoff>:/pktk/images/disabled/color</disabledoff>:/pktk/images/normal/color</iconset>
             </property>
             <property name="popupMode">
              <enum>QToolButton::InstantPopup</enum>
@@ -527,8 +531,8 @@ Updated:</string>
      </widget>
      <widget class="QWidget" name="tabBrushes">
       <attribute name="icon">
-       <iconset resource="dark_icons.qrc">
-        <normaloff>:/images/tabBrushes</normaloff>:/images/tabBrushes</iconset>
+       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+        <normaloff>:/pktk/images/normal/brush_r90</normaloff>:/pktk/images/normal/brush_r90</iconset>
       </attribute>
       <attribute name="title">
        <string/>
@@ -622,9 +626,9 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="dark_icons.qrc">
-                     <normaloff>:/images/btBrushAdd</normaloff>
-                     <disabledoff>:/images_d/btBrushAdd</disabledoff>:/images/btBrushAdd</iconset>
+                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                     <normaloff>:/pktk/images/normal/brush_add</normaloff>
+                     <disabledoff>:/pktk/images/disabled/brush_add</disabledoff>:/pktk/images/normal/brush_add</iconset>
                    </property>
                    <property name="autoRaise">
                     <bool>true</bool>
@@ -640,9 +644,9 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="dark_icons.qrc">
-                     <normaloff>:/images/btBrushEdit</normaloff>
-                     <disabledoff>:/images_d/btBrushEdit</disabledoff>:/images/btBrushEdit</iconset>
+                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                     <normaloff>:/pktk/images/normal/brush_edit</normaloff>
+                     <disabledoff>:/pktk/images/disabled/brush_edit</disabledoff>:/pktk/images/normal/brush_edit</iconset>
                    </property>
                    <property name="autoRaise">
                     <bool>true</bool>
@@ -658,9 +662,9 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="dark_icons.qrc">
-                     <normaloff>:/images/btBrushDel</normaloff>
-                     <disabledoff>:/images_d/btBrushDel</disabledoff>:/images/btBrushDel</iconset>
+                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                     <normaloff>:/pktk/images/normal/brush_remove</normaloff>
+                     <disabledoff>:/pktk/images/disabled/brush_remove</disabledoff>:/pktk/images/normal/brush_remove</iconset>
                    </property>
                    <property name="autoRaise">
                     <bool>true</bool>
@@ -760,8 +764,9 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset theme="gtk-color-picker">
-                     <normaloff>.</normaloff>.</iconset>
+                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                     <normaloff>:/pktk/images/normal/color</normaloff>
+                     <disabledoff>:/pktk/images/disabled/color</disabledoff>:/pktk/images/normal/color</iconset>
                    </property>
                    <property name="popupMode">
                     <enum>QToolButton::InstantPopup</enum>
@@ -838,6 +843,172 @@ Updated:</string>
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabLinkedLayers">
+      <attribute name="icon">
+       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+        <normaloff>:/pktk/images/normal/layers_r90</normaloff>:/pktk/images/normal/layers_r90</iconset>
+      </attribute>
+      <attribute name="title">
+       <string/>
+      </attribute>
+      <attribute name="toolTip">
+       <string>Linked layers</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <property name="leftMargin">
+        <number>6</number>
+       </property>
+       <item>
+        <widget class="QWidget" name="widget_8" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>100</height>
+          </size>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_9">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QWidget" name="widget_7" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QToolButton" name="tbLinkedLayerAdd">
+               <property name="toolTip">
+                <string>Add a layer</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/layers_add</normaloff>
+                 <disabledoff>:/pktk/images/disabled/layers_add</disabledoff>:/pktk/images/normal/layers_add</iconset>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="tbLinkedLayerEdit">
+               <property name="toolTip">
+                <string>Edit layer</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/layers_edit</normaloff>
+                 <disabledoff>:/pktk/images/disabled/layers_edit</disabledoff>:/pktk/images/normal/layers_edit</iconset>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="tbLinkedLayerDelete">
+               <property name="toolTip">
+                <string>Remove layer</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/layers_del</normaloff>
+                 <disabledoff>:/pktk/images/disabled/layers_del</disabledoff>:/pktk/images/normal/layers_del</iconset>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_5">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="BNWLinkedLayers" name="tvLinkedLayers">
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::ExtendedSelection</enum>
+            </property>
+            <property name="verticalScrollMode">
+             <enum>QAbstractItemView::ScrollPerPixel</enum>
+            </property>
+            <property name="indentation">
+             <number>0</number>
+            </property>
+            <property name="rootIsDecorated">
+             <bool>false</bool>
+            </property>
+            <property name="uniformRowHeights">
+             <bool>false</bool>
+            </property>
+            <property name="itemsExpandable">
+             <bool>false</bool>
+            </property>
+            <property name="sortingEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="allColumnsShowFocus">
+             <bool>true</bool>
+            </property>
+            <property name="expandsOnDoubleClick">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
@@ -860,13 +1031,17 @@ Updated:</string>
    <extends>QTreeView</extends>
    <header>bulinotes.bn.bnwbrushes</header>
   </customwidget>
+  <customwidget>
+   <class>BNWLinkedLayers</class>
+   <extends>QTreeView</extends>
+   <header>bulinotes.bn.bnwlinkedlayers</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>leTitle</tabstop>
   <tabstop>pteDescription</tabstop>
   <tabstop>tabWidget</tabstop>
   <tabstop>btOk</tabstop>
-  <tabstop>btCancel</tabstop>
   <tabstop>tbExport</tabstop>
   <tabstop>tbClear</tabstop>
   <tabstop>tbBrush</tabstop>
@@ -887,6 +1062,7 @@ Updated:</string>
  </tabstops>
  <resources>
   <include location="dark_icons.qrc"/>
+  <include location="../../../../../../pktk/resources/svg/dark_icons.qrc"/>
   <include location="light_icons.qrc"/>
  </resources>
  <connections>

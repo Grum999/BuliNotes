@@ -45,6 +45,7 @@ from .wcolorbutton import (
                         QEColor
                     )
 
+from pktk.modules.utils import buildIcon
 
 class WTextEditDialog(QDialog):
     """A simple dialog box to edit formatted text"""
@@ -158,7 +159,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'undo',
              'tooltip':         i18n('Undo last action'),
-             'icon':            QIcon.fromTheme('edit-undo'),
+             'icon':            buildIcon('pktk:edit_undo'),
              'action':          self.__textEdit.undo,
              'visibility':      WTextEditBtBarOption.UNDOREDO,
              'checkable':       False
@@ -166,7 +167,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'redo',
              'tooltip':         i18n('Redo last action'),
-             'icon':            QIcon.fromTheme('edit-redo'),
+             'icon':            buildIcon('pktk:edit_redo'),
              'action':          self.__textEdit.redo,
              'visibility':      WTextEditBtBarOption.UNDOREDO,
              'checkable':       False
@@ -175,7 +176,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'copy',
              'tooltip':         i18n('Copy selection to clipboard'),
-             'icon':            QIcon.fromTheme('edit-copy'),
+             'icon':            buildIcon('pktk:copy'),
              'action':          self.__textEdit.copy,
              'visibility':      WTextEditBtBarOption.COPYPASTE,
              'checkable':       False
@@ -183,7 +184,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'cut',
              'tooltip':         i18n('Cut selection to clipboard'),
-             'icon':            QIcon.fromTheme('edit-cut'),
+             'icon':            buildIcon('pktk:cut'),
              'action':          self.__textEdit.cut,
              'visibility':      WTextEditBtBarOption.COPYPASTE,
              'checkable':       False
@@ -191,7 +192,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'paste',
              'tooltip':         i18n('Paste from clipboard'),
-             'icon':            QIcon.fromTheme('edit-paste'),
+             'icon':            buildIcon('pktk:paste'),
              'action':          self.__textEdit.paste,
              'visibility':      WTextEditBtBarOption.COPYPASTE,
              'checkable':       False
@@ -217,7 +218,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'fontBold',
              'tooltip':         i18n('Set current font style <b>Bold</b> (CTRL+B)'),
-             'icon':            QIcon.fromTheme('format-text-bold'),
+             'icon':            buildIcon('pktk:format_text_bold'),
              'action':          (lambda value: self.__textEdit.setFontWeight(QFont.Bold if value else QFont.Normal)),
              'visibility':      WTextEditBtBarOption.STYLE_BOLD,
              'shortcut':        QKeySequence("CTRL+B"),
@@ -227,7 +228,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'fontItalic',
              'tooltip':         i18n('Set current font style <i>Italic</i> (CTRL+I)'),
-             'icon':            QIcon.fromTheme('format-text-italic'),
+             'icon':            buildIcon('pktk:format_text_italic'),
              'action':          self.__textEdit.setFontItalic,
              'visibility':      WTextEditBtBarOption.STYLE_ITALIC,
              'shortcut':        QKeySequence("CTRL+I"),
@@ -237,7 +238,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'fontUnderline',
              'tooltip':         i18n('Set current font style <u>Underline</u> (CTRL+U)'),
-             'icon':            QIcon.fromTheme('format-text-underline'),
+             'icon':            buildIcon('pktk:format_text_underline'),
              'action':          self.__textEdit.setFontUnderline,
              'visibility':      WTextEditBtBarOption.STYLE_UNDERLINE,
              'shortcut':        QKeySequence("CTRL+U"),
@@ -247,7 +248,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'fontStrikethrough',
              'tooltip':         i18n('Set current font style <s>Strikethrough</s> (CTRL+T)'),
-             'icon':            QIcon.fromTheme('format-text-strikethrough'),
+             'icon':            buildIcon('pktk:format_text_strikethrough'),
              'action':          self.__setFontStrikethrough,
              'visibility':      WTextEditBtBarOption.STYLE_STRIKETHROUGH,
              'shortcut':        QKeySequence("CTRL+T"),
@@ -257,7 +258,7 @@ class WTextEdit(QWidget):
             {'type':            'cbutton',
              'id':              'fontColor',
              'tooltip':         i18n('Set current font color'),
-             'icon':            QIcon(':/images/format_text_fgcolor'),
+             'icon':            buildIcon('pktk:format_text_fgcolor'),
              'action':          self.__updateSelectedTextFontColor,
              'visibility':      WTextEditBtBarOption.STYLE_COLOR_FG,
              'checkable':       False,
@@ -266,7 +267,7 @@ class WTextEdit(QWidget):
             {'type':            'cbutton',
              'id':              'bgColor',
              'tooltip':         i18n('Set current background color'),
-             'icon':            QIcon(':/images/format_text_bgcolor'),
+             'icon':            buildIcon('pktk:format_text_bgcolor'),
              'action':          self.__updateSelectedTextBackgroundColor,
              'visibility':      WTextEditBtBarOption.STYLE_COLOR_BG,
              'checkable':       False,
@@ -276,7 +277,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'textAlignLeft',
              'tooltip':         i18n('Set Left text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-left'),
+             'icon':            buildIcon('pktk:format_text_align-left'),
              'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignLeft)),
              'group':           'text-align',
              'visibility':      WTextEditBtBarOption.ALIGNMENT,
@@ -286,7 +287,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'textAlignCenter',
              'tooltip':         i18n('Set Centered text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-center'),
+             'icon':            buildIcon('pktk:format_text_align-center'),
              'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignCenter)),
              'group':           'text-align',
              'visibility':      WTextEditBtBarOption.ALIGNMENT,
@@ -296,7 +297,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'textAlignRight',
              'tooltip':         i18n('Set Right text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-right'),
+             'icon':            buildIcon('pktk:format_text_align-right'),
              'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignRight)),
              'group':           'text-align',
              'visibility':      WTextEditBtBarOption.ALIGNMENT,
@@ -306,7 +307,7 @@ class WTextEdit(QWidget):
             {'type':            'button',
              'id':              'textAlignJustify',
              'tooltip':         i18n('Set Justified text alignment'),
-             'icon':            QIcon.fromTheme('format-justify-fill'),
+             'icon':            buildIcon('pktk:format_text_align-justify'),
              'action':          (lambda: self.__textEdit.setAlignment(Qt.AlignJustify)),
              'group':           'text-align',
              'visibility':      WTextEditBtBarOption.ALIGNMENT,

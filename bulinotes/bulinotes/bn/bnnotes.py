@@ -43,7 +43,8 @@ from pktk.modules.utils import (
                         secToStrTime,
                         tsToStr,
                         qImageToPngQByteArray,
-                        BCTimer
+                        BCTimer,
+                        stripHtml
                     )
 from pktk.modules.edialog import EDialog
 from pktk.modules.ekrita import EKritaNode
@@ -60,8 +61,11 @@ from pktk.widgets.wtextedit import (
 from pktk.widgets.wefiledialog import WEFileDialog
 
 from .bnbrush import (BNBrush, BNBrushes)
+from .bnlinkedlayer import (BNLinkedLayer, BNLinkedLayers)
+from .bnwlinkedlayers import BNLinkedLayerEditor
 from .bnwbrushes import BNBrushesModel
 from .bnnote_postit import BNNotePostIt
+
 
 class BNNote(QObject):
     """A note"""
@@ -70,7 +74,8 @@ class BNNote(QObject):
     CONTENT_TEXT=0x01
     CONTENT_SCRATCHPAD=0x02
     CONTENT_BRUSHES=0x03
-    #CONTENT_TASKS=0x04
+    CONTENT_LINKEDLAYERS=0x04
+    #CONTENT_TASKS=0x05
     __CONTENT_LAST=0x03
 
     @staticmethod
@@ -98,6 +103,7 @@ class BNNote(QObject):
         self.__windowPostItGeometry=None
         self.__windowPostItCompact=False
         self.__windowPostItBrushIconSizeIndex=1
+        self.__windowPostItLinkedLayersIconSizeIndex=1
 
         self.__scratchpadBrushName='b)_Basic-5_Size'
         self.__scratchpadBrushSize=5
@@ -110,6 +116,12 @@ class BNNote(QObject):
         self.__brushes.updateReset.connect(self.__updatedBrushes)
         self.__brushes.updateAdded.connect(self.__updatedBrushes)
         self.__brushes.updateRemoved.connect(self.__updatedBrushes)
+
+        self.__linkedLayers=BNLinkedLayers()
+        self.__linkedLayers.updated.connect(self.__updatedLinkedLayers)
+        self.__linkedLayers.updateReset.connect(self.__updatedLinkedLayers)
+        self.__linkedLayers.updateAdded.connect(self.__updatedLinkedLayers)
+        self.__linkedLayers.updateRemoved.connect(self.__updatedLinkedLayers)
 
         self.__selectedType=BNNote.CONTENT_TEXT
 
@@ -131,6 +143,10 @@ class BNNote(QObject):
     def __updatedBrushes(self, property=None):
         """Brushes have been udpated"""
         self.__updated('brushes')
+
+    def __updatedLinkedLayers(self, property=None):
+        """Linked layers have been udpated"""
+        self.__updated('linkedLayers')
 
     def __updated(self, property):
         """Emit updated signal when a property has been changed"""
@@ -271,6 +287,16 @@ class BNNote(QObject):
             self.__windowPostItBrushIconSizeIndex=index
             self.__updated('brushIconSizeIndex')
 
+    def windowPostItLinkedLayersIconSizeIndex(self):
+        """Return current size index for post-it linked layers icon list"""
+        return self.__windowPostItLinkedLayersIconSizeIndex
+
+    def setWindowPostItLinkedLayersIconSizeIndex(self, index):
+        """Set window note compact"""
+        if isinstance(index, int) and index>=0 and index<=4 and self.__windowPostItLinkedLayersIconSizeIndex!=index:
+            self.__windowPostItLinkedLayersIconSizeIndex=index
+            self.__updated('linkedLayersIconSizeIndex')
+
     def windowPostIt(self):
         """Return note windows post-it"""
         return self.__windowPostIt
@@ -364,7 +390,7 @@ class BNNote(QObject):
 
     def hasText(self):
         """Return True if note has text content"""
-        return (self.__text.strip()!='')
+        return (stripHtml(self.__text)!='')
 
     def hasScratchpad(self):
         """Return True if note has scratchpad content"""
@@ -373,6 +399,10 @@ class BNNote(QObject):
     def hasBrushes(self):
         """Return True if note has brushes content"""
         return self.__brushes.length()>0
+
+    def hasLinkedLayers(self):
+        """Return True if note has linked layers content"""
+        return self.__linkedLayers.length()>0
 
     def selectedType(self):
         """Return current selected type"""
@@ -393,6 +423,16 @@ class BNNote(QObject):
         if isinstance(brushes, BNBrushes):
             self.__brushes.copyFrom(brushes)
             self.__updated('brushes')
+
+    def linkedLayers(self):
+        """Return linked layers list"""
+        return self.__linkedLayers
+
+    def setLinkedLayers(self, linkedLayers):
+        """Return linked layers list"""
+        if isinstance(linkedLayers, BNLinkedLayers):
+            self.__linkedLayers.copyFrom(linkedLayers)
+            self.__updated('linkedLayers')
 
     def exportData(self, asQByteArray=True):
         """Export current note as internal format
@@ -557,6 +597,19 @@ class BNNote(QObject):
                      |         |                 |
 
 
+        *** Block type [0x0034 - Window linked layer icon size index]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | 1       | ushort          | 0x00: 32px
+                     |         |                 | 0x01: 64px
+                     |         |                 | 0x02: 96px
+                     |         |                 | 0x03: 128px
+                     |         |                 | 0x04: 192px
+                     |         |                 |
+
+
         *** Block type [0x0100 - Content text]
 
             position | size    | format          | description
@@ -624,13 +677,18 @@ class BNNote(QObject):
                      |         |                 | note: 0 to N brushes definition
                      |         |                 | can be defined
                      |         |                 |
+
+        *** Block type [0x0400 - linked layer]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | N       | bytes           | An exported linked layer definition
+                     |         |                 | note: 0 to N linked layer definition
+                     |         |                 | can be defined
                      |         |                 |
 
-
-
-
                      |         |                 |
-
 
         """
         # format version
@@ -685,6 +743,7 @@ class BNNote(QObject):
         writeBlock(0x0031, 'bool', self.__windowPostItCompact)
         writeBlock(0x0032, 'ushort', self.__selectedType)
         writeBlock(0x0033, 'ushort', self.__windowPostItBrushIconSizeIndex)
+        writeBlock(0x0034, 'ushort', self.__windowPostItLinkedLayersIconSizeIndex)
 
         writeBlock(0x0100, 'str', self.__text)
 
@@ -697,6 +756,9 @@ class BNNote(QObject):
 
         for brush in self.__brushes.idList():
             writeBlock(0x0300, 'bytes', self.__brushes.get(brush).exportData())
+
+        for linkedLayer in self.__linkedLayers.idList():
+            writeBlock(0x0400, 'bytes', self.__linkedLayers.get(linkedLayer).exportData())
 
         if asQByteArray:
             return QByteArray(dataWrite.getvalue())
@@ -769,6 +831,8 @@ class BNNote(QObject):
                 self.setSelectedType(dataRead.readUShort())
             elif blockType==0x0033:
                 self.setWindowPostItBrushIconSizeIndex(dataRead.readUShort())
+            elif blockType==0x0034:
+                self.setWindowPostItLinkedLayersIconSizeIndex(dataRead.readUShort())
             elif blockType==0x0100:
                 self.setText(dataRead.readStr(blockContentSize))
             elif blockType==0x0200:
@@ -785,6 +849,10 @@ class BNNote(QObject):
                 brush=BNBrush()
                 brush.importData(dataRead.read(blockContentSize))
                 self.__brushes.add(brush)
+            elif blockType==0x0400:
+                linkedLayer=BNLinkedLayer()
+                linkedLayer.importData(dataRead.read(blockContentSize))
+                self.__linkedLayers.add(linkedLayer)
 
         dataRead.close()
         #self.__brushes.endUpdate()
@@ -1071,7 +1139,6 @@ class BNNoteEditor(EDialog):
 
     def __init__(self, note=None, name="Buli Notes", parent=None):
         super(BNNoteEditor, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bnnoteeditor.ui'), parent)
-
         if Krita.instance().activeWindow() is None:
             self.reject()
         elif Krita.instance().activeWindow().activeView() is None:
@@ -1088,6 +1155,7 @@ class BNNoteEditor(EDialog):
 
         self.__tmpNote=BNNote.clone(self.__note)
         self.__tmpBrushes=BNBrushes(self.__note.brushes())
+        self.__tmpLinkedLayers=BNLinkedLayers(self.__note.linkedLayers())
 
         self.__activeView=Krita.instance().activeWindow().activeView()
         self.__activeViewCurrentConfig={}
@@ -1113,12 +1181,33 @@ class BNNoteEditor(EDialog):
 
     def __buildUi(self):
         """Build/Initialise dialog widgets"""
+        # -- global note properties
         self.leTitle.setText(self.__note.title())
         self.pteDescription.setPlainText(self.__note.description())
         self.wColorIndex.setColorIndex(self.__note.colorIndex())
+
+        currentTime=time.time()
+        delayCreated=currentTime - self.__note.timestampCreated()
+        delayUpdated=currentTime - self.__note.timestampUpdated()
+
+        if delayCreated<1:
+            self.lblTimestampLabel.setVisible(False)
+            self.lblTimestamp.setVisible(False)
+        else:
+            self.lblTimestamp.setText(f'{tsToStr(self.__note.timestampCreated())} ({secToStrTime(delayCreated)} ago)\n{tsToStr(self.__note.timestampUpdated())} ({secToStrTime(delayUpdated)} ago)')
+
+        self.btOk.clicked.connect(self.__accept)
+        self.btCancel.clicked.connect(self.__reject)
+
+        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.currentChanged.connect(self.__tabChanged)
+
+
+        # -- TEXT Note properties
         self.wteText.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
         self.wteText.setHtml(self.__note.text())
 
+        # -- HAND WRITTEN Note properties
         self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
         self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
         self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorRGB(False)
@@ -1133,28 +1222,9 @@ class BNNoteEditor(EDialog):
         menuBrushScratchpadColor = QMenu(self.tbColor)
         menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
 
-        self.tbBrushAdd.clicked.connect(self.__actionBrushAdd)
-        self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
-        self.tbBrushDelete.clicked.connect(self.__actionBrushDelete)
-        self.tbBrushScratchpadClear.clicked.connect(self.__actionBrushScratchpadClear)
-        self.tbBrushScratchpadColor.setMenu(menuBrushScratchpadColor)
-
         img=self.__note.scratchpadImage()
         if not img is None:
             self.__scratchpadHandWritting.loadScratchpadImage(img)
-
-        currentTime=time.time()
-        delayCreated=currentTime - self.__note.timestampCreated()
-        delayUpdated=currentTime - self.__note.timestampUpdated()
-
-        if delayCreated<1:
-            self.lblTimestampLabel.setVisible(False)
-            self.lblTimestamp.setVisible(False)
-        else:
-            self.lblTimestamp.setText(f'{tsToStr(self.__note.timestampCreated())} ({secToStrTime(delayCreated)} ago)\n{tsToStr(self.__note.timestampUpdated())} ({secToStrTime(delayUpdated)} ago)')
-
-        self.btOk.clicked.connect(self.__accept)
-        self.btCancel.clicked.connect(self.__reject)
 
         layout=self.tabScratchpad.layout()
         layout.setSpacing(0)
@@ -1212,7 +1282,6 @@ class BNNoteEditor(EDialog):
         menuExport.addAction(self.__actionExportToClipboard)
         menuExport.addAction(self.__actionExportToLayer)
 
-
         menuBrush = QMenu(self.tbBrush)
         menuBrush.addAction(self.__actionSelectDefaultBrush)
         menuBrush.addAction(self.__actionSelectCurrentBrush)
@@ -1232,16 +1301,32 @@ class BNNoteEditor(EDialog):
         self.hsZoom.valueChanged.connect(self.__actionScratchpadSetZoom)
 
 
+        # -- BRUSHES Note properties
+        self.tbBrushAdd.clicked.connect(self.__actionBrushAdd)
+        self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
+        self.tbBrushDelete.clicked.connect(self.__actionBrushDelete)
+        self.tbBrushScratchpadClear.clicked.connect(self.__actionBrushScratchpadClear)
+        self.tbBrushScratchpadColor.setMenu(menuBrushScratchpadColor)
+
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
         self.tvBrushes.setBrushes(self.__tmpBrushes)
 
-        self.tabWidget.setCurrentIndex(0)
-        self.tabWidget.currentChanged.connect(self.__tabChanged)
-
         self.__updateBrushUi()
+
+        # -- LINKED LAYERS Note properties
+        self.tbLinkedLayerAdd.clicked.connect(self.__actionLinkedLayerAdd)
+        self.tbLinkedLayerEdit.clicked.connect(self.__actionLinkedLayerEdit)
+        self.tbLinkedLayerDelete.clicked.connect(self.__actionLinkedLayerDelete)
+
+        self.tvLinkedLayers.doubleClicked.connect(self.__actionLinkedLayerEdit)
+        self.tvLinkedLayers.setLinkedLayers(self.__tmpLinkedLayers)
+
+        self.__tmpLinkedLayers.updateFromDocument()
+        self.__updateLinkedLayersUi()
 
     def showEvent(self, event):
         self.tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
+        self.tvLinkedLayers.selectionModel().selectionChanged.connect(self.__linkedLayersSelectionChanged)
         self.leTitle.setFocus()
 
     def __updateImportMenuUi(self):
@@ -1275,12 +1360,22 @@ class BNNoteEditor(EDialog):
         self.tbBrushEdit.setEnabled(nbSelectedBrush==1)
         self.tbBrushDelete.setEnabled(nbSelectedBrush==1)
 
+    def __updateLinkedLayersUi(self):
+        """Update linked layers UI (enable/disable buttons...)"""
+        nbSelectedLinkedLayers=self.tvLinkedLayers.nbSelectedItems()
+        self.tbLinkedLayerEdit.setEnabled(nbSelectedLinkedLayers==1)
+        self.tbLinkedLayerDelete.setEnabled(nbSelectedLinkedLayers==1)
+
     def __brushesSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
         self.__updateBrushUi()
         selectedBrushes=self.tvBrushes.selectedItems()
         if len(selectedBrushes)==1:
             selectedBrushes[0].toBrush()
+
+    def __linkedLayersSelectionChanged(self, selected, deselected):
+        """Selection in treeview has changed, update UI"""
+        self.__updateLinkedLayersUi()
 
     def __saveViewConfig(self):
         """Save current view properties"""
@@ -1345,6 +1440,7 @@ class BNNoteEditor(EDialog):
         self.__note.setScratchpadBrushColor(self.__activeView.foregroundColor().colorForCanvas(self.__activeView.canvas()))
 
         self.__note.setBrushes(self.__tmpBrushes)
+        self.__note.setLinkedLayers(self.__tmpLinkedLayers)
 
         img=self.__scratchpadHandWritting.copyScratchpadImageData()
         self.__note.setScratchpadImage(self.__scratchpadHandWritting.copyScratchpadImageData())
@@ -1516,6 +1612,41 @@ class BNNoteEditor(EDialog):
     def __actionBrushScratchpadClear(self):
         """Clear Scratchpad content"""
         self.__scratchpadTestBrush.clear()
+
+    def __actionLinkedLayerAdd(self):
+        """Add layer to linked layer list"""
+        linkedLayer=BNLinkedLayerEditor.edit(None, i18n(f"{self.__name}::Add linked layer"))
+
+        if linkedLayer:
+            self.__tmpLinkedLayers.add(linkedLayer)
+            self.__updateLinkedLayersUi()
+
+    def __actionLinkedLayerEdit(self):
+        """Edit layer from linked layer list"""
+        selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
+
+        if len(selectedLinkedLayers)==1:
+            linkedLayer=BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
+
+            print('__actionLinkedLayerEdit', linkedLayer)
+            if linkedLayer:
+                if linkedLayer.id()==selectedLinkedLayers[0].id():
+                    self.__tmpLinkedLayers.update(linkedLayer)
+                else:
+                    self.__tmpLinkedLayers.remove(selectedLinkedLayers[0])
+                    self.__tmpLinkedLayers.add(linkedLayer)
+
+                self.__updateLinkedLayersUi()
+
+    def __actionLinkedLayerDelete(self):
+        """Remove layer from linked layer list"""
+        selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
+
+        print('__actionLinkedLayerDelete', selectedLinkedLayers)
+        if len(selectedLinkedLayers)>0:
+            self.__tmpLinkedLayers.remove(selectedLinkedLayers)
+            self.__updateLinkedLayersUi()
+
 
     def closeEvent(self, event):
         """Dialog is about to be closed..."""

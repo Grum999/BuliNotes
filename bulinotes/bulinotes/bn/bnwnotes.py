@@ -177,24 +177,24 @@ class BNNotesModel(QAbstractTableModel):
                     id=self.__items[row]
                     item = self.__notes.get(id)
                     if item.windowPostIt():
-                        return QIcon(':/images/noteView')
+                        return QIcon(':/pktk/images/normal/note_view')
                     else:
-                        return QIcon(':/images_d/noteView')
+                        return QIcon(':/pktk/images/disabled/note_view')
                 elif column==BNNotesModel.COLNUM_PINNED:
                     id=self.__items[row]
                     item = self.__notes.get(id)
                     if item.pinned():
-                        return QIcon(':/images/pinned')
+                        return QIcon(':/pktk/images/normal/pinned')
                     else:
-                        return QIcon(':/images_d/pinned')
+                        return QIcon(':/pktk/images/disabled/pinned')
                 elif column==BNNotesModel.COLNUM_LOCKED:
                     id=self.__items[row]
                     item = self.__notes.get(id)
 
                     if item.locked():
-                        return QIcon(':/images/locked')
+                        return QIcon(':/pktk/images/normal/lock_locked')
                     else:
-                        return QIcon(':/images_d/unlocked')
+                        return QIcon(':/pktk/images/disabled/lock_unlocked')
         elif role == Qt.DisplayRole:
             id=self.__items[row]
             item = self.__notes.get(id)
@@ -379,16 +379,17 @@ class BNWNotes(QTreeView):
         # set colums size rules
         header = self.header()
         header.setStretchLastSection(False)
+        header.setMinimumSectionSize(BNNotesModel.ICON_WIDTH)
         header.setSectionResizeMode(BNNotesModel.COLNUM_COLOR, QHeaderView.Fixed)
         header.setSectionResizeMode(BNNotesModel.COLNUM_TITLE, QHeaderView.Stretch)
         header.setSectionResizeMode(BNNotesModel.COLNUM_LOCKED, QHeaderView.Fixed)
         header.setSectionResizeMode(BNNotesModel.COLNUM_VIEW, QHeaderView.Fixed)
         header.setSectionResizeMode(BNNotesModel.COLNUM_PINNED, QHeaderView.Fixed)
 
-        header.resizeSection(BNNotesModel.COLNUM_COLOR, BNNotesModel.ICON_WIDTH)
-        header.resizeSection(BNNotesModel.COLNUM_LOCKED, BNNotesModel.ICON_WIDTH)
-        header.resizeSection(BNNotesModel.COLNUM_VIEW, BNNotesModel.ICON_WIDTH)
-        header.resizeSection(BNNotesModel.COLNUM_PINNED, BNNotesModel.ICON_WIDTH)
+        header.resizeSection(BNNotesModel.COLNUM_COLOR, BNNotesModel.ICON_WIDTH+2)
+        header.resizeSection(BNNotesModel.COLNUM_LOCKED, BNNotesModel.ICON_WIDTH+2)
+        header.resizeSection(BNNotesModel.COLNUM_VIEW, BNNotesModel.ICON_WIDTH+2)
+        header.resizeSection(BNNotesModel.COLNUM_PINNED, BNNotesModel.ICON_WIDTH+2)
 
     def contextMenuEvent(self, event):
         """Display context menu, updated according to current options"""
