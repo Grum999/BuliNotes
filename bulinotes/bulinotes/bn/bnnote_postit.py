@@ -42,6 +42,7 @@ from .bnwbrushes import (
                     BNBrushesModel,
                     BNWBrushes
                 )
+from pktk.modules.utils import buildIcon
 from pktk.widgets.wtoolbox import WToolBox
 
 
@@ -182,7 +183,7 @@ width: 0px;
         self.__btShowText=QToolButton(self)
         self.__btShowText.clicked.connect(self.__showNotePage)
         self.__btShowText.setToolTip(i18n('Text note'))
-        self.__btShowText.setIcon(QIcon(':/images/btText'))
+        self.__btShowText.setIcon(buildIcon('pktk:text_t'))
         self.__btShowText.setFocusPolicy(Qt.NoFocus)
         self.__btShowText.setAutoRaise(True)
         self.__btShowText.setCheckable(True)
@@ -190,7 +191,7 @@ width: 0px;
         self.__btShowScratchpad=QToolButton(self)
         self.__btShowScratchpad.clicked.connect(self.__showNotePage)
         self.__btShowScratchpad.setToolTip(i18n('Handwritten note'))
-        self.__btShowScratchpad.setIcon(QIcon(':/images/btDraw'))
+        self.__btShowScratchpad.setIcon(buildIcon('pktk:draw'))
         self.__btShowScratchpad.setFocusPolicy(Qt.NoFocus)
         self.__btShowScratchpad.setAutoRaise(True)
         self.__btShowScratchpad.setCheckable(True)
@@ -198,7 +199,7 @@ width: 0px;
         self.__btShowBrushes=QToolButton(self)
         self.__btShowBrushes.clicked.connect(self.__showNotePage)
         self.__btShowBrushes.setToolTip(i18n('Brushes note'))
-        self.__btShowBrushes.setIcon(QIcon(':/images/btBrushes'))
+        self.__btShowBrushes.setIcon(buildIcon('pktk:brush'))
         self.__btShowBrushes.setFocusPolicy(Qt.NoFocus)
         self.__btShowBrushes.setAutoRaise(True)
         self.__btShowBrushes.setCheckable(True)

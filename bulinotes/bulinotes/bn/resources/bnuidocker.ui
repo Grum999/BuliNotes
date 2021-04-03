@@ -62,9 +62,9 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/noteAdd</normaloff>
-          <disabledoff>:/images_d/noteAdd</disabledoff>:/images/noteAdd</iconset>
+         <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+          <normaloff>:/pktk/images/normal/note_add</normaloff>
+          <disabledoff>:/pktk/images/disabled/note_add</disabledoff>:/pktk/images/normal/note_add</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -83,9 +83,9 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/noteEdit</normaloff>
-          <disabledoff>:/images_d/noteEdit</disabledoff>:/images/noteEdit</iconset>
+         <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+          <normaloff>:/pktk/images/normal/note_edit</normaloff>
+          <disabledoff>:/pktk/images/disabled/note_edit</disabledoff>:/pktk/images/normal/note_edit</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -104,9 +104,9 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/noteDelete</normaloff>
-          <disabledoff>:/images_d/noteDelete</disabledoff>:/images/noteDelete</iconset>
+         <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+          <normaloff>:/pktk/images/normal/note_delete</normaloff>
+          <disabledoff>:/pktk/images/disabled/note_delete</disabledoff>:/pktk/images/normal/note_delete</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -132,9 +132,9 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/move_up</normaloff>
-          <disabledoff>:/images_d/move_up</disabledoff>:/images/move_up</iconset>
+         <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+          <normaloff>:/pktk/images/normal/move_up</normaloff>
+          <disabledoff>:/pktk/images/disabled/move_up</disabledoff>:/pktk/images/normal/move_up</iconset>
         </property>
         <property name="autoRaise">
          <bool>true</bool>
@@ -147,9 +147,9 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/move_down</normaloff>
-          <disabledoff>:/images_d/move_down</disabledoff>:/images/move_down</iconset>
+         <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+          <normaloff>:/pktk/images/normal/move_down</normaloff>
+          <disabledoff>:/pktk/images/disabled/move_down</disabledoff>:/pktk/images/normal/move_down</iconset>
         </property>
         <property name="autoRaise">
          <bool>true</bool>
@@ -175,8 +175,9 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="dark_icons.qrc">
-          <normaloff>:/images/about_info</normaloff>:/images/about_info</iconset>
+         <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+          <normaloff>:/pktk/images/normal/info</normaloff>
+          <disabledoff>:/pktk/images/disabled/info</disabledoff>:/pktk/images/normal/info</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -248,8 +249,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="dark_icons.qrc"/>
-  <include location="light_icons.qrc"/>
+  <include location="../../../../../../pktk/resources/svg/dark_icons.qrc"/>
  </resources>
  <connections/>
 </ui>
