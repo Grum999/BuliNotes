@@ -331,6 +331,27 @@ def getLangValue(dictionary, lang=None, default=''):
         # not found, return first entry
         return dictionary[list(dictionary.keys())[0]]
 
+def warningAreaBrush(size=32):
+    """Return a checker board brush"""
+    tmpPixmap = QPixmap(size,size)
+    tmpPixmap.fill(QColor(255,255,255,32))
+    brush = QBrush(QColor(0,0,0,32))
+
+    canvas = QPainter()
+    canvas.begin(tmpPixmap)
+    canvas.setPen(Qt.NoPen)
+    canvas.setBrush(brush)
+
+    s1 = size>>1
+    s2 = size - s1
+
+    canvas.setRenderHint(QPainter.Antialiasing, True)
+    canvas.drawPolygon(QPolygon([QPoint(s1, 0), QPoint(size, 0), QPoint(0, size), QPoint(0, s1)]))
+    canvas.drawPolygon(QPolygon([QPoint(size, s1), QPoint(size, size), QPoint(s1, size)]))
+    canvas.end()
+
+    return QBrush(tmpPixmap)
+
 def checkerBoardBrush(size=32):
     """Return a checker board brush"""
     tmpPixmap = QPixmap(size,size)
