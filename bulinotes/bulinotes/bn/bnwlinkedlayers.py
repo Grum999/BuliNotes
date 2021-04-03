@@ -270,6 +270,7 @@ class BNWLinkedLayers(QTreeView):
     def __init__(self, parent=None):
         super(BNWLinkedLayers, self).__init__(parent)
         self.setAutoScroll(False)
+        self.setAlternatingRowColors(True)
 
         self.__parent=parent
         self.__model = None
@@ -313,12 +314,16 @@ class BNWLinkedLayers(QTreeView):
             for rowNumber in range(self.__model.rowCount()):
                 # need to recalculate height for all rows
                 self.__delegate.sizeHintChanged.emit(self.__model.createIndex(rowNumber, index))
+        elif index==BNLinkedLayersModel.COLNUM_NAME and self.isColumnHidden(BNLinkedLayersModel.COLNUM_COMMENT):
+            self.__delegate.setNSize(newSize)
+            for rowNumber in range(self.__model.rowCount()):
+                # need to recalculate height for all rows
+                self.__delegate.sizeHintChanged.emit(self.__model.createIndex(rowNumber, index))
 
     def setColumnHidden(self, column, hide):
         """Reimplement column hidden"""
         super(BNWLinkedLayers, self).setColumnHidden(column, hide)
         self.__delegate.setCSize(0)
-        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_NAME, QHeaderView.Stretch)
 
     def wheelEvent(self, event):
         """Mange zoom level through mouse wheel"""
@@ -343,9 +348,10 @@ class BNWLinkedLayers(QTreeView):
         """Set icon size from index value"""
         if index is None or self.__iconSize.setIndex(index):
             # new size defined
+            self.__delegate.setTSize(self.__iconSize.value())
+
             header = self.header()
             header.resizeSection(BNLinkedLayersModel.COLNUM_THUMB, self.__iconSize.value())
-            self.__delegate.setTSize(self.__iconSize.value())
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
 
     def setLinkedLayers(self, linkedLayers):
@@ -428,6 +434,7 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
         """Constructor, nothingspecial"""
         super(BNLinkedLayersModelDelegate, self).__init__(parent)
         self.__csize=0
+        self.__nsize=0
         self.__tsize=QSize()
         self.__isCompact=False
 
@@ -447,16 +454,24 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
             else:
                 textDocument.setHtml(text)
                 cursor=QTextCursor(textDocument)
-                cursor.insertHtml(f"<p>{linkedLayer.name()}</p>")
+                cursor.insertHtml(f"<span>{linkedLayer.name()}</span><br>")
 
-            if self.__isCompact:
-                text=re.sub(r"font-size\s*:\s*(\d+)pt;", self.__applyCompactFactor, text)
+        if self.__isCompact:
+            text=textDocument.toHtml()
+            text=re.sub(r"font-size\s*:\s*(\d+)pt;", self.__applyCompactFactor, text)
+            textDocument.setHtml(text)
 
         return textDocument
 
     def setCSize(self, value):
         """Force size for comments column"""
         self.__csize=value
+        self.__nsize=0
+
+    def setNSize(self, value):
+        """Force size for comments column"""
+        self.__nsize=value
+        self.__csize=0
 
     def setTSize(self, value):
         """Force size for comments column"""
@@ -492,9 +507,9 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
 
             textDocument=self.__getTextDocument(linkedLayer)
             textDocument.setDocumentMargin(1)
+            textDocument.setDefaultFont(option.font)
             textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
             textDocument.setPageSize(QSizeF(rectTxt.size()))
-            textDocument.setDefaultFont(option.font)
 
             painter.translate(QPointF(rectTxt.topLeft()))
             textDocument.drawContents(painter, QRectF(QPointF(0,0), QSizeF(rectTxt.size()) ))
@@ -558,13 +573,18 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
         if index.column() == BNLinkedLayersModel.COLNUM_THUMB:
             return self.__tsize
         elif index.column() == BNLinkedLayersModel.COLNUM_NAME:
+            self.initStyleOption(option, index)
+
             linkedLayer=index.data(BNLinkedLayersModel.ROLE_LINKEDLAYER)
             textDocument=self.__getTextDocument(linkedLayer)
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)
             textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
             textDocument.setPageSize(QSizeF(4096, 1000)) # set 1000px size height arbitrary
-            textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000)) # set 1000px size height arbitrary
+            if self.__nsize>0:
+                textDocument.setPageSize(QSizeF(self.__nsize, 1000)) # set 1000px size height arbitrary
+            else:
+                textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000)) # set 1000px size height arbitrary
             size=textDocument.size().toSize()+QSize(8, 8)
         elif index.column() == BNLinkedLayersModel.COLNUM_COMMENT:
             # size for comments cell (width is forced, calculate height of rich text)
@@ -641,7 +661,6 @@ class BNLinkedLayerEditor(EDialog):
     def __updateUi(self):
         """Check if content is valid"""
         self.pbOk.setEnabled(self.tvDocNodesView.nbSelectedItems()==1)
-
 
     def __linkedLayerSelectionChanged(self, selected, deselected):
         """Layer selection has been changed"""

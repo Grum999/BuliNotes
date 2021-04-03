@@ -43,7 +43,8 @@ from pktk.modules.utils import (
                         secToStrTime,
                         tsToStr,
                         qImageToPngQByteArray,
-                        BCTimer
+                        BCTimer,
+                        stripHtml
                     )
 from pktk.modules.edialog import EDialog
 from pktk.modules.ekrita import EKritaNode
@@ -102,6 +103,7 @@ class BNNote(QObject):
         self.__windowPostItGeometry=None
         self.__windowPostItCompact=False
         self.__windowPostItBrushIconSizeIndex=1
+        self.__windowPostItLinkedLayersIconSizeIndex=1
 
         self.__scratchpadBrushName='b)_Basic-5_Size'
         self.__scratchpadBrushSize=5
@@ -285,6 +287,16 @@ class BNNote(QObject):
             self.__windowPostItBrushIconSizeIndex=index
             self.__updated('brushIconSizeIndex')
 
+    def windowPostItLinkedLayersIconSizeIndex(self):
+        """Return current size index for post-it linked layers icon list"""
+        return self.__windowPostItLinkedLayersIconSizeIndex
+
+    def setWindowPostItLinkedLayersIconSizeIndex(self, index):
+        """Set window note compact"""
+        if isinstance(index, int) and index>=0 and index<=4 and self.__windowPostItLinkedLayersIconSizeIndex!=index:
+            self.__windowPostItLinkedLayersIconSizeIndex=index
+            self.__updated('linkedLayersIconSizeIndex')
+
     def windowPostIt(self):
         """Return note windows post-it"""
         return self.__windowPostIt
@@ -378,7 +390,7 @@ class BNNote(QObject):
 
     def hasText(self):
         """Return True if note has text content"""
-        return (self.__text.strip()!='')
+        return (stripHtml(self.__text)!='')
 
     def hasScratchpad(self):
         """Return True if note has scratchpad content"""
@@ -387,6 +399,10 @@ class BNNote(QObject):
     def hasBrushes(self):
         """Return True if note has brushes content"""
         return self.__brushes.length()>0
+
+    def hasLinkedLayers(self):
+        """Return True if note has linked layers content"""
+        return self.__linkedLayers.length()>0
 
     def selectedType(self):
         """Return current selected type"""
@@ -581,6 +597,19 @@ class BNNote(QObject):
                      |         |                 |
 
 
+        *** Block type [0x0034 - Window linked layer icon size index]
+
+            position | size    | format          | description
+                     | (bytes) |                 |
+            ---------+---------+-----------------+------------------------------
+            0        | 1       | ushort          | 0x00: 32px
+                     |         |                 | 0x01: 64px
+                     |         |                 | 0x02: 96px
+                     |         |                 | 0x03: 128px
+                     |         |                 | 0x04: 192px
+                     |         |                 |
+
+
         *** Block type [0x0100 - Content text]
 
             position | size    | format          | description
@@ -714,6 +743,7 @@ class BNNote(QObject):
         writeBlock(0x0031, 'bool', self.__windowPostItCompact)
         writeBlock(0x0032, 'ushort', self.__selectedType)
         writeBlock(0x0033, 'ushort', self.__windowPostItBrushIconSizeIndex)
+        writeBlock(0x0034, 'ushort', self.__windowPostItLinkedLayersIconSizeIndex)
 
         writeBlock(0x0100, 'str', self.__text)
 
@@ -801,6 +831,8 @@ class BNNote(QObject):
                 self.setSelectedType(dataRead.readUShort())
             elif blockType==0x0033:
                 self.setWindowPostItBrushIconSizeIndex(dataRead.readUShort())
+            elif blockType==0x0034:
+                self.setWindowPostItLinkedLayersIconSizeIndex(dataRead.readUShort())
             elif blockType==0x0100:
                 self.setText(dataRead.readStr(blockContentSize))
             elif blockType==0x0200:

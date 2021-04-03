@@ -42,7 +42,12 @@ from .bnwbrushes import (
                     BNBrushesModel,
                     BNWBrushes
                 )
+from .bnwlinkedlayers import (
+                    BNLinkedLayersModel,
+                    BNWLinkedLayers
+                )
 from pktk.modules.utils import buildIcon
+from pktk.modules.ekrita import EKritaDocument
 from pktk.widgets.wtoolbox import WToolBox
 
 
@@ -172,10 +177,27 @@ width: 0px;
         header.setStretchLastSection(False)
         header.setSectionResizeMode(BNBrushesModel.COLNUM_BRUSH, QHeaderView.Stretch)
 
+        self.__linkedLayersList=BNWLinkedLayers(self)
+        self.__linkedLayersList.setLinkedLayers(self.__note.linkedLayers())
+        self.__linkedLayersList.setColumnHidden(BNLinkedLayersModel.COLNUM_COMMENT, True)
+        self.__linkedLayersList.setHeaderHidden(True)
+        self.__linkedLayersList.setIndentation(0)
+        self.__linkedLayersList.setAllColumnsShowFocus(True)
+        self.__linkedLayersList.setExpandsOnDoubleClick(False)
+        self.__linkedLayersList.setRootIsDecorated(False)
+        self.__linkedLayersList.setUniformRowHeights(False)
+        self.__linkedLayersList.setIconSizeIndex(self.__note.windowPostItLinkedLayersIconSizeIndex())
+        self.__linkedLayersList.selectionModel().selectionChanged.connect(self.__linkedLayersListSelectionChanged)
+        self.__linkedLayersList.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.__linkedLayersList.iconSizeIndexChanged.connect(self.__linkedLayersListIconSizeIndexChanged)
+        header = self.__linkedLayersList.header()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(BNLinkedLayersModel.COLNUM_NAME, QHeaderView.Stretch)
 
         self.__stackedWidgets.addWidget(self.__textEdit)
         self.__stackedWidgets.addWidget(self.__scratchpadImg)
         self.__stackedWidgets.addWidget(self.__brushesList)
+        self.__stackedWidgets.addWidget(self.__linkedLayersList)
         self.__stackedWidgets.setCurrentIndex(0)
 
         self.setCentralWidget(self.__stackedWidgets)
@@ -204,14 +226,24 @@ width: 0px;
         self.__btShowBrushes.setAutoRaise(True)
         self.__btShowBrushes.setCheckable(True)
 
+        self.__btShowLinkedLayers=QToolButton(self)
+        self.__btShowLinkedLayers.clicked.connect(self.__showNotePage)
+        self.__btShowLinkedLayers.setToolTip(i18n('Linked layers'))
+        self.__btShowLinkedLayers.setIcon(buildIcon('pktk:layers'))
+        self.__btShowLinkedLayers.setFocusPolicy(Qt.NoFocus)
+        self.__btShowLinkedLayers.setAutoRaise(True)
+        self.__btShowLinkedLayers.setCheckable(True)
+
         self.__buttonGroup=QButtonGroup()
         self.__buttonGroup.addButton(self.__btShowText)
         self.__buttonGroup.addButton(self.__btShowScratchpad)
         self.__buttonGroup.addButton(self.__btShowBrushes)
+        self.__buttonGroup.addButton(self.__btShowLinkedLayers)
 
         self.bottomBarAddWidget(self.__btShowText)
         self.bottomBarAddWidget(self.__btShowScratchpad)
         self.bottomBarAddWidget(self.__btShowBrushes)
+        self.bottomBarAddWidget(self.__btShowLinkedLayers)
 
         # -1 because note type start from 1 and page from 0
         self.__showNotePage(self.__note.selectedType()-1)
@@ -240,6 +272,7 @@ width: 0px;
     def showEvent(self, event):
         """Need to update treeview columns size..."""
         self.__brushesList.resizeColumns()
+        self.__linkedLayersList.resizeColumns()
 
     def __setCompact(self, value):
         """Set post-it as compact"""
@@ -251,13 +284,18 @@ width: 0px;
             self.__textEdit.setHtml(self.__note.text())
         self.__textEdit.setCompact(value)
         self.__brushesList.setCompact(value)
+        self.__linkedLayersList.setCompact(value)
 
         if value:
             self.__brushesList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_COMPACT_CSS)
             self.__brushesList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_COMPACT_CSS)
+            self.__linkedLayersList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_COMPACT_CSS)
+            self.__linkedLayersList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_COMPACT_CSS)
         else:
             self.__brushesList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_NORMAL_CSS)
             self.__brushesList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_NORMAL_CSS)
+            self.__linkedLayersList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_NORMAL_CSS)
+            self.__linkedLayersList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_NORMAL_CSS)
 
         self.setCompact(value)
 
@@ -281,17 +319,33 @@ width: 0px;
             nb+=1
         else:
             self.__textEdit.setHtml('')
+
         if self.__note.hasScratchpad():
             self.__scratchpadImg.setPixmap(QPixmap.fromImage(self.__note.scratchpadImage()))
             nb+=1
         else:
             self.__scratchpadImg.setPixmap(None)
+
         if self.__note.hasBrushes():
+            nb+=1
+
+        if self.__note.hasLinkedLayers():
             nb+=1
 
         self.__btShowText.setVisible(self.__note.hasText() and nb>1)
         self.__btShowScratchpad.setVisible(self.__note.hasScratchpad() and nb>1)
         self.__btShowBrushes.setVisible(self.__note.hasBrushes() and nb>1)
+        self.__btShowLinkedLayers.setVisible(self.__note.hasLinkedLayers() and nb>1)
+
+        if nb==1:
+            if self.__note.hasText():
+                self.__showNotePage(0)
+            elif self.__note.hasScratchpad():
+                self.__showNotePage(1)
+            elif self.__note.hasBrushes():
+                self.__showNotePage(2)
+            elif self.__note.hasLinkedLayers():
+                self.__showNotePage(3)
 
         self.setColorIndex(self.__note.colorIndex())
 
@@ -302,8 +356,11 @@ width: 0px;
                 pageNumber=0
             elif self.__btShowScratchpad.isChecked():
                 pageNumber=1
-            if self.__btShowBrushes.isChecked():
+            elif self.__btShowBrushes.isChecked():
                 pageNumber=2
+            elif self.__btShowLinkedLayers.isChecked():
+                pageNumber=3
+                self.__note.linkedLayers().updateFromDocument()
 
             # +1 because types start from 1 and pages from 0
             self.__note.setSelectedType(pageNumber+1)
@@ -314,6 +371,8 @@ width: 0px;
                 self.__btShowScratchpad.setChecked(True)
             elif pageNumber==2:
                 self.__btShowBrushes.setChecked(True)
+            elif pageNumber==3:
+                self.__btShowLinkedLayers.setChecked(True)
 
         self.__stackedWidgets.setCurrentIndex(pageNumber)
 
@@ -330,6 +389,20 @@ width: 0px;
         selectedBrushes=self.__brushesList.selectedItems()
         if len(selectedBrushes)==1:
             selectedBrushes[0].toBrush()
+
+    def __linkedLayersListIconSizeIndexChanged(self, index, size):
+        """Icon size index has been changed"""
+        self.__note.setWindowPostItLinkedLayersIconSizeIndex(index)
+
+    def __linkedLayersListSelectionChanged(self, selected, deselected):
+        """Selection in linked layer list has changed"""
+        selectedLayer=self.__linkedLayersList.selectedItems()
+        if len(selectedLayer)==1:
+            document=Krita.instance().activeDocument()
+            node=EKritaDocument.findLayerById(document, selectedLayer[0].id())
+            if node:
+                document.setActiveNode(node)
+
 
     def closeEvent(self, event):
         """About to close window"""
