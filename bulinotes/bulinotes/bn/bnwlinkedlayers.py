@@ -454,7 +454,7 @@ class BNLinkedLayersModelDelegate(QStyledItemDelegate):
             else:
                 textDocument.setHtml(text)
                 cursor=QTextCursor(textDocument)
-                cursor.insertHtml(f"<span>{linkedLayer.name()}</span><br>")
+                cursor.insertHtml(f"<span><i>[{linkedLayer.name()}]</i></span><br>")
 
         if self.__isCompact:
             text=textDocument.toHtml()
