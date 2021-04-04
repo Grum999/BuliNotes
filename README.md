@@ -21,6 +21,8 @@ As notes are embedded into *.kra* file, you're sure to never loose them :-)
 | *Hand written informations post-it* | *Brushes list post-it* |
 |---|---|
 | ![Handwritten note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_fullscreen_example-handwritten.jpg) | ![Brushes note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_fullscreen_example-brushes.jpg) |
+| ***Linked layers informations post-it*** |  |
+| ![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-2-0a_fullscreen_example-linked_layers.jpg) |  |
 
 
 *Editor - Text note*
@@ -35,6 +37,10 @@ As notes are embedded into *.kra* file, you're sure to never loose them :-)
 *Editor - Brushes note*
 
 ![Handwritten note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note-brushes.jpg)
+
+*Editor - Brushes note*
+
+![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-2-0a_edit_note-linked_layers.jpg)
 
 
 
@@ -98,7 +104,7 @@ To use scratchpad:
 
 > **Note**: undo/redo is not available (and not sure to be able to implement it...)
 
-When a note is displayed as a post-it, clicking on scratchpad will change brush color with picked color
+When a note is displayed as a post-it, clicking on scratchpad will change brush color with picked color.
 
 ### Brushes list
 
@@ -121,7 +127,15 @@ And as note in saved into Krita file, you can do a break and came back few days 
 
 > **Note:** brush preset is not embedded into Krita document, only reference to brush is saved
 
-When a note is displayed as a post-it, clicking on a brush will change current brush with the selected one
+When a note is displayed as a post-it, clicking on a brush will change current brush with the selected one.
+
+
+### Linked layers
+
+Layers can be linked to notes with some rich text anotations.
+This can be useful in a note to refer to specifics layers, or just to "group" some related layers.
+
+When a note is displayed as a post-it, clicking on a linked layer will activate it as current layer.
 
 
 
@@ -129,7 +143,7 @@ When a note is displayed as a post-it, clicking on a brush will change current b
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.1.0a]((https://github.com/Grum999/BuliNotes/releases/download/0.1.0a/bulinotes.zip)**
++ **[ZIP ARCHIVE - v0.2.0a]((https://github.com/Grum999/BuliNotes/releases/download/0.2.0a/bulinotes.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 
@@ -161,7 +175,15 @@ Plugin hasn't been tested on Windows and MacOs
 
 ### What's new?
 
-_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.1.0a.md)*
+_[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.2.0a.md)
+- *Linked layers notes* - implement functionality
+- *Text notes* - implement strikethrough & bg colors styles
+- *Text notes* - implement shortcuts
+- *Hand written notes* - implement brush opacity
+- *Hand written notes* - implement import/export
+- *Brushes notes* - improve post-it mode
+
+_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.1.0a.md)
 - First implemented/released version
 
 
@@ -171,11 +193,7 @@ _[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://gith
 
 There's some bugs, and many functionalities are not yet implemented (even if buttons are already here :-))
 
-> # **Important note**
-> Due to Krita's [Bug 434244 - Annotation not loaded](https://bugs.kde.org/show_bug.cgi?id=434244), with a document with more than one note, only the last added note will be available when re-opening a document
->
-> Wider, problem will occurs if any plugin other than *Buli Notes* save annotation data: only the lastest annotation data can be opened
->
+
 > **Using plugin is currently not recommended except for testing & feedback purpose**
 
 
