@@ -51,7 +51,7 @@ from pktk.modules.ekrita import EKritaNode
 from pktk.modules.bytesrw import BytesRW
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 from pktk.widgets.wmenuitem import WMenuBrushesPresetSelector
-from pktk.widgets.wcolorselector import WMenuColorPicker
+from pktk.widgets.wcolorselector import (WColorPicker, WMenuColorPicker)
 from pktk.widgets.wdocnodesview import WDocNodesViewDialog
 from pktk.widgets.wtextedit import (
                                 WTextEditDialog,
@@ -1216,8 +1216,10 @@ class BNNoteEditor(EDialog):
         self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSL(False)
         self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorAlpha(False)
         self.__actionSelectBrushScratchpadColor.colorPicker().setOptionCompactUi(True)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionPreviewColor(True)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowPreviewColor(True)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowCssRgb(False)
         self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCombination(False)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
 
         menuBrushScratchpadColor = QMenu(self.tbColor)
         menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
@@ -1250,8 +1252,10 @@ class BNNoteEditor(EDialog):
         self.__actionSelectColor.colorPicker().setOptionShowColorHSL(False)
         self.__actionSelectColor.colorPicker().setOptionShowColorAlpha(False)
         self.__actionSelectColor.colorPicker().setOptionCompactUi(True)
-        self.__actionSelectColor.colorPicker().setOptionPreviewColor(True)
+        self.__actionSelectColor.colorPicker().setOptionShowPreviewColor(True)
+        self.__actionSelectColor.colorPicker().setOptionShowCssRgb(False)
         self.__actionSelectColor.colorPicker().setOptionShowColorCombination(False)
+        self.__actionSelectColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
 
 
         self.__actionImportFromFile=QAction(i18n('Import from file...'), self)
