@@ -1,7 +1,7 @@
 import sys
 import os.path
 
-from .pktk import *
+from .pktk import (PkTk, EInvalidType, EInvalidValue, EInvalidStatus)
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 

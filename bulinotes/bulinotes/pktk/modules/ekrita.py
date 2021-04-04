@@ -26,11 +26,12 @@
 from enum import Enum
 import re
 
-from .pktk import (
+from pktk import (
         PkTk,
-        EInvalidType
+        EInvalidType,
+        EInvalidValue,
+        EInvalidStatus
     )
-
 from krita import (
         Document,
         Node
@@ -42,14 +43,17 @@ from PyQt5.QtCore import (
         QMimeData,
         QPoint,
         QRect,
-        QTimer
+        QTimer,
+        QUuid,
     )
 from PyQt5.QtGui import (
         QGuiApplication,
         QImage,
-        QPixmap
+        QPixmap,
+        qRgb
     )
 
+from PyQt5.Qt import QObject
 
 
 
@@ -68,6 +72,30 @@ PkTk.setModuleInfo(
 
 class EKritaDocument:
     """Provides methods to manage Krita Documents"""
+
+    @staticmethod
+    def findLayerById(document, layerId):
+        """Find a layer by ID in document
+        because Document.nodeByUniqueID() returns a QObject instead of a Node object... :-/
+        """
+        def find(layerId, parentLayer):
+            """sub function called recursively to search layer in document tree"""
+            for layer in parentLayer.childNodes():
+                if layerId == layer.uniqueId():
+                    return layer
+                elif len(layer.childNodes()) > 0:
+                    returned = find(layerId, layer)
+                    if not returned is None:
+                        return returned
+            return None
+
+        if not isinstance(document, Document):
+            raise EInvalidType("Given `document` must be a Krita <Document> type")
+        elif not isinstance(layerId, QUuid):
+            raise EInvalidType("Given `layerId` must be a valid <QUuid>")
+
+        return find(layerId, document.rootNode())
+
 
     @staticmethod
     def findFirstLayerByName(searchFrom, layerName):
@@ -280,7 +308,7 @@ class EKritaNode:
 
 
     @staticmethod
-    def toQImage(layerNode, rect=None):
+    def toQImage(layerNode, rect=None, projectionMode=None):
         """Return `layerNode` content as a QImage (as ARGB32)
 
         The `rect` value can be:
@@ -288,7 +316,20 @@ class EKritaNode:
         - A QRect() object, in this case return `layerNode` content reduced to given rectangle bounds
         - A Krita document, in this case return `layerNode` content reduced to document bounds
         """
-        if not isinstance(layerNode, Node):
+        if layerNode is None:
+            raise EInvalidValue("Given `layerNode` can't be None")
+
+        if type(layerNode)==QObject:
+            # NOTE: layerNode can be a QObject...
+            #       that's weird, but document.nodeByUniqueID() return a QObject for a paintlayer (other Nodes seems to be Ok...)
+            #       it can sound strange but in this case the returned QObject is a QObject iwht Node properties
+            #       so, need to check if QObject have expected methods
+            if hasattr(layerNode, 'type') and hasattr(layerNode, 'bounds') and hasattr(layerNode, 'childNodes') and hasattr(layerNode, 'colorModel') and hasattr(layerNode, 'colorDepth') and hasattr(layerNode, 'colorProfile') and hasattr(layerNode, 'setColorSpace') and hasattr(layerNode, 'setPixelData'):
+                pass
+            else:
+                # consider that it's not a node
+                raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
+        elif not isinstance(layerNode, Node):
             raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
 
         if rect is None:
@@ -298,21 +339,32 @@ class EKritaNode:
         elif not isinstance(rect, QRect):
             raise EInvalidType("Given `rect` must be a valid Krita <Document>, a <QRect> or None")
 
-        projectionMode = EKritaNode.__projectionMode
+        if projectionMode is None:
+            projectionMode = EKritaNode.__projectionMode
         if projectionMode == EKritaNode.ProjectionMode.AUTO:
-            if len(layerNode.childNodes()) == 0:
+            childNodes=layerNode.childNodes()
+            # childNodes can return be None!?
+            if childNodes and len(childNodes) == 0:
                 projectionMode = EKritaNode.ProjectionMode.FALSE
             else:
                 projectionMode = EKritaNode.ProjectionMode.TRUE
 
-        if projectionMode == EKritaNode.ProjectionMode.TRUE:
-            return QImage(layerNode.projectionPixelData(rect.left(), rect.top(), rect.width(), rect.height()), rect.width(), rect.height(), QImage.Format_ARGB32)
+        # Need to check what todo for:
+        # - masks (8bit/pixels)
+        # - other color space (need to convert to 8bits/rgba...?)
+        if layerNode.type() in ('transparencymask', 'filtermask', 'transformmask', 'selectionmask'):
+            # pixelData/projectionPixelData return a 8bits/pixel matrix
+            # didn't find how to convert pixel data to QImlage then use thumbnail() function
+            return layerNode.thumbnail(rect.width(), rect.height())
         else:
-            return QImage(layerNode.pixelData(rect.left(), rect.top(), rect.width(), rect.height()), rect.width(), rect.height(), QImage.Format_ARGB32)
+            if projectionMode == EKritaNode.ProjectionMode.TRUE:
+                return QImage(layerNode.projectionPixelData(rect.left(), rect.top(), rect.width(), rect.height()), rect.width(), rect.height(), QImage.Format_ARGB32)
+            else:
+                return QImage(layerNode.pixelData(rect.left(), rect.top(), rect.width(), rect.height()), rect.width(), rect.height(), QImage.Format_ARGB32)
 
 
     @staticmethod
-    def toQPixmap(layerNode, rect=None):
+    def toQPixmap(layerNode, rect=None, projectionMode=None):
         """Return `layerNode` content as a QPixmap (as ARGB32)
 
         If the `projection` value is True, returned :
@@ -323,7 +375,7 @@ class EKritaNode:
         - A QRect() object, in this case return `layerNode` content reduced to given rectangle bounds
         - A Krita document, in this case return `layerNode` content reduced to document bounds
         """
-        return QPixmap.fromImage(EKritaNode.toQImage(layerNode, rect))
+        return QPixmap.fromImage(EKritaNode.toQImage(layerNode, rect, projectionMode))
 
 
     @staticmethod
@@ -334,9 +386,20 @@ class EKritaNode:
         - None, in this case, pixmap will be pasted at position (0, 0)
         - A QPoint() object, pixmap will be pasted at defined position
         """
-        if not isinstance(layerNode, Node):
+        # NOTE: layerNode can be a QObject...
+        #       that's weird, but document.nodeByUniqueID() return a QObject for a paintlayer (other Nodes seems to be Ok...)
+        #       it can sound strange but in this case the returned QObject is a QObject iwht Node properties
+        #       so, need to check if QObject have expected methods
+        if type(layerNode)==QObject():
+            if hasattr(layerNode, 'type') and hasattr(layerNode, 'colorModel') and hasattr(layerNode, 'colorDepth') and hasattr(layerNode, 'colorProfile') and hasattr(layerNode, 'setColorSpace') and hasattr(layerNode, 'setPixelData'):
+                pass
+            else:
+                # consider that it's not a node
+                raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
+        elif not isinstance(layerNode, Node):
             raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
-        elif not isinstance(image, QImage):
+
+        if not isinstance(image, QImage):
             raise EInvalidType("Given `image` must be a valid <QImage> ")
 
         if position is None:

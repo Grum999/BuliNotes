@@ -331,6 +331,27 @@ def getLangValue(dictionary, lang=None, default=''):
         # not found, return first entry
         return dictionary[list(dictionary.keys())[0]]
 
+def warningAreaBrush(size=32):
+    """Return a checker board brush"""
+    tmpPixmap = QPixmap(size,size)
+    tmpPixmap.fill(QColor(255,255,255,32))
+    brush = QBrush(QColor(0,0,0,32))
+
+    canvas = QPainter()
+    canvas.begin(tmpPixmap)
+    canvas.setPen(Qt.NoPen)
+    canvas.setBrush(brush)
+
+    s1 = size>>1
+    s2 = size - s1
+
+    canvas.setRenderHint(QPainter.Antialiasing, True)
+    canvas.drawPolygon(QPolygon([QPoint(s1, 0), QPoint(size, 0), QPoint(0, size), QPoint(0, s1)]))
+    canvas.drawPolygon(QPolygon([QPoint(size, s1), QPoint(size, size), QPoint(s1, size)]))
+    canvas.end()
+
+    return QBrush(tmpPixmap)
+
 def checkerBoardBrush(size=32):
     """Return a checker board brush"""
     tmpPixmap = QPixmap(size,size)
@@ -373,9 +394,31 @@ def buildIcon(icons):
         return icons
     elif isinstance(icons, list) and len(icons)>0:
         returned = QIcon()
+
+        pixmapList=[]
         for icon in icons:
-            returned.addPixmap(*icon)
+            if isinstance(icon[0], QPixmap):
+                pixmapListItem=[icon[0]]
+            elif isinstance(icon[0], str):
+                pixmapListItem=[QPixmap(icon[0])]
+
+            for index in range(1,3):
+                if index == 1:
+                    if len(icon) >= 2:
+                        pixmapListItem.append(icon[index])
+                    else:
+                        pixmapListItem.append(QIcon.Normal)
+                elif index == 2:
+                    if len(icon) >= 3:
+                        pixmapListItem.append(icon[index])
+                    else:
+                        pixmapListItem.append(QIcon.Off)
+
+            returned.addPixmap(*tuple(pixmapListItem))
         return returned
+    elif isinstance(icons, str) and (rfind:=re.match("pktk:(.*)", icons)):
+        return buildIcon([(f':/pktk/images/normal/{rfind.groups()[0]}', QIcon.Normal),
+                          (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)])
     else:
         raise EInvalidType("Given `icons` must be a list of tuples")
 

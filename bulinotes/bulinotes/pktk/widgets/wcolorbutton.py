@@ -33,9 +33,23 @@ from PyQt5.QtWidgets import (
         QPushButton,
     )
 
+class QEColor(QColor):
+    def __init__(self, value=None):
+        super(QEColor, self).__init__(value)
+
+        self.__isNone=False
+
+    def isNone(self):
+        return self.__isNone
+
+    def setNone(self, value):
+        if isinstance(value, bool):
+            self.__isNone=value
+
+
 class WColorButton(QToolButton):
     """A button to choose color"""
-    colorChanged = Signal(QColor)
+    colorChanged = Signal(QEColor)
 
     def __init__(self, label, parent=None):
         super(WColorButton, self).__init__(parent)
@@ -51,6 +65,15 @@ class WColorButton(QToolButton):
         self.__pen.setWidth(1)
 
         self.__alphaChannel = True
+        self.__noneColor = False
+
+        self.__actionNoColor=QAction(i18n('No color'), self)
+        self.__actionNoColor.triggered.connect(self.__setColorNone)
+        self.__actionFromPalette=QAction(i18n('From palette'), self)
+        self.__actionFromPalette.triggered.connect(self.__showColorPalette)
+        self.__menu=QMenu(self)
+        self.__menu.addAction(self.__actionNoColor)
+        self.__menu.addAction(self.__actionFromPalette)
 
         self.setText("")
         self.setText=newSetText
@@ -75,6 +98,24 @@ class WColorButton(QToolButton):
 
         return QBrush(tmpPixmap)
 
+    def __setColorNone(self):
+        """Set current color to None"""
+        self.__color=QEColor()
+        self.__color.setNone(True)
+        self.colorChanged.emit(self.__color)
+
+    def __showColorPalette(self):
+        """Display color palette dialog box"""
+        if self.__alphaChannel:
+            options = QColorDialog.ShowAlphaChannel|QColorDialog.DontUseNativeDialog
+        else:
+            options = QColorDialog.DontUseNativeDialog
+
+        returnedColor = QColorDialog.getColor(self.__color, None, i18n("Choose color"), options)
+        if returnedColor.isValid():
+            self.setColor(returnedColor)
+            self.colorChanged.emit(self.__color)
+
     def paintEvent(self, event):
         super(WColorButton, self).paintEvent(event)
 
@@ -86,21 +127,15 @@ class WColorButton(QToolButton):
             rect=QRect(margin, margin, self.width() - margin2,  self.height() - margin2)
 
         painter = QPainter(self)
-        painter.fillRect(rect, self.__cbBrush)
         painter.setPen(self.__pen)
-        painter.setBrush(self.__brush)
+        if not self.__color.isNone():
+            painter.fillRect(rect, self.__cbBrush)
+            painter.setBrush(self.__brush)
         painter.drawRect(rect)
 
     def mouseReleaseEvent(self, event):
-        if self.__alphaChannel:
-            options = QColorDialog.ShowAlphaChannel|QColorDialog.DontUseNativeDialog
-        else:
-            options = QColorDialog.DontUseNativeDialog
-
-        returnedColor = QColorDialog.getColor(self.__color, None, i18n("Choose color"), options)
-        if returnedColor.isValid():
-            self.setColor(returnedColor)
-            self.colorChanged.emit(self.__color)
+        self.__showColorPalette()
+        super(WColorButton, self).mouseReleaseEvent(event)
 
     def color(self):
         """Return current button color"""
@@ -108,7 +143,7 @@ class WColorButton(QToolButton):
 
     def setColor(self, color):
         """Set current button color"""
-        self.__color = QColor(color)
+        self.__color = QEColor(color)
         self.__brush.setColor(self.__color)
         self.update()
 
@@ -119,3 +154,25 @@ class WColorButton(QToolButton):
     def setAlphaChannel(self, value):
         """Set if alpha channel is managed or not"""
         self.__alphaChannel=value
+
+    def noneColor(self):
+        """Return if no color value is managed or not"""
+        return self.__noneColor
+
+    def setNoneColor(self, value):
+        """Set if no color is managed or not
+
+        If true, button is delayed popup with a menu:
+        - "no color"
+        - From palette
+        """
+        if isinstance(value, bool):
+            self.__noneColor=value
+            if value:
+                self.setPopupMode(QToolButton.InstantPopup)
+                self.setArrowType(Qt.NoArrow)
+                self.setMenu(self.__menu)
+                self.setStyleSheet("""WColorButton::menu-indicator { width: 0; } """ )
+            else:
+                self.setPopupMode(QToolButton.DelayedPopup)
+                self.setMenu(None)
