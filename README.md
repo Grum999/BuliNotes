@@ -204,20 +204,12 @@ Some ideas currently in mind:
   - Allow to define notes position in list (currently, sorted by creation order)
   - Export/Import notes
   - Extend clipboad mime type (text + png), allowing to paste information in an editor
-- Note editor
-  - Review tab order
-- Note editor - Text content
-  - A striketrhough text format
-  - Allow to set background color
 - Note editor - Hand written content
-  - Allow to import image (from file, from clipboard, from layer)
-  - Allow to export image (to file, to clipboard)
   - Fix color chooser (there's some bug interface)
-  - Add brush opacity
 - Tasks
   - Implement tasks list note
 - Link layers
-  - Allow to link a note to one or more layers
+  - Allow to apply some basics action on linked layers (show/hide all, lock/unlock all)
 
 
 ## License
