@@ -143,7 +143,7 @@ When a note is displayed as a post-it, clicking on a linked layer will activate 
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.2.0a]((https://github.com/Grum999/BuliNotes/releases/download/0.2.0a/bulinotes.zip)**
++ **[ZIP ARCHIVE - v0.2.0a](https://github.com/Grum999/BuliNotes/releases/download/0.2.0a/bulinotes.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 

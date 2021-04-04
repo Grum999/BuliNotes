@@ -90,5 +90,6 @@ Hand written note can be exported to:
 
 ## Improve brushes notes
 
-Basic brush properties (name, size and blending mode) are displayed
+Basic brush properties (name, size and blending mode) are now displayed.
+
 ![Linked layers edit](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-2-0a_fullscreen_example-brushes_properties.jpg)
