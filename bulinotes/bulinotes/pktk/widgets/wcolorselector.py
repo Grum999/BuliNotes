@@ -1285,6 +1285,7 @@ class WColorSlider(QWidget):
         super(WColorSlider, self).__init__(parent)
 
         self.__optionCompactUi=False
+        self.__optionAsPct=False
 
         self.__disableSignal=False
 
@@ -1293,7 +1294,7 @@ class WColorSlider(QWidget):
 
         self.__wColorSlider=WColorSlider.WColoredSlider(self)
         self.__wValueSpin=QDoubleSpinBox()
-        #self.__wValueSpin.setFrame(False)
+        self.__wValueSpin.setAlignment(Qt.AlignRight)
 
         self.__layout.addWidget(self.__wColorSlider)
         self.__layout.addWidget(self.__wValueSpin)
@@ -1316,15 +1317,57 @@ class WColorSlider(QWidget):
     def __updateFromSlider(self, value):
         if self.__disableSignal:
             return
-        self.__wValueSpin.setValue(value)
+        self.__defineSpinValue()
         self.valueUpdated.emit(value)
 
 
     def __updateFromSpin(self, value):
         if self.__disableSignal:
             return
-        self.__wColorSlider.setValue(value)
-        self.valueUpdated.emit(value)
+        if self.__optionAsPct:
+            errorFix=0
+            if value<=50:
+                errorFix=1
+            self.__wColorSlider.setValue(round(value*(errorFix+self.__wColorSlider.valueMax()-self.__wColorSlider.valueMin())/100+self.__wColorSlider.valueMin(), self.__wColorSlider.valueDecimals()))
+        else:
+            self.__wColorSlider.setValue(value)
+        self.valueUpdated.emit(self.__wColorSlider.value())
+
+
+    def __defineSpinValueMin(self):
+        """Calculate spin min value according to slider values and PCT option"""
+        if self.__optionAsPct:
+            self.__wValueSpin.setMinimum(0)
+        else:
+            self.__wValueSpin.setMinimum(self.__wColorSlider.valueMin())
+
+    def __defineSpinValueMax(self):
+        """Calculate spin max value according to slider values and PCT option"""
+        if self.__optionAsPct:
+            self.__wValueSpin.setMaximum(100)
+        else:
+            self.__wValueSpin.setMaximum(self.__wColorSlider.valueMax())
+
+    def __defineSpinValue(self):
+        """Calculate spin current value according to slider values and PCT option"""
+        if self.__optionAsPct:
+            errorFix=0
+            if self.__wColorSlider.value()<=128:
+                errorFix=1
+            divisor=(errorFix+self.__wColorSlider.valueMax()-self.__wColorSlider.valueMin())
+            if divisor!=0:
+                self.__wValueSpin.setValue(round(100*self.__wColorSlider.value()/divisor, 2))
+            else:
+                self.__wValueSpin.setValue(0)
+        else:
+            self.__wValueSpin.setValue(self.__wColorSlider.value())
+
+    def __defineSpinDecimals(self):
+        """Calculate spin current value according to slider values and PCT option"""
+        if self.__optionAsPct:
+            self.__wValueSpin.setDecimals(2)
+        else:
+            self.__wValueSpin.setDecimals(self.__wColorSlider.valueDecimals())
 
 
     def setModel(self, value):
@@ -1355,7 +1398,7 @@ class WColorSlider(QWidget):
         """Define minimum allowed value"""
         self.__disableSignal=True
         self.__wColorSlider.setValueMin(value)
-        self.__wValueSpin.setMinimum(self.__wColorSlider.valueMin())
+        self.__defineSpinValueMin()
         self.__disableSignal=False
 
 
@@ -1363,7 +1406,7 @@ class WColorSlider(QWidget):
         """Define maximum allowed value"""
         self.__disableSignal=True
         self.__wColorSlider.setValueMax(value)
-        self.__wValueSpin.setMaximum(self.__wColorSlider.valueMax())
+        self.__defineSpinValueMax()
         self.__disableSignal=False
 
 
@@ -1371,7 +1414,7 @@ class WColorSlider(QWidget):
         """Define current value"""
         self.__disableSignal=True
         self.__wColorSlider.setValue(value)
-        self.__wValueSpin.setValue(self.__wColorSlider.value())
+        self.__defineSpinValue()
         self.__disableSignal=False
         self.valueChanged.emit(value)
 
@@ -1380,7 +1423,7 @@ class WColorSlider(QWidget):
         """Define current decimals for value"""
         self.__disableSignal=True
         self.__wColorSlider.setValueDecimals(value)
-        self.__wValueSpin.setDecimals(self.__wColorSlider.valueDecimals())
+        self.__defineSpinDecimals()
         self.__disableSignal=False
 
 
@@ -1411,22 +1454,37 @@ class WColorSlider(QWidget):
 
     def valueMin(self):
         """Return current minimum value"""
-        return self.__propValueMin
+        return self.__wColorSlider.valueMin()
 
 
     def valueMax(self):
         """Return current maximum value"""
-        return self.__propValueMax
+        return self.__wColorSlider.valueMax()
 
 
-    def valueMax(self):
+    def value(self):
         """Return current value"""
-        return self.__propValue
+        return self.__wColorSlider.value()
+
+
+    def valuePct(self, decimals=2):
+        """Return current value as Pct"""
+        errorFix=0
+        if self.__wColorSlider.value()<=128:
+            errorFix=1
+        divisor=(errorFix+self.__wColorSlider.valueMax()-self.__wColorSlider.valueMin())
+        if divisor!=0:
+            returned=100*self.__wColorSlider.value()/divisor
+            if isinstance(decimals, int) and decimals>=0:
+                returned=round(returned, decimals)
+        else:
+            returned=0
+        return returned
 
 
     def valueDecimals(self):
         """Return value decimals """
-        return self.__propValueDec
+        return self.__wColorSlider.valueDecimals()
 
 
     def ticksMain(self):
@@ -1443,13 +1501,16 @@ class WColorSlider(QWidget):
         """Return current suffix"""
         return self.__wValueSpin.suffix()
 
+
     def model(self):
         """Return current model"""
         return self.__modelId
 
+
     def optionCompactUi(self):
         """Return if option 'small size' is active or not"""
         return self.__optionCompactUi
+
 
     def setOptionCompactUi(self, value):
         """Set if option 'small size' is active or not"""
@@ -1464,6 +1525,28 @@ class WColorSlider(QWidget):
         else:
             self.__wValueSpin.setMaximumHeight(99999)
             self.__wColorSlider.setOptionMarginV(8)
+
+
+    def optionAsPct(self):
+        """Return if slider works in PCT mode"""
+        return self.__optionAsPct
+
+    def setOptionAsPct(self, value):
+        """Set if slider works in PCT mode"""
+        if isinstance(value, bool) and value!=self.__optionAsPct:
+            self.__optionAsPct=value
+
+            if value:
+                self.__wValueSpin.setSuffix('%')
+            else:
+                self.__wValueSpin.setSuffix('')
+            self.__disableSignal=True
+            self.__defineSpinDecimals()
+            self.__defineSpinValueMin()
+            self.__defineSpinValueMax()
+            self.__defineSpinValue()
+            self.__disableSignal=False
+
 
 
 
@@ -1892,7 +1975,6 @@ class WColorPicker(QWidget):
         self.setOptionCompactUi(False)
         self.setColor(color)
 
-
     def __initMenu(self):
         """Initialise context menu"""
         self.__actionShowPreviewColor = QAction(i18n('Preview color'), self)
@@ -1949,6 +2031,11 @@ class WColorPicker(QWidget):
         self.__actionShowColorRGB.setCheckable(True)
         self.__actionShowColorRGB.setChecked(self.__optionShowColorRGB)
         self.__subMenuRGB.addAction(self.__actionShowColorRGB)
+        self.__actionDisplayAsPctColorRGB = QAction(i18n('Display as percentage'), self)
+        self.__actionDisplayAsPctColorRGB.toggled.connect(self.setOptionDisplayAsPctColorRGB)
+        self.__actionDisplayAsPctColorRGB.setCheckable(True)
+        self.__actionDisplayAsPctColorRGB.setChecked(self.__optionDisplayAsPctRGB)
+        self.__subMenuRGB.addAction(self.__actionDisplayAsPctColorRGB)
 
         self.__subMenuCMYK = self.__contextMenu.addMenu('CMYK')
         self.__actionShowColorCMYK = QAction(i18n('Show CMYK'), self)
@@ -1956,6 +2043,11 @@ class WColorPicker(QWidget):
         self.__actionShowColorCMYK.setCheckable(True)
         self.__actionShowColorCMYK.setChecked(self.__optionShowColorCMYK)
         self.__subMenuCMYK.addAction(self.__actionShowColorCMYK)
+        self.__actionDisplayAsPctColorCMYK = QAction(i18n('Display as percentage'), self)
+        self.__actionDisplayAsPctColorCMYK.toggled.connect(self.setOptionDisplayAsPctColorCMYK)
+        self.__actionDisplayAsPctColorCMYK.setCheckable(True)
+        self.__actionDisplayAsPctColorCMYK.setChecked(self.__optionDisplayAsPctCMYK)
+        self.__subMenuCMYK.addAction(self.__actionDisplayAsPctColorCMYK)
 
         self.__subMenuHSV = self.__contextMenu.addMenu('HSV')
         self.__actionShowColorHSV = QAction(i18n('Show HSV'), self)
@@ -1963,6 +2055,11 @@ class WColorPicker(QWidget):
         self.__actionShowColorHSV.setCheckable(True)
         self.__actionShowColorHSV.setChecked(self.__optionShowColorHSV)
         self.__subMenuHSV.addAction(self.__actionShowColorHSV)
+        self.__actionDisplayAsPctColorHSV = QAction(i18n('Display as percentage'), self)
+        self.__actionDisplayAsPctColorHSV.toggled.connect(self.setOptionDisplayAsPctColorHSV)
+        self.__actionDisplayAsPctColorHSV.setCheckable(True)
+        self.__actionDisplayAsPctColorHSV.setChecked(self.__optionDisplayAsPctHSV)
+        self.__subMenuHSV.addAction(self.__actionDisplayAsPctColorHSV)
 
         self.__subMenuHSL = self.__contextMenu.addMenu('HSL')
         self.__actionShowColorHSL = QAction(i18n('Show HSL'), self)
@@ -1970,6 +2067,11 @@ class WColorPicker(QWidget):
         self.__actionShowColorHSL.setCheckable(True)
         self.__actionShowColorHSL.setChecked(self.__optionShowColorHSL)
         self.__subMenuHSL.addAction(self.__actionShowColorHSL)
+        self.__actionDisplayAsPctColorHSL = QAction(i18n('Display as percentage'), self)
+        self.__actionDisplayAsPctColorHSL.toggled.connect(self.setOptionDisplayAsPctColorHSL)
+        self.__actionDisplayAsPctColorHSL.setCheckable(True)
+        self.__actionDisplayAsPctColorHSL.setChecked(self.__optionDisplayAsPctHSL)
+        self.__subMenuHSL.addAction(self.__actionDisplayAsPctColorHSL)
 
         self.__subMenuAlpha = self.__contextMenu.addMenu('Alpha')
         self.__actionShowColorAlpha = QAction(i18n('Show Alpha'), self)
@@ -1977,6 +2079,11 @@ class WColorPicker(QWidget):
         self.__actionShowColorAlpha.setCheckable(True)
         self.__actionShowColorAlpha.setChecked(self.__optionShowColorAlpha)
         self.__subMenuAlpha.addAction(self.__actionShowColorAlpha)
+        self.__actionDisplayAsPctColorAlpha = QAction(i18n('Display as percentage'), self)
+        self.__actionDisplayAsPctColorAlpha.toggled.connect(self.setOptionDisplayAsPctColorAlpha)
+        self.__actionDisplayAsPctColorAlpha.setCheckable(True)
+        self.__actionDisplayAsPctColorAlpha.setChecked(self.__optionDisplayAsPctAlpha)
+        self.__subMenuAlpha.addAction(self.__actionDisplayAsPctColorAlpha)
 
 
         self.__contextMenu.addAction(self.__actionShowCompactUi)
@@ -2101,7 +2208,6 @@ class WColorPicker(QWidget):
         self.__color.setAlpha(int(value))
         self.__updateColor(WColorPicker.__COLOR_ALPHA)
 
-
     def __updateColor(self, updating=__COLOR_NONE):
         """Update color interface to current color"""
         if updating==WColorPicker.__COLOR_COMPLEMENTARY:
@@ -2152,7 +2258,6 @@ class WColorPicker(QWidget):
             else:
                 self.__emitColorUpdated()
 
-
     def __emitColorUpdated(self):
         """Emit signal when color has been updated (from mouse position)"""
         self.colorUpdated.emit(self.__color)
@@ -2160,7 +2265,6 @@ class WColorPicker(QWidget):
     def __emitColorChanged(self):
         """Emit signal when color has been changed (programmatically)"""
         self.colorChanged.emit(self.__color)
-
 
     def optionMenu(self):
         """Return current menu options"""
@@ -2170,7 +2274,6 @@ class WColorPicker(QWidget):
         """Return current menu options"""
         if isinstance(value, int):
             self.__optionMenu=value
-
 
     def color(self, value):
         """Get current color"""
@@ -2184,7 +2287,6 @@ class WColorPicker(QWidget):
 
         self.__color=value
         self.__updateColor()
-
 
     def optionShowColorRGB(self):
         """Return if option 'show color RGB sliders' is active or not"""
@@ -2214,7 +2316,6 @@ class WColorPicker(QWidget):
         """Return current option 'show color combination' value"""
         return self.__optionShowColorCombination
 
-
     def optionCompactUi(self):
         """Return if option 'small size' is active or not"""
         return self.__optionCompactUi
@@ -2223,26 +2324,25 @@ class WColorPicker(QWidget):
         """Return if option 'preview color' is active or not"""
         return self.__optionShowPreviewColor
 
-    def optionDisplayAsColorRGB(self):
+    def optionDisplayAsPctColorRGB(self):
         """Return if option 'display color RGB as pct' is active or not"""
         return self.__optionDisplayAsPctRGB
 
-    def optionDisplayAsColorCMYK(self):
+    def optionDisplayAsPctColorCMYK(self):
         """Return if option 'display color CMYK as pct' is active or not"""
         return self.__optionDisplayAsPctCMYK
 
-    def optionDisplayAsColorHSV(self):
+    def optionDisplayAsPctColorHSV(self):
         """Return if option 'display color HSV as pct' is active or not"""
         return self.__optionDisplayAsPctHSV
 
-    def optionDisplayAsColorHSL(self):
+    def optionDisplayAsPctColorHSL(self):
         """Return if option 'display color HSL as pct' is active or not"""
         return self.__optionDisplayAsPctHSL
 
-    def optionDisplayAsColorAlpha(self):
+    def optionDisplayAsPctColorAlpha(self):
         """Return if option 'display color alpha as pct' is active or not"""
         return self.__optionDisplayAsPctAlpha
-
 
     def setOptionShowColorRGB(self, value):
         """Set option 'show color RGB sliders' is active or not"""
@@ -2315,7 +2415,6 @@ class WColorPicker(QWidget):
         self.__ColorCssEdit.setVisible(self.__optionShowColorCssRGB)
         self.__updateSize()
 
-
     def setOptionCompactUi(self, value):
         """Set if option 'small size' is active or not"""
         if not isinstance(value, bool) or self.__optionCompactUi==value:
@@ -2363,40 +2462,62 @@ class WColorPicker(QWidget):
         self.__optionShowPreviewColor=value
         self.__colorWheel.setOptionPreviewColor(value)
 
-    def setOptionDisplayAsColorRGB(self, value):
+    def setOptionDisplayAsPctColorRGB(self, value):
         """Set option 'display RGB  as pct' is active or not"""
         if not isinstance(value, bool) or self.__optionDisplayAsPctRGB==value:
             return
 
         self.__optionDisplayAsPctRGB=value
+        self.__colorSliderRed.setOptionAsPct(self.__optionDisplayAsPctRGB)
+        self.__colorSliderGreen.setOptionAsPct(self.__optionDisplayAsPctRGB)
+        self.__colorSliderBlue.setOptionAsPct(self.__optionDisplayAsPctRGB)
 
-    def setOptionDisplayAsColorCMYK(self, value):
+    def setOptionDisplayAsPctColorCMYK(self, value):
         """Set option 'display CMYK  as pct' is active or not"""
         if not isinstance(value, bool) or self.__optionDisplayAsPctCMYK==value:
             return
 
         self.__optionDisplayAsPctCMYK=value
+        self.__colorSliderCyan.setOptionAsPct(self.__optionDisplayAsPctCMYK)
+        self.__colorSliderMagenta.setOptionAsPct(self.__optionDisplayAsPctCMYK)
+        self.__colorSliderYellow.setOptionAsPct(self.__optionDisplayAsPctCMYK)
+        self.__colorSliderBlack.setOptionAsPct(self.__optionDisplayAsPctCMYK)
 
-    def setOptionDisplayAsColorHSV(self, value):
+    def setOptionDisplayAsPctColorHSV(self, value):
         """Set option 'display HSV  as pct' is active or not"""
         if not isinstance(value, bool) or self.__optionDisplayAsPctHSV==value:
             return
 
+        # HSV and HSL share the same 'HS' slider then both must be set to same
+        # display mode value
         self.__optionDisplayAsPctHSV=value
+        self.__optionDisplayAsPctHSL=value
+        self.__colorSliderHue.setOptionAsPct(self.__optionDisplayAsPctHSV)
+        self.__colorSliderSaturation.setOptionAsPct(self.__optionDisplayAsPctHSV)
+        self.__colorSliderValue.setOptionAsPct(self.__optionDisplayAsPctHSV)
+        self.__colorSliderLightness.setOptionAsPct(self.__optionDisplayAsPctHSV)
 
-    def setOptionDisplayAsColorHSL(self, value):
+    def setOptionDisplayAsPctColorHSL(self, value):
         """Set option 'display HSL  as pct' is active or not"""
         if not isinstance(value, bool) or self.__optionDisplayAsPctHSL==value:
             return
 
+        # HSV and HSL share the same 'HS' slider then both must be set to same
+        # display mode value
+        self.__optionDisplayAsPctHSV=value
         self.__optionDisplayAsPctHSL=value
+        self.__colorSliderHue.setOptionAsPct(self.__optionDisplayAsPctHSL)
+        self.__colorSliderSaturation.setOptionAsPct(self.__optionDisplayAsPctHSL)
+        self.__colorSliderValue.setOptionAsPct(self.__optionDisplayAsPctHSL)
+        self.__colorSliderLightness.setOptionAsPct(self.__optionDisplayAsPctHSL)
 
-    def setOptionDisplayAsColorAlpha(self, value):
+    def setOptionDisplayAsPctColorAlpha(self, value):
         """Set option 'display Alpha as pct' is active or not"""
         if not isinstance(value, bool) or self.__optionDisplayAsPctAlpha==value:
             return
 
         self.__optionDisplayAsPctAlpha=value
+        self.__colorSliderAlpha.setOptionAsPct(self.__optionDisplayAsPctAlpha)
 
     def setOptionShowColorCombination(self, value):
         """Set option 'color combination'
