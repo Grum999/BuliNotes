@@ -1917,7 +1917,7 @@ class WColorPicker(QWidget):
         self.__colorComplementary=WColorComplementary(self.__color)
         self.__colorComplementary.colorClicked.connect(self.__colorComplementaryClicked)
 
-        self.__ColorCssEdit=WColorCssEdit(self)
+        self.__colorCssEdit=WColorCssEdit(self)
 
         self.__colorSliderRed=WColorSlider('red')
         self.__colorSliderGreen=WColorSlider('green')
@@ -1933,6 +1933,7 @@ class WColorPicker(QWidget):
         self.__colorSliderAlpha=WColorSlider('alpha')
 
         self.__colorWheel.colorUpdated.connect(self.__colorWheelChanged)
+        self.__colorCssEdit.colorUpdated.connect(self.__colorCssRGBChanged)
         self.__colorSliderRed.valueUpdated.connect(self.__colorRChanged)
         self.__colorSliderGreen.valueUpdated.connect(self.__colorGChanged)
         self.__colorSliderBlue.valueUpdated.connect(self.__colorBChanged)
@@ -1950,7 +1951,7 @@ class WColorPicker(QWidget):
 
         self.__layout.addWidget(self.__colorWheel)
         self.__layout.addWidget(self.__colorComplementary)
-        self.__layout.addWidget(self.__ColorCssEdit)
+        self.__layout.addWidget(self.__colorCssEdit)
         self.__layout.addWidget(self.__colorSliderRed)
         self.__layout.addWidget(self.__colorSliderGreen)
         self.__layout.addWidget(self.__colorSliderBlue)
@@ -2124,6 +2125,11 @@ class WColorPicker(QWidget):
         self.__actionShowColorHSL.setChecked(self.__optionShowColorHSL)
         self.__actionShowColorAlpha.setChecked(self.__optionShowColorAlpha)
 
+        self.__actionDisplayAsPctColorRGB.setChecked(self.__optionDisplayAsPctRGB)
+        self.__actionDisplayAsPctColorCMYK.setChecked(self.__optionDisplayAsPctCMYK)
+        self.__actionDisplayAsPctColorHSV.setChecked(self.__optionDisplayAsPctHSV)
+        self.__actionDisplayAsPctColorHSL.setChecked(self.__optionDisplayAsPctHSL)
+        self.__actionDisplayAsPctColorAlpha.setChecked(self.__optionDisplayAsPctAlpha)
 
         self.__actionShowCompactUi.setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_UICOMPACT) == WColorPicker.OPTION_MENU_UICOMPACT)
         self.__actionShowPreviewColor.setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_COLPREVIEW) == WColorPicker.OPTION_MENU_COLPREVIEW)
@@ -2147,6 +2153,11 @@ class WColorPicker(QWidget):
         """Color from color wheel has been changed"""
         self.__color=self.__colorWheel.color()
         self.__updateColor(WColorPicker.__COLOR_WHEEL)
+
+    def __colorCssRGBChanged(self, color):
+        """Color from CSS color code editor has been changed"""
+        self.__color=color
+        self.__updateColor(WColorPicker.__COLOR_CSSRGB)
 
     def __colorRChanged(self, value):
         """Color from Red color slider has been changed"""
@@ -2248,7 +2259,7 @@ class WColorPicker(QWidget):
             self.__colorSliderAlpha.setFgGradient([(0, QColor(Qt.transparent)), (1, self.__colorHue)])
             self.__colorSliderAlpha.setValue(self.__color.alpha())
         if updating!=WColorPicker.__COLOR_CSSRGB:
-            self.__ColorCssEdit.setColor(self.__color)
+            self.__colorCssEdit.setColor(self.__color)
 
         if updating!=WColorPicker.__COLOR_ALPHA:
             # when only alpha is modified, do not consider color is changed
@@ -2412,7 +2423,7 @@ class WColorPicker(QWidget):
 
         self.__optionShowColorCssRGB=value
 
-        self.__ColorCssEdit.setVisible(self.__optionShowColorCssRGB)
+        self.__colorCssEdit.setVisible(self.__optionShowColorCssRGB)
         self.__updateSize()
 
     def setOptionCompactUi(self, value):
@@ -2429,14 +2440,14 @@ class WColorPicker(QWidget):
             self.__layout.setSpacing(1)
             self.__colorComplementary.setMinimumHeight(40)
             self.__colorComplementary.setMaximumHeight(60)
-            self.__ColorCssEdit.setMaximumHeight(22)
+            self.__colorCssEdit.setMaximumHeight(22)
         else:
             fnt=QApplication.font()
 
             self.__layout.setSpacing(4)
             self.__colorComplementary.setMinimumHeight(60)
             self.__colorComplementary.setMaximumHeight(80)
-            self.__ColorCssEdit.setMaximumHeight(99999)
+            self.__colorCssEdit.setMaximumHeight(99999)
 
         self.setFont(fnt)
 
