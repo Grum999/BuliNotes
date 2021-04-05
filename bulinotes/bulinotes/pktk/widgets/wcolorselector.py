@@ -49,7 +49,6 @@ from pktk.modules.utils import checkerBoardBrush
 #       - On a CMYK document, selecting a color is buggy (cursor is repositionned on each move)
 #
 #   * WColorWheel
-#       - Review cursor style
 #       - Implement INNER_MODE
 #
 #   * WColorPicker
@@ -57,11 +56,6 @@ from pktk.modules.utils import checkerBoardBrush
 #       - Load from palette
 #       - WebColor (#rrggbb|#rrggbbaa|rgb(255,255,255)|rgba(255,255,255,255)| +floating mode 0.00-1.00  )
 #
-#   * WColorComplementary
-#       - Implement Monochromatic
-#
-#   * WColorSlider
-#       - Fix font size in compactUi mode (currently not applied?)
 
 
 class WColorWheel(QWidget):
@@ -1549,7 +1543,6 @@ class WColorSlider(QWidget):
 
 
 
-
 class WColorComplementary(QWidget):
     """Display complementary colors"""
     colorClicked = Signal(QColor, int)       # when color is clicked from user interface (color, color index)
@@ -2565,27 +2558,3 @@ class WColorPicker(QWidget):
 
         self.__colorComplementary.setMode(self.__optionShowColorCombination)
         self.__updateSize()
-
-
-
-class WMenuColorPicker(QWidgetAction):
-    """Encapsulate a WColorPicker as a menu item"""
-    def __init__(self, parent=None):
-        super(WMenuColorPicker, self).__init__(parent)
-
-        self.__colorPicker = WColorPicker()
-        self.__colorPicker.setMinimumSize(450,0)
-        self.__colorPicker.setContentsMargins(6,6,6,6)
-
-        self.__colorPicker.uiChanged.connect(self.__resizeMenu)
-
-        self.setDefaultWidget(self.__colorPicker)
-
-    def __resizeMenu(self):
-        """Resize menu when menu item content size has been changed"""
-        if self.sender() and self.sender().parent():
-            event=QActionEvent(QEvent.ActionChanged, self)
-            QApplication.sendEvent(self.sender().parent(), event)
-
-    def colorPicker(self):
-        return self.__colorPicker

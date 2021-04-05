@@ -42,7 +42,7 @@ from PyQt5.QtWidgets import (
     )
 
 from krita import PresetChooser
-
+from pktk.widgets.wcolorselector import WColorPicker
 
 
 class WMenuSlider(QWidgetAction):
@@ -91,3 +91,25 @@ class WMenuBrushesPresetSelector(QWidgetAction):
 
     def presetChooser(self):
         return self.__presetChooser
+
+class WMenuColorPicker(QWidgetAction):
+    """Encapsulate a WColorPicker as a menu item"""
+    def __init__(self, parent=None):
+        super(WMenuColorPicker, self).__init__(parent)
+
+        self.__colorPicker = WColorPicker()
+        self.__colorPicker.setMinimumSize(450,0)
+        self.__colorPicker.setContentsMargins(6,6,6,6)
+
+        self.__colorPicker.uiChanged.connect(self.__resizeMenu)
+
+        self.setDefaultWidget(self.__colorPicker)
+
+    def __resizeMenu(self):
+        """Resize menu when menu item content size has been changed"""
+        if self.sender() and self.sender().parent():
+            event=QActionEvent(QEvent.ActionChanged, self)
+            QApplication.sendEvent(self.sender().parent(), event)
+
+    def colorPicker(self):
+        return self.__colorPicker
