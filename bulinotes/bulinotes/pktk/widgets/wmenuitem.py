@@ -98,7 +98,8 @@ class WMenuColorPicker(QWidgetAction):
         super(WMenuColorPicker, self).__init__(parent)
 
         self.__colorPicker = WColorPicker()
-        self.__colorPicker.setMinimumSize(450,0)
+        self.__colorPicker.setCompactWidth(350)
+        self.__colorPicker.setNormalWidth(450)
         self.__colorPicker.setContentsMargins(6,6,6,6)
 
         self.__colorPicker.uiChanged.connect(self.__resizeMenu)

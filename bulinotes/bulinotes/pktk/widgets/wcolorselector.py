@@ -2098,6 +2098,9 @@ class WColorPalette(QWidget):
         self.__scrollArea.setWidgetResizable(True)
         self.__scrollArea.setWidget(self.__pgPalette)
         self.__scrollArea.setFrameStyle(QFrame.NoFrame)
+        # note:
+        #   QScrollArea > QWidget > QScrollBar { background: 0; }
+        #   => setting a number allows to keep the default scrollbar style
         self.__scrollArea.setStyleSheet("""
 QScrollArea { background: transparent; }
 QScrollArea > QWidget > QWidget { background: transparent; }
@@ -2250,6 +2253,10 @@ class WColorPicker(QWidget):
 
     def __init__(self, color=None, parent=None):
         super(WColorPicker, self).__init__(parent)
+
+
+        self.__compactWidth=350
+        self.__normalWidth=450
 
         # compact ui let interface be smaller
         self.__optionCompactUi=True     # fored to false at the end of init
@@ -2908,26 +2915,29 @@ class WColorPicker(QWidget):
             fnt=self.font()
             fnt.setPointSize(int(fnt.pointSize() * 0.75))
 
-            self.setMinimumWidth(250)
-            self.setMaximumWidth(350)
+            minSize=int(0.85 * self.__compactWidth)
+            self.setMinimumWidth(minSize)
+            self.setMaximumWidth(self.__compactWidth)
             self.__layout.setSpacing(1)
             self.__colorComplementary.setMinimumHeight(40)
             self.__colorComplementary.setMaximumHeight(60)
             self.__colorCssEdit.setMaximumHeight(22)
-            self.__colorWheel.setMinimumSize(250,250)
-            self.__colorPalette.setMinimumSize(250,0)
+            self.__colorWheel.setMinimumSize(minSize,minSize)
+            self.__colorPalette.setMinimumSize(minSize,0)
 
         else:
             fnt=QApplication.font()
 
-            self.setMinimumWidth(450)
-            self.setMaximumWidth(99999)
+            minSize=int(0.85 * self.__normalWidth)
+
+            self.setMinimumWidth(minSize)
+            self.setMaximumWidth(self.__normalWidth)
             self.__layout.setSpacing(4)
             self.__colorComplementary.setMinimumHeight(60)
             self.__colorComplementary.setMaximumHeight(80)
             self.__colorCssEdit.setMaximumHeight(99999)
-            self.__colorWheel.setMinimumSize(350,350)
-            self.__colorPalette.setMinimumSize(350,0)
+            self.__colorWheel.setMinimumSize(minSize, minSize)
+            self.__colorPalette.setMinimumSize(minSize, 0)
 
         self.setFont(fnt)
 
@@ -3009,3 +3019,29 @@ class WColorPicker(QWidget):
 
         self.__optionDisplayAsPctAlpha=value
         self.__colorSliderAlpha.setOptionAsPct(self.__optionDisplayAsPctAlpha)
+
+    def compactWidth(self):
+        """Return compact width"""
+        return self.__compactWidth
+
+    def setCompactWidth(self, value):
+        """Define compact width"""
+        self.__compactWidth=value
+        if self.__normalWidth<=self.__compactWidth:
+            self.__normalWidth=int(self.__compactWidth * 0.3)
+        # force compact ui refresh...
+        self.__optionCompactUi=not self.__optionCompactUi
+        self.setOptionCompactUi(not self.__optionCompactUi)
+
+    def normalWidth(self):
+        """Return normal width"""
+        return self.__normalWidth
+
+    def setNormalWidth(self, value):
+        """Define compact width"""
+        self.__normalWidth=value
+        if self.__compactWidth<=self.__normalWidth:
+            self.__compactWidth=int(self.__compactWidth * 0.7)
+        # force compact ui refresh...
+        self.__optionCompactUi=not self.__optionCompactUi
+        self.setOptionCompactUi(not self.__optionCompactUi)
