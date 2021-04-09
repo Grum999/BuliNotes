@@ -1926,14 +1926,12 @@ class WColorPalette(QWidget):
             # - current cell size
             # - number of rows
             self.__idealSize=QSize(self.width(), (self.__cellSize+1)*self.__rows)
-            print('__renderCache', self.__idealSize, self.__cellSize, self.__rows)
 
             # and set ideal height as minimal height for widget
             self.setMinimumHeight(self.__idealSize.height())
 
         def resizeEvent(self, event):
             """Widget is resized, need to invalidate pixmap cache"""
-            print('resize event')
             self.__cachedGrid=None
             super(WColorPalette.WPaletteGrid, self).resizeEvent(event)
             self.invalidate()
@@ -2126,7 +2124,6 @@ QScrollArea > QWidget > QScrollBar { background: 0; }
 
     def __paletteChanged(self, palette):
         """Palette has been changed in list"""
-        print("__paletteChanged", palette)
         self.__palette=palette
         self.__pgPalette.setPalette(self.__palettes[self.__palette])
         self.paletteChanged.emit(palette)
@@ -2160,7 +2157,6 @@ QScrollArea > QWidget > QScrollBar { background: 0; }
 
     def setPalette(self, palette):
         """Return current selected palette"""
-        print('setPalette', palette, self.__palette, self.__palettes)
         if palette in self.__palettes and palette!=self.__palette:
             self.__cbPalettes.setCurrentText(palette)
 
@@ -2285,6 +2281,8 @@ class WColorPicker(QWidget):
 
         # options to define which options are available in context menu
         self.__optionMenu=WColorPicker.OPTION_MENU_ALL
+
+        self.__optionAllowRightClick=False
 
         # --
         self.__color=QColor()
@@ -2569,8 +2567,9 @@ class WColorPicker(QWidget):
     def __colorPaletteClicked(self, index, swatch, color, buttons):
         """Color palette has been changed"""
         if index>-1 and swatch.isValid():
-            self.__color=color
-            self.__updateColor(WColorPicker.__COLOR_PALETTE)
+            if self.__optionAllowRightClick or (int(buttons) & Qt.RightButton != Qt.RightButton):
+                self.__color=color
+                self.__updateColor(WColorPicker.__COLOR_PALETTE)
 
     def __colorRChanged(self, value):
         """Color from Red color slider has been changed"""
@@ -2775,6 +2774,10 @@ class WColorPicker(QWidget):
     def optionDisplayAsPctColorAlpha(self):
         """Return if option 'display color alpha as pct' is active or not"""
         return self.__optionDisplayAsPctAlpha
+
+    def optionAllowRightClick(self):
+        """Return True if right click on palette allows to select a color"""
+        return self.__optionAllowRightClick
 
     def setOptionShowColorRGB(self, value):
         """Set option 'show color RGB sliders' is active or not"""
@@ -3019,6 +3022,11 @@ class WColorPicker(QWidget):
 
         self.__optionDisplayAsPctAlpha=value
         self.__colorSliderAlpha.setOptionAsPct(self.__optionDisplayAsPctAlpha)
+
+    def setOptionAllowRightClick(self, value):
+        """Set if right click on palette is allowed to select a color"""
+        if isinstance(value, bool):
+            self.__optionAllowRightClick=value
 
     def compactWidth(self):
         """Return compact width"""

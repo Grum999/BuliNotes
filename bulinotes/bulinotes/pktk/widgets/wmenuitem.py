@@ -103,8 +103,23 @@ class WMenuColorPicker(QWidgetAction):
         self.__colorPicker.setContentsMargins(6,6,6,6)
 
         self.__colorPicker.uiChanged.connect(self.__resizeMenu)
+        self.__colorPicker.colorUpdated.connect(self.__closeMenu)
 
         self.setDefaultWidget(self.__colorPicker)
+
+    def __closeMenu(self):
+        if self.__colorPicker.optionShowColorPalette():
+            if (self.__colorPicker.optionShowColorRGB() or
+                self.__colorPicker.optionShowColorCMYK() or
+                self.__colorPicker.optionShowColorHSV() or
+                self.__colorPicker.optionShowColorHSL() or
+                self.__colorPicker.optionShowColorAlpha() or
+                self.__colorPicker.optionShowColorCssRGB() or
+                self.__colorPicker.optionShowColorWheel() or
+                self.__colorPicker.optionShowColorCombination()):
+                return
+            for parentWidget in self.associatedWidgets():
+                parentWidget.hide()
 
     def __resizeMenu(self):
         """Resize menu when menu item content size has been changed"""
