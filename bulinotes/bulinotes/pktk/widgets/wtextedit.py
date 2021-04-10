@@ -40,6 +40,7 @@ from PyQt5.QtWidgets import (
         QVBoxLayout,
         QWidget
     )
+from .wcolorselector import WColorPicker
 from .wcolorbutton import (
                         WColorButton,
                         QEColor
@@ -367,8 +368,18 @@ class WTextEdit(QWidget):
                     qItem = WColorButton(self.__toolBar)
 
                     qItem.colorChanged.connect(item['action'])
-                    qItem.setAlphaChannel(False)
                     qItem.setNoneColor(True)
+                    qItem.colorPicker().setOptionShowColorRGB(False)
+                    qItem.colorPicker().setOptionShowColorCMYK(False)
+                    qItem.colorPicker().setOptionShowColorHSV(False)
+                    qItem.colorPicker().setOptionShowColorHSL(False)
+                    qItem.colorPicker().setOptionShowColorAlpha(False)
+                    qItem.colorPicker().setOptionShowCssRgb(False)
+                    qItem.colorPicker().setOptionShowColorCombination(False)
+                    qItem.colorPicker().setOptionShowColorPalette(True)
+                    qItem.colorPicker().setOptionShowColorWheel(False)
+                    qItem.colorPicker().setOptionCompactUi(False)
+                    qItem.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
                 else:
                     qItem = QToolButton(self.__toolBar)
 

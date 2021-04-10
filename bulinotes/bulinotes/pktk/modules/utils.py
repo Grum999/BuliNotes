@@ -381,8 +381,8 @@ def checkerBoardImage(size, checkerSize=32):
         return None
 
     pixmap = QPixmap(size)
-    painter = QPainter(pixmap)
-    painter.begin()
+    painter = QPainter()
+    painter.begin(pixmap)
     painter.fillRect(pixmap.rect(), checkerBoardBrush(checkerSize))
     painter.end()
 

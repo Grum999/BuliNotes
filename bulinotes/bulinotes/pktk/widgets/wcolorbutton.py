@@ -33,6 +33,10 @@ from PyQt5.QtWidgets import (
         QPushButton,
     )
 
+from pktk.modules.utils import checkerBoardBrush
+from .wmenuitem import WMenuColorPicker
+
+
 class QEColor(QColor):
     def __init__(self, value=None):
         super(QEColor, self).__init__(value)
@@ -60,43 +64,22 @@ class WColorButton(QToolButton):
 
         self.__color = Qt.white
         self.__brush = QBrush(self.__color, Qt.SolidPattern)
-        self.__cbBrush = self.__checkerBoardBrush(16)
+        self.__cbBrush = checkerBoardBrush(16)
         self.__pen = QPen(QColor("#88888888"))
         self.__pen.setWidth(1)
 
-        self.__alphaChannel = True
         self.__noneColor = False
 
         self.__actionNoColor=QAction(i18n('No color'), self)
         self.__actionNoColor.triggered.connect(self.__setColorNone)
-        self.__actionFromPalette=QAction(i18n('From palette'), self)
-        self.__actionFromPalette.triggered.connect(self.__showColorPalette)
+        self.__actionFromColorPicker=WMenuColorPicker()
+        self.__actionFromColorPicker.colorPicker().colorUpdated.connect(self.__setColor)
         self.__menu=QMenu(self)
         self.__menu.addAction(self.__actionNoColor)
-        self.__menu.addAction(self.__actionFromPalette)
+        self.__menu.addAction(self.__actionFromColorPicker)
 
         self.setText("")
         self.setText=newSetText
-
-    def __checkerBoardBrush(self, size=32):
-        """Return a checker board brush"""
-        tmpPixmap = QPixmap(size,size)
-        tmpPixmap.fill(QColor(255,255,255))
-        brush = QBrush(QColor(220,220,220))
-
-        canvas = QPainter()
-        canvas.begin(tmpPixmap)
-        canvas.setPen(Qt.NoPen)
-
-        s1 = size>>1
-        s2 = size - s1
-
-        canvas.setRenderHint(QPainter.Antialiasing, False)
-        canvas.fillRect(QRect(0, 0, s1, s1), brush)
-        canvas.fillRect(QRect(s1, s1, s2, s2), brush)
-        canvas.end()
-
-        return QBrush(tmpPixmap)
 
     def __setColorNone(self):
         """Set current color to None"""
@@ -104,17 +87,10 @@ class WColorButton(QToolButton):
         self.__color.setNone(True)
         self.colorChanged.emit(self.__color)
 
-    def __showColorPalette(self):
+    def __setColor(self, color):
         """Display color palette dialog box"""
-        if self.__alphaChannel:
-            options = QColorDialog.ShowAlphaChannel|QColorDialog.DontUseNativeDialog
-        else:
-            options = QColorDialog.DontUseNativeDialog
-
-        returnedColor = QColorDialog.getColor(self.__color, None, i18n("Choose color"), options)
-        if returnedColor.isValid():
-            self.setColor(returnedColor)
-            self.colorChanged.emit(self.__color)
+        self.setColor(color)
+        self.colorChanged.emit(self.__color)
 
     def paintEvent(self, event):
         super(WColorButton, self).paintEvent(event)
@@ -145,15 +121,8 @@ class WColorButton(QToolButton):
         """Set current button color"""
         self.__color = QEColor(color)
         self.__brush.setColor(self.__color)
+        self.__actionFromColorPicker.colorPicker().setColor(self.__color)
         self.update()
-
-    def alphaChannel(self):
-        """Return if alpha channel is managed or not"""
-        return self.__alphaChannel
-
-    def setAlphaChannel(self, value):
-        """Set if alpha channel is managed or not"""
-        self.__alphaChannel=value
 
     def noneColor(self):
         """Return if no color value is managed or not"""
@@ -176,3 +145,7 @@ class WColorButton(QToolButton):
             else:
                 self.setPopupMode(QToolButton.DelayedPopup)
                 self.setMenu(None)
+
+    def colorPicker(self):
+        """Return color picker instance, allowing to define options for it"""
+        return self.__actionFromColorPicker.colorPicker()
