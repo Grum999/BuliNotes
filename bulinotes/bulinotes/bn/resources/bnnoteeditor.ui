@@ -175,7 +175,7 @@ Updated:</string>
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>3</number>
      </property>
      <property name="iconSize">
       <size>
@@ -191,7 +191,7 @@ Updated:</string>
      </property>
      <widget class="QWidget" name="tabText">
       <attribute name="icon">
-       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+       <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
         <normaloff>:/pktk/images/normal/text_t_r90</normaloff>:/pktk/images/normal/text_t_r90</iconset>
       </attribute>
       <attribute name="title">
@@ -227,7 +227,7 @@ Updated:</string>
      </widget>
      <widget class="QWidget" name="tabScratchpad">
       <attribute name="icon">
-       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+       <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
         <normaloff>:/pktk/images/normal/draw_r90</normaloff>:/pktk/images/normal/draw_r90</iconset>
       </attribute>
       <attribute name="title">
@@ -276,7 +276,7 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+             <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
               <normaloff>:/pktk/images/normal/folder_open</normaloff>
               <disabledoff>:/pktk/images/disabled/folder_open</disabledoff>:/pktk/images/normal/folder_open</iconset>
             </property>
@@ -297,7 +297,7 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+             <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
               <normaloff>:/pktk/images/normal/save</normaloff>
               <disabledoff>:/pktk/images/disabled/save</disabledoff>:/pktk/images/normal/save</iconset>
             </property>
@@ -352,7 +352,7 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+             <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
               <normaloff>:/pktk/images/normal/brush</normaloff>
               <disabledoff>:/pktk/images/disabled/brush</disabledoff>:/pktk/images/normal/brush</iconset>
             </property>
@@ -376,7 +376,7 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+             <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
               <normaloff>:/pktk/images/normal/color</normaloff>
               <disabledoff>:/pktk/images/disabled/color</disabledoff>:/pktk/images/normal/color</iconset>
             </property>
@@ -531,7 +531,7 @@ Updated:</string>
      </widget>
      <widget class="QWidget" name="tabBrushes">
       <attribute name="icon">
-       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+       <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
         <normaloff>:/pktk/images/normal/brush_r90</normaloff>:/pktk/images/normal/brush_r90</iconset>
       </attribute>
       <attribute name="title">
@@ -626,7 +626,7 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                    <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                      <normaloff>:/pktk/images/normal/brush_add</normaloff>
                      <disabledoff>:/pktk/images/disabled/brush_add</disabledoff>:/pktk/images/normal/brush_add</iconset>
                    </property>
@@ -644,7 +644,7 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                    <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                      <normaloff>:/pktk/images/normal/brush_edit</normaloff>
                      <disabledoff>:/pktk/images/disabled/brush_edit</disabledoff>:/pktk/images/normal/brush_edit</iconset>
                    </property>
@@ -662,7 +662,7 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                    <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                      <normaloff>:/pktk/images/normal/brush_remove</normaloff>
                      <disabledoff>:/pktk/images/disabled/brush_remove</disabledoff>:/pktk/images/normal/brush_remove</iconset>
                    </property>
@@ -764,7 +764,7 @@ Updated:</string>
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                    <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                      <normaloff>:/pktk/images/normal/color</normaloff>
                      <disabledoff>:/pktk/images/disabled/color</disabledoff>:/pktk/images/normal/color</iconset>
                    </property>
@@ -845,7 +845,7 @@ Updated:</string>
      </widget>
      <widget class="QWidget" name="tabLinkedLayers">
       <attribute name="icon">
-       <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+       <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
         <normaloff>:/pktk/images/normal/layers_r90</normaloff>:/pktk/images/normal/layers_r90</iconset>
       </attribute>
       <attribute name="title">
@@ -858,15 +858,27 @@ Updated:</string>
        <property name="leftMargin">
         <number>6</number>
        </property>
+       <property name="topMargin">
+        <number>6</number>
+       </property>
+       <property name="rightMargin">
+        <number>6</number>
+       </property>
+       <property name="bottomMargin">
+        <number>6</number>
+       </property>
        <item>
         <widget class="QWidget" name="widget_8" native="true">
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>100</height>
+           <height>0</height>
           </size>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_9">
+         <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,0">
+          <property name="spacing">
+           <number>-1</number>
+          </property>
           <property name="leftMargin">
            <number>0</number>
           </property>
@@ -881,6 +893,12 @@ Updated:</string>
           </property>
           <item>
            <widget class="QWidget" name="widget_7" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -909,7 +927,7 @@ Updated:</string>
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                  <normaloff>:/pktk/images/normal/layers_add</normaloff>
                  <disabledoff>:/pktk/images/disabled/layers_add</disabledoff>:/pktk/images/normal/layers_add</iconset>
                </property>
@@ -927,7 +945,7 @@ Updated:</string>
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                  <normaloff>:/pktk/images/normal/layers_edit</normaloff>
                  <disabledoff>:/pktk/images/disabled/layers_edit</disabledoff>:/pktk/images/normal/layers_edit</iconset>
                </property>
@@ -945,7 +963,7 @@ Updated:</string>
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../../../../../../pktk/resources/svg/dark_icons.qrc">
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                  <normaloff>:/pktk/images/normal/layers_del</normaloff>
                  <disabledoff>:/pktk/images/disabled/layers_del</disabledoff>:/pktk/images/normal/layers_del</iconset>
                </property>
@@ -1061,9 +1079,9 @@ Updated:</string>
   <tabstop>tbImport</tabstop>
  </tabstops>
  <resources>
-  <include location="dark_icons.qrc"/>
+  <include location="../../pktk/resources/svg/dark_icons.qrc"/>
   <include location="../../../../../../pktk/resources/svg/dark_icons.qrc"/>
-  <include location="light_icons.qrc"/>
+  <include location="../../pktk/resources/svg/light_icons.qrc"/>
  </resources>
  <connections>
   <connection>
