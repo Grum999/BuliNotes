@@ -33,6 +33,8 @@ from PyQt5.QtGui import (
 
 import re
 
+from pktk import *
+
 def warningAreaBrush(size=32):
     """Return a checker board brush"""
     tmpPixmap = QPixmap(size,size)
@@ -133,3 +135,24 @@ def qImageToPngQByteArray(image):
         image.save(buffer, "PNG")
         buffer.close()
         return ba
+    return b''
+
+def imgBoxSize(imageSize, boxSize):
+    """Return size of given `imageSize` to fit within `boxSize`"""
+    if not isinstance(imageSize, QSize):
+        raise EInvalidType("Given `imageSize` must be a <QSize>")
+
+    if not isinstance(boxSize, QSize):
+        raise EInvalidType("Given `boxSize` must be a <QSize>")
+
+    imageRatio=imageSize.width()/imageSize.height()
+    boxRatio=boxSize.width()/boxSize.height()
+
+    if boxRatio>imageRatio:
+        h=boxSize.height()
+        w=h*imageRatio
+    else:
+        w=boxSize.width()
+        h=w/imageRatio
+
+    return QSize(w,h)
