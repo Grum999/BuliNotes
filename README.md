@@ -143,7 +143,7 @@ When a note is displayed as a post-it, clicking on a linked layer will activate 
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.2.0a](https://github.com/Grum999/BuliNotes/releases/download/0.2.0a/bulinotes.zip)**
++ **[ZIP ARCHIVE - v0.3.0a](https://github.com/Grum999/BuliNotes/releases/download/0.3.0a/bulinotes.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 
@@ -177,6 +177,7 @@ Plugin hasn't been tested on Windows and MacOs
 
 _[2021-XX-XX] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.3.0a.md)
 - *Color picker* - improve color picker for text/hand written notes
+- *Docker* - add mime type "text/plain" and "text/html" for copy/paste action
 - *Settings* - implement global settings
 
 
