@@ -71,6 +71,27 @@ class WStandardColorSelector(QWidget):
         return None
 
     @staticmethod
+    def getColorName(colorIndex):
+        """Return QColor for given color index"""
+        if colorIndex==WStandardColorSelector.COLOR_BLUE:
+            return i18n('Blue')
+        elif colorIndex==WStandardColorSelector.COLOR_GREEN:
+            return i18n('Green')
+        elif colorIndex==WStandardColorSelector.COLOR_YELLOW:
+            return i18n('Yellow')
+        elif colorIndex==WStandardColorSelector.COLOR_ORANGE:
+            return i18n('Orange')
+        elif colorIndex==WStandardColorSelector.COLOR_MAROON:
+            return i18n('Maroon')
+        elif colorIndex==WStandardColorSelector.COLOR_RED:
+            return i18n('Red')
+        elif colorIndex==WStandardColorSelector.COLOR_PURPLE:
+            return i18n('Purple')
+        elif colorIndex==WStandardColorSelector.COLOR_GRAY:
+            return i18n('Gray')
+        return i18n('None')
+
+    @staticmethod
     def isValidColorIndex(colorIndex):
         """Return is given color index is valid"""
         if isinstance(colorIndex, int) and colorIndex >=0 and colorIndex < WStandardColorSelector.NB_COLORS:
