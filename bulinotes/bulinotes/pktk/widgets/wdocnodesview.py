@@ -34,7 +34,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (buildIcon, checkerBoardBrush)
+from pktk.modules.imgutils import (buildIcon, checkerBoardBrush)
 from pktk.modules.ekrita import EKritaNode
 from pktk.modules.iconsizes import IconSizes
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector

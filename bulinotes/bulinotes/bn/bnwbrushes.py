@@ -28,7 +28,7 @@ from PyQt5.QtCore import (
     )
 
 from pktk.modules.iconsizes import IconSizes
-from pktk.modules.utils import stripHtml
+from pktk.modules.strutils import stripHtml
 from pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 
 from .bnbrush import BNBrush

@@ -46,7 +46,7 @@ from .wcolorbutton import (
                         QEColor
                     )
 
-from pktk.modules.utils import buildIcon
+from pktk.modules.imgutils import buildIcon
 
 class WTextEditDialog(QDialog):
     """A simple dialog box to edit formatted text"""

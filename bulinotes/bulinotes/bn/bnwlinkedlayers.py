@@ -27,7 +27,8 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (checkerBoardBrush, warningAreaBrush, stripHtml)
+from pktk.modules.imgutils import (checkerBoardBrush, warningAreaBrush)
+from pktk.modules.strutils import stripHtml
 from pktk.modules.iconsizes import IconSizes
 from pktk.modules.edialog import EDialog
 from pktk.widgets.wtextedit import (WTextEdit, WTextEditBtBarOption)

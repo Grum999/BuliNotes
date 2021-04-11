@@ -38,13 +38,13 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (
-                        secToStrTime,
+from pktk.modules.timeutils import (
                         tsToStr,
-                        qImageToPngQByteArray,
-                        BCTimer,
-                        stripHtml
+                        secToStrTime,
+                        Timer
                     )
+from pktk.modules.imgutils import qImageToPngQByteArray
+from pktk.modules.strutils import (indent, stripHtml)
 from pktk.modules.edialog import EDialog
 from pktk.modules.ekrita import EKritaNode
 from pktk.modules.bytesrw import BytesRW

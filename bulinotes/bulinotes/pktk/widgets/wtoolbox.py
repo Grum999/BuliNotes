@@ -28,7 +28,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import BCTimer
+from pktk.modules.timeutils import Timer
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 
 
@@ -157,7 +157,7 @@ background-color: rgba(0,0,0,50);
             #
             # having a 1ms timer is enough to fix the problem
             # suspecting something with too much event or something like that...
-            BCTimer.sleep(1)
+            Timer.sleep(1)
             # --
 
             self.move(self.x() + delta.x(), self.y() + delta.y())

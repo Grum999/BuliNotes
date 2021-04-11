@@ -47,7 +47,7 @@ if __name__ != '__main__':
             EInvalidValue,
             PkTk
         )
-    from .bn.bnutils import checkKritaVersion
+    from pktk.modules.utils import checkKritaVersion
     from .bn.bnuidocker import BNUiDocker
 else:
     # Execution from 'Scripter' plugin?
@@ -59,7 +59,7 @@ else:
     print(f'Execution from {__PLUGIN_EXEC_FROM__}')
 
     for module in list(sys.modules.keys()):
-        if not re.search(r'^selectionmanager\.', module) is None:
+        if not re.search(r'^bulinotes\.', module) is None:
             print('Reload module {0}: {1}', module, sys.modules[module])
             reload(sys.modules[module])
 
@@ -69,8 +69,8 @@ else:
             EInvalidValue,
             PkTk
         )
-    from selectionmanager.bn.bnutils import checkKritaVersion
-    from .bn.bnuimain import BNUiMain
+    from pktk.modules.utils import checkKritaVersion
+    from .bn.bnuidocker import BNUiDocker
 
     print("======================================")
 

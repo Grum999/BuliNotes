@@ -29,7 +29,8 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (stripHtml, qImageToPngQByteArray)
+from pktk.modules.imgutils import qImageToPngQByteArray
+from pktk.modules.strutils import stripHtml
 from pktk.modules.bytesrw import BytesRW
 from pktk.modules.ekrita import EKritaNode
 
