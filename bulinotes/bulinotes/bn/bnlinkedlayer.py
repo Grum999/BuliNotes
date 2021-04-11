@@ -220,6 +220,15 @@ class BNLinkedLayer(QObject):
 
         self.fromLayer(self.__uuid)
 
+    def exportAsText(self):
+        """Return synthetised brush information (Text)"""
+        returned=[]
+        returned.append(f'{self.__name}')
+        returned.append(stripHtml(self.__comments))
+
+        return "\n".join(returned)
+
+
 
 class BNLinkedLayers(QObject):
     """Collection of linked layers"""

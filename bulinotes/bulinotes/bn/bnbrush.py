@@ -321,6 +321,19 @@ class BNBrush(QObject):
         else:
             return self.__brushNfoShort
 
+    def exportAsText(self):
+        """Return synthetised brush information (Text)"""
+        returned=[]
+        returned.append(f'{self.__name.replace("_", " ")}')
+        returned.append(f'- Blending mode: {self.__blendingMode}')
+        returned.append(f'- Size:          {self.__size:0.2f}px')
+        returned.append(f'- Opacity:       {100*self.__opacity:0.2f}%')
+        returned.append(f'- Flow:          {100*self.__flow:0.2f}%')
+
+        return "\n".join(returned)
+
+
+
 class BNBrushes(QObject):
     """Collection of brushes"""
     updated = Signal(BNBrush, str)

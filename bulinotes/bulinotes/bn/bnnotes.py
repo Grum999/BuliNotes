@@ -45,6 +45,7 @@ from pktk.modules.timeutils import (
                     )
 from pktk.modules.imgutils import qImageToPngQByteArray
 from pktk.modules.strutils import (indent, stripHtml)
+from pktk.modules.strtable import (TextTable, TextTableSettingsText)
 from pktk.modules.edialog import EDialog
 from pktk.modules.ekrita import EKritaNode
 from pktk.modules.bytesrw import BytesRW
@@ -881,6 +882,59 @@ class BNNote(QObject):
         elif self.__emitUpdated==0:
             self.__updated('*')
 
+    def exportAsText(self):
+        """Export note as raw text"""
+        returned=TextTable()
+
+        returned.addRow(["Title", self.__title])
+        returned.addRow(["Description", self.__description])
+        returned.addRow(["Color", WStandardColorSelector.getColorName(self.__colorIndex)])
+
+
+        returned.addSeparator()
+        returned.addRow(["Created", tsToStr(self.__timestampCreated)])
+        returned.addRow(["Modified", tsToStr(self.__timestampUpdated)])
+
+
+        returned.addSeparator()
+        if stripHtml(self.__text).strip()!='':
+            returned.addRow(["Text notes", stripHtml(self.__text)])
+        else:
+            returned.addRow(["Text notes", "-"])
+
+
+        returned.addSeparator()
+        if self.__scratchpadImage is None:
+            returned.addRow(["Hand written notes", "-"])
+        else:
+            returned.addRow(["Hand written notes", f"{self.__scratchpadImage.width()}x{self.__scratchpadImage.height()}"])
+
+
+        returned.addSeparator()
+        if len(self.__brushes.idList())==0:
+            returned.append(["Brushes notes", "-"])
+        else:
+            tmpText=[]
+            for brush in self.__brushes.idList():
+                tmpText.append(indent(self.__brushes.get(brush).exportAsText(), "* ", "     ", True))
+            returned.addRow(["Brushes notes", "\n\n".join(tmpText)])
+
+
+        returned.addSeparator()
+        if len(self.__linkedLayers.idList())==0:
+            returned.append(["Linked layers notes", "-"])
+        else:
+            tmpText=[]
+            for layer in self.__linkedLayers.idList():
+                tmpText.append(indent(self.__linkedLayers.get(layer).exportAsText(), "* ", "     ", True))
+            returned.addRow(["Linked layers notes", "\n\n".join(tmpText)])
+
+        tableSettings=TextTableSettingsText()
+
+
+        return returned.asText(tableSettings)
+
+
 
 class BNNotes(QObject):
     """Collection of notes"""
@@ -1071,7 +1125,11 @@ class BNNotes(QObject):
                 if isinstance(note, BNNote):
                     binaryList.append(note.exportData(False))
                     #htmlList.append(note.toHtml())
-                    #plainTextList.append(note.toPlainText())
+                    plainTextList.append(note.exportAsText())
+
+        clipboardContent=False
+        clipboard = QGuiApplication.clipboard()
+        mimeContent=QMimeData()
 
         if len(binaryList)>0:
             dataWrite=BytesRW()
@@ -1080,13 +1138,15 @@ class BNNotes(QObject):
                 dataWrite.writeUInt4(len(data))
                 dataWrite.write(data)
 
-            mimeContent=QMimeData()
             mimeContent.setData(BNNotes.MIME_TYPE, QByteArray(dataWrite.getvalue()))
 
-            clipboard = QGuiApplication.clipboard()
-            clipboard.setMimeData(mimeContent)
+        if len(plainTextList)>0:
+            mimeContent.setData('text/plain', ("\n\n".join(plainTextList)).encode())
 
+        if len(mimeContent.formats())>0:
+            clipboard.setMimeData(mimeContent)
             return True
+
         return False
 
     def clipboardCut(self, notes):
@@ -1685,7 +1745,6 @@ class BNNoteEditor(EDialog):
         """Remove layer from linked layer list"""
         selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
 
-        print('__actionLinkedLayerDelete', selectedLinkedLayers)
         if len(selectedLinkedLayers)>0:
             self.__tmpLinkedLayers.remove(selectedLinkedLayers)
             self.__updateLinkedLayersUi()
