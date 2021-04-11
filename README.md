@@ -177,6 +177,7 @@ Plugin hasn't been tested on Windows and MacOs
 
 _[2021-XX-XX] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.3.0a.md)
 - *Color picker* - improve color picker for text/hand written notes
+- *Settings* - implement global settings
 
 
 _[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.2.0a.md)

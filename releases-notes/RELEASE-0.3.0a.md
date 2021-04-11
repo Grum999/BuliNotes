@@ -13,3 +13,10 @@ Color picker for text/hand written notes has been improved:
 
 All options are available from context menu:
 ![Linked layers edit](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-3-0a_colorpicker-full_with_ctxmenu.png)
+
+## Implement global settings
+
+Global settings automatically keep user preferences for the following interface item:
+- Color picker layout for text editors
+- Color picker layout for scratchpad
+- Thumbnails size
