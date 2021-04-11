@@ -24,6 +24,7 @@
 
 
 import math
+import re
 
 from krita import (
         Krita,
@@ -1837,12 +1838,12 @@ class WColorCssEdit(QWidget):
         return self.__color
 
 
+
 class WColorPalette(QWidget):
     """A simple widget to manage palettes"""
     colorOver = Signal(int, Swatch, QColor)             # when mouse is over a color (color index, color swatch, color)
     colorClicked = Signal(int, Swatch, QColor, int)       # when a color has been clicked (color index, color swatch, color, mouse button)
     paletteChanged = Signal(str)                        # when palette has been changed,
-
 
     class WPaletteGrid(QWidget):
         """A palette widget
@@ -2136,7 +2137,6 @@ QScrollArea > QWidget > QScrollBar { background: 0; }
         """Mouse over a color"""
         self.colorClicked.emit(index, swatch, color, buttons)
 
-
     def updateHeight(self):
         iSize=self.__pgPalette.idealSize()
         if iSize.width()==-1:
@@ -2149,14 +2149,12 @@ QScrollArea > QWidget > QScrollBar { background: 0; }
 
         self.setMinimumHeight(height + self.__cbPalettes.height())
 
-
-
     def palette(self):
         """Return current selected palette"""
         return self.__palette
 
     def setPalette(self, palette):
-        """Return current selected palette"""
+        """Set current selected palette"""
         if palette in self.__palettes and palette!=self.__palette:
             self.__cbPalettes.setCurrentText(palette)
 
@@ -2205,9 +2203,6 @@ QScrollArea > QWidget > QScrollBar { background: 0; }
 
 
 
-
-
-
 class WColorPicker(QWidget):
     """A color picker"""
     colorUpdated = Signal(QColor)       # when color is changed from user interface
@@ -2250,6 +2245,7 @@ class WColorPicker(QWidget):
     def __init__(self, color=None, parent=None):
         super(WColorPicker, self).__init__(parent)
 
+        self.__inUpdate=True
 
         self.__compactWidth=350
         self.__normalWidth=450
@@ -2361,6 +2357,9 @@ class WColorPicker(QWidget):
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.setOptionCompactUi(False)
         self.setColor(color)
+
+        self.__inUpdate=False
+        self.__updateSize()
 
     def __initMenu(self):
         """Initialise context menu"""
@@ -2498,6 +2497,8 @@ class WColorPicker(QWidget):
 
     def __updateSize(self):
         """Update size according to current widget visible"""
+        if self.__inUpdate:
+            return
         self.adjustSize()
         self.uiChanged.emit()
 
@@ -2958,6 +2959,14 @@ class WColorPicker(QWidget):
         self.__colorSliderAlpha.setOptionCompactUi(self.__optionCompactUi)
         self.__updateSize()
 
+    def optionColorPalette(self):
+        """Return current color palette name"""
+        return self.__colorPalette.palette()
+
+    def setOptionColorPalette(self, paletteName):
+        """Set color palette"""
+        return self.__colorPalette.setPalette(paletteName)
+
     def setOptionShowPreviewColor(self, value):
         """Set option 'color preview' is active or not"""
         if not isinstance(value, bool) or self.__optionShowPreviewColor==value:
@@ -3053,3 +3062,78 @@ class WColorPicker(QWidget):
         # force compact ui refresh...
         self.__optionCompactUi=not self.__optionCompactUi
         self.setOptionCompactUi(not self.__optionCompactUi)
+
+    def optionLayout(self):
+        """Return a list of current layout options status"""
+        returned=[]
+        if self.__optionShowColorRGB:
+            returned.append('colorRGB')
+        if self.__optionShowColorCMYK:
+            returned.append('colorCMYK')
+        if self.__optionShowColorHSV:
+            returned.append('colorHSV')
+        if self.__optionShowColorHSL:
+            returned.append('colorHSL')
+        if self.__optionShowColorAlpha:
+            returned.append('colorAlpha')
+        if self.__optionShowColorCssRGB:
+            returned.append('colorCssRGB')
+        if self.__optionShowColorPalette:
+            returned.append('colorPalette')
+        if self.__optionShowColorWheel:
+            returned.append('colorWheel')
+        if self.__optionShowPreviewColor:
+            returned.append('colorPreview')
+
+        if self.__optionDisplayAsPctRGB:
+            returned.append('colorRGB%')
+        if self.__optionDisplayAsPctCMYK:
+            returned.append('colorCMYK%')
+        if self.__optionDisplayAsPctHSV:
+            returned.append('colorHSV%')
+        if self.__optionDisplayAsPctHSL:
+            returned.append('colorHSL%')
+        if self.__optionDisplayAsPctAlpha:
+            returned.append('colorAlpha%')
+
+        if self.__optionCompactUi:
+            returned.append('compactUi')
+
+        returned.append(f"colorCombination:{self.__optionShowColorCombination}")
+        returned.append(f"colorPalette:{self.__colorPalette.palette()}")
+
+        return returned
+
+    def setOptionLayout(self, layout):
+        """Set layout from given options"""
+        if not (isinstance(layout, list) or isinstance(layout, tuple)):
+            raise EInvalidType('Given `layout` must be a <list> or <tuple>')
+
+        self.__inUpdate=True
+
+        self.setOptionShowColorRGB('colorRGB' in layout)
+        self.setOptionShowColorCMYK('colorCMYK' in layout)
+        self.setOptionShowColorHSV('colorHSV' in layout)
+        self.setOptionShowColorHSL('colorHSL' in layout)
+        self.setOptionShowColorAlpha('colorAlpha' in layout)
+        self.setOptionShowCssRgb('colorCssRGB' in layout)
+        self.setOptionShowColorPalette('colorPalette' in layout)
+        self.setOptionShowColorWheel('colorWheel' in layout)
+        self.setOptionShowPreviewColor('colorPreview' in layout)
+
+        self.setOptionDisplayAsPctColorRGB('colorRGB%' in layout)
+        self.setOptionDisplayAsPctColorCMYK('colorCMYK%' in layout)
+        self.setOptionDisplayAsPctColorHSV('colorHSV%' in layout)
+        self.setOptionDisplayAsPctColorHSL('colorHSL%' in layout)
+        self.setOptionDisplayAsPctColorAlpha('colorAlpha%' in layout)
+
+        self.setOptionCompactUi('compactUi' in layout)
+
+        for item in layout:
+            if r:=re.match('colorPalette:(.*)', item):
+                self.setOptionColorPalette(r.groups()[0])
+            elif r:=re.match('colorCombination:(\d)', item):
+                self.setOptionShowColorCombination(int(r.groups()[0]))
+
+        self.__inUpdate=False
+        self.__updateSize()

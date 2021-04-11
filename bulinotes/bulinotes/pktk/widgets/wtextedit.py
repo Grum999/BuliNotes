@@ -57,7 +57,7 @@ class WTextEditDialog(QDialog):
         self.setSizeGripEnabled(True)
         self.setModal(True)
 
-        self.__editor = WTextEdit(self)
+        self.editor = WTextEdit(self)
 
         dbbxOkCancel = QDialogButtonBox(self)
         dbbxOkCancel.setOrientation(Qt.Horizontal)
@@ -66,24 +66,24 @@ class WTextEditDialog(QDialog):
         dbbxOkCancel.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.__editor)
+        layout.addWidget(self.editor)
         layout.addWidget(dbbxOkCancel)
 
     def toPlainText(self):
         """Return current text as plain text"""
-        return self.__editor.toPlainText()
+        return self.editor.toPlainText()
 
     def setPlainText(self, text):
         """Set current text as plain text"""
-        self.__editor.setPlainText(text)
+        self.editor.setPlainText(text)
 
     def toHtml(self):
         """Return current text as HTML text"""
-        return self.__editor.toHtml()
+        return self.editor.toHtml()
 
     def setHtml(self, text):
         """Set current text as HTML text"""
-        self.__editor.setHtml(text)
+        self.editor.setHtml(text)
 
     @staticmethod
     def edit(title, text, textColor=None, textBackgroundColor=None, toolbarBtns=None):
@@ -93,13 +93,13 @@ class WTextEditDialog(QDialog):
         dlgBox.setWindowTitle(title)
 
         if isinstance(toolbarBtns, int):
-            dlgBox.__editor.setToolbarButtons(toolbarBtns)
+            dlgBox.editor.setToolbarButtons(toolbarBtns)
 
         if not textColor is None:
-            dlgBox.__editor.setTextColor(textColor)
+            dlgBox.editor.setTextColor(textColor)
 
         if not textBackgroundColor is None:
-            dlgBox.__editor.setTextBackgroundColor(textBackgroundColor)
+            dlgBox.editor.setTextBackgroundColor(textBackgroundColor)
 
         returned = dlgBox.exec()
 
@@ -128,6 +128,7 @@ class WTextEditBtBarOption:
 
 class WTextEdit(QWidget):
     """A small text editor widget with a basic formatting toolbar"""
+    colorMenuUiChanged = Signal(list)       # layout for fg/bg color menu has been modified
 
     DEFAULT_TOOLBAR=(WTextEditBtBarOption.UNDOREDO|
                          WTextEditBtBarOption.COPYPASTE|
@@ -154,6 +155,8 @@ class WTextEdit(QWidget):
 
         self.__fgColor = None
         self.__bgColor = None
+
+        self.__ignoreColorMenuUpdate=False
 
         # define toolbar items
         self.__itemsDef = [
@@ -434,9 +437,37 @@ class WTextEdit(QWidget):
                 self.__toolBarItems[item['id']]=qItem
             layout.addWidget(qItem)
 
+
+        if 'fontColor' in self.__toolBarItems and 'bgColor' in self.__toolBarItems:
+            # when both menu are available, they should provide the same layout
+            # each layout modification made on one has to be reported on other
+            self.__toolBarItems['fontColor'].colorPicker().uiChanged.connect(self.__fgColorLayoutChanged)
+            self.__toolBarItems['bgColor'].colorPicker().uiChanged.connect(self.__bgColorLayoutChanged)
+
+
         self.__updateToolbarBtnVisibility()
         self.__selectionChanged()
         self.__toolBar.setLayout(layout)
+
+
+    def __fgColorLayoutChanged(self):
+        """Layout for fg color menu has been modified"""
+        if self.__ignoreColorMenuUpdate:
+            return
+        self.__ignoreColorMenuUpdate=True
+        self.__toolBarItems['bgColor'].colorPicker().setOptionLayout(self.__toolBarItems['fontColor'].colorPicker().optionLayout())
+        self.__ignoreColorMenuUpdate=False
+        self.colorMenuUiChanged.emit(self.__toolBarItems['bgColor'].colorPicker().optionLayout())
+
+
+    def __bgColorLayoutChanged(self):
+        """Layout for bg color menu has been modified"""
+        if self.__ignoreColorMenuUpdate:
+            return
+        self.__ignoreColorMenuUpdate=True
+        self.__toolBarItems['fontColor'].colorPicker().setOptionLayout(self.__toolBarItems['bgColor'].colorPicker().optionLayout())
+        self.__ignoreColorMenuUpdate=False
+        self.colorMenuUiChanged.emit(self.__toolBarItems['fontColor'].colorPicker().optionLayout())
 
 
     def __updateToolbarBtnVisibility(self):
@@ -782,6 +813,23 @@ class WTextEdit(QWidget):
 
         self.__updateToolbarBtnVisibility()
 
+
+    def setColorPickerLayout(self, layout):
+        """Set layout for fg/bg color picker"""
+        if 'fontColor' in self.__toolBarItems:
+            self.__toolBarItems['fontColor'].colorPicker().setOptionLayout(layout)
+        elif 'bgColor' in self.__toolBarItems:
+            self.__toolBarItems['bgColor'].colorPicker().setOptionLayout(layout)
+
+
+    def colorPickerLayout(self):
+        """Return layout for fg/bg color picker"""
+        if 'fontColor' in self.__toolBarItems:
+            return self.__toolBarItems['fontColor'].colorPicker().optionLayout()
+        elif 'bgColor' in self.__toolBarItems:
+            return self.__toolBarItems['return'].colorPicker().optionLayout()
+        else:
+            return []
 
 
 class BCWSmallTextEdit(QFrame):

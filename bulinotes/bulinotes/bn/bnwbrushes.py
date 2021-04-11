@@ -29,8 +29,10 @@ from PyQt5.QtCore import (
 
 from pktk.modules.iconsizes import IconSizes
 from pktk.modules.utils import stripHtml
+from pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 
 from .bnbrush import BNBrush
+from .bnsettings import (BNSettings, BNSettingsKey)
 
 
 class BNBrushesModel(QAbstractTableModel):
@@ -430,3 +432,29 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             size=QSize(self.__csize, textDocument.size().toSize().height())
 
         return size
+
+
+class BNBrushesEditor(WTextEditDialog):
+    """A simple dialog box to brushe comment
+
+    The WTextEditDialog doesn't allows to manage color picker configuration then,
+    create a dedicated dailog box
+    """
+
+    @staticmethod
+    def edit(title, text):
+        """Open a dialog box to edit text"""
+        dlgBox = BNBrushesEditor(None)
+        dlgBox.setHtml(text)
+        dlgBox.setWindowTitle(title)
+
+        dlgBox.editor.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+        dlgBox.editor.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
+
+        returned = dlgBox.exec()
+
+        if returned == QDialog.Accepted:
+            BNSettings.setTxtColorPickerLayout(dlgBox.editor.colorPickerLayout())
+            return dlgBox.toHtml()
+        else:
+            return None

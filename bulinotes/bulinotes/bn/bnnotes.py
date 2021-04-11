@@ -62,8 +62,9 @@ from pktk.widgets.wefiledialog import WEFileDialog
 from .bnbrush import (BNBrush, BNBrushes)
 from .bnlinkedlayer import (BNLinkedLayer, BNLinkedLayers)
 from .bnwlinkedlayers import BNLinkedLayerEditor
-from .bnwbrushes import BNBrushesModel
+from .bnwbrushes import (BNBrushesModel, BNBrushesEditor)
 from .bnnote_postit import BNNotePostIt
+from .bnsettings import (BNSettings, BNSettingsKey)
 
 
 class BNNote(QObject):
@@ -1156,6 +1157,8 @@ class BNNoteEditor(EDialog):
         self.__tmpBrushes=BNBrushes(self.__note.brushes())
         self.__tmpLinkedLayers=BNLinkedLayers(self.__note.linkedLayers())
 
+        self.__ignoreMenuUpdate=False
+
         self.__activeView=Krita.instance().activeWindow().activeView()
         self.__activeViewCurrentConfig={}
         self.__allBrushesPreset = Krita.instance().resources("preset")
@@ -1205,24 +1208,10 @@ class BNNoteEditor(EDialog):
         # -- TEXT Note properties
         self.wteText.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
         self.wteText.setHtml(self.__note.text())
+        self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
+        self.wteText.colorMenuUiChanged.connect(BNSettings.setTxtColorPickerLayout)
 
         # -- HAND WRITTEN Note properties
-        self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
-        self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorRGB(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCMYK(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSV(True)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSL(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorAlpha(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionCompactUi(True)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowPreviewColor(True)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowCssRgb(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCombination(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
-
-        menuBrushScratchpadColor = QMenu(self.tbColor)
-        menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
-
         img=self.__note.scratchpadImage()
         if not img is None:
             self.__scratchpadHandWritting.loadScratchpadImage(img)
@@ -1245,16 +1234,24 @@ class BNNoteEditor(EDialog):
         self.__actionSelectBrush.presetChooser().presetClicked.connect(self.__actionScratchpadSetBrushPreset)
         self.__actionSelectColor=WMenuColorPicker()
         self.__actionSelectColor.colorPicker().colorUpdated.connect(self.__actionScratchpadSetColor)
-        self.__actionSelectColor.colorPicker().setOptionShowColorRGB(False)
-        self.__actionSelectColor.colorPicker().setOptionShowColorCMYK(False)
-        self.__actionSelectColor.colorPicker().setOptionShowColorHSV(True)
-        self.__actionSelectColor.colorPicker().setOptionShowColorHSL(False)
+        self.__actionSelectColor.colorPicker().setOptionCompactUi(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorPalette(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionColorPalette(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorWheel(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionShowPreviewColor(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW))
+        self.__actionSelectColor.colorPicker().setOptionShowColorCombination(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION))
+        self.__actionSelectColor.colorPicker().setOptionShowCssRgb(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS))
+        self.__actionSelectColor.colorPicker().setOptionShowColorRGB(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorRGB(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorCMYK(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorCMYK(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorHSV(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorHSV(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorHSL(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorHSL(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT))
         self.__actionSelectColor.colorPicker().setOptionShowColorAlpha(False)
-        self.__actionSelectColor.colorPicker().setOptionCompactUi(True)
-        self.__actionSelectColor.colorPicker().setOptionShowPreviewColor(True)
-        self.__actionSelectColor.colorPicker().setOptionShowCssRgb(False)
-        self.__actionSelectColor.colorPicker().setOptionShowColorCombination(False)
         self.__actionSelectColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.__actionSelectColor.colorPicker().uiChanged.connect(self.__selectColorMenuChanged)
 
 
         self.__actionImportFromFile=QAction(i18n('Import from file...'), self)
@@ -1305,6 +1302,15 @@ class BNNoteEditor(EDialog):
 
 
         # -- BRUSHES Note properties
+        self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
+        self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionLayout(self.__actionSelectColor.colorPicker().optionLayout())
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.__actionSelectBrushScratchpadColor.colorPicker().uiChanged.connect(self.__selectBrushScratchpadColorMenuChanged)
+
+        menuBrushScratchpadColor = QMenu(self.tbColor)
+        menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
+
         self.tbBrushAdd.clicked.connect(self.__actionBrushAdd)
         self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
         self.tbBrushDelete.clicked.connect(self.__actionBrushDelete)
@@ -1313,6 +1319,7 @@ class BNNoteEditor(EDialog):
 
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
         self.tvBrushes.setBrushes(self.__tmpBrushes)
+        self.tvBrushes.setIconSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_BRUSHES_ZOOMLEVEL))
 
         self.__updateBrushUi()
 
@@ -1323,6 +1330,7 @@ class BNNoteEditor(EDialog):
 
         self.tvLinkedLayers.doubleClicked.connect(self.__actionLinkedLayerEdit)
         self.tvLinkedLayers.setLinkedLayers(self.__tmpLinkedLayers)
+        self.tvLinkedLayers.setIconSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_LIST_ZOOMLEVEL))
 
         self.__tmpLinkedLayers.updateFromDocument()
         self.__updateLinkedLayersUi()
@@ -1331,6 +1339,32 @@ class BNNoteEditor(EDialog):
         self.tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
         self.tvLinkedLayers.selectionModel().selectionChanged.connect(self.__linkedLayersSelectionChanged)
         self.leTitle.setFocus()
+
+    def __saveSettings(self):
+        """Save current settings"""
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_BRUSHES_ZOOMLEVEL, self.tvBrushes.iconSizeIndex())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_LIST_ZOOMLEVEL, self.tvLinkedLayers.iconSizeIndex())
+
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT, self.__actionSelectBrushScratchpadColor.colorPicker().optionCompactUi())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorPalette())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT, self.__actionSelectBrushScratchpadColor.colorPicker().optionColorPalette())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorWheel())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowPreviewColor())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCombination())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCssRGB())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorRGB())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorRGB())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCMYK())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorCMYK())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorHSL())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorHSL())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorHSV())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorHSV())
+
+        BNSettings.setTxtColorPickerLayout(self.wteText.colorPickerLayout())
+
+        if BNSettings.modified():
+            BNSettings.save()
 
     def __updateImportMenuUi(self):
         """Menu import is about to be displayed"""
@@ -1450,6 +1484,9 @@ class BNNoteEditor(EDialog):
 
         self.__restoreViewConfig()
         self.__note.endUpdate()
+
+        self.__saveSettings()
+
         self.accept()
 
     def __reject(self):
@@ -1590,19 +1627,21 @@ class BNNoteEditor(EDialog):
 
     def __actionBrushAdd(self):
         """Add current brush definition to brushes list"""
-        result=WTextEditDialog.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "", None, None, WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+        result=BNBrushesEditor.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "")
         if not result is None:
             self.__currentUiBrush.setComments(result)
             self.__tmpBrushes.add(self.__currentUiBrush)
+            self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
             self.__updateBrushUi()
 
     def __actionBrushEdit(self):
         """Edit comment for current selected brush"""
         selection=self.tvBrushes.selectedItems()
         if len(selection)==1:
-            result=WTextEditDialog.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments(), None, None, WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+            result=BNBrushesEditor.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments())
             if not result is None:
                 selection[0].setComments(result)
+                self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
                 self.__updateBrushUi()
 
     def __actionBrushDelete(self):
@@ -1622,6 +1661,7 @@ class BNNoteEditor(EDialog):
 
         if linkedLayer:
             self.__tmpLinkedLayers.add(linkedLayer)
+            self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
             self.__updateLinkedLayersUi()
 
     def __actionLinkedLayerEdit(self):
@@ -1631,7 +1671,6 @@ class BNNoteEditor(EDialog):
         if len(selectedLinkedLayers)==1:
             linkedLayer=BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
 
-            print('__actionLinkedLayerEdit', linkedLayer)
             if linkedLayer:
                 if linkedLayer.id()==selectedLinkedLayers[0].id():
                     self.__tmpLinkedLayers.update(linkedLayer)
@@ -1639,6 +1678,7 @@ class BNNoteEditor(EDialog):
                     self.__tmpLinkedLayers.remove(selectedLinkedLayers[0])
                     self.__tmpLinkedLayers.add(linkedLayer)
 
+                self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
                 self.__updateLinkedLayersUi()
 
     def __actionLinkedLayerDelete(self):
@@ -1650,6 +1690,21 @@ class BNNoteEditor(EDialog):
             self.__tmpLinkedLayers.remove(selectedLinkedLayers)
             self.__updateLinkedLayersUi()
 
+    def __selectColorMenuChanged(self):
+        """option for color menu 'handwritten notes' has been modified"""
+        if self.__ignoreMenuUpdate:
+            return
+        self.__ignoreMenuUpdate=True
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionLayout(self.__actionSelectColor.colorPicker().optionLayout())
+        self.__ignoreMenuUpdate=False
+
+    def __selectBrushScratchpadColorMenuChanged(self):
+        """option for color menu 'brushes notes' has been modified"""
+        if self.__ignoreMenuUpdate:
+            return
+        self.__ignoreMenuUpdate=True
+        self.__actionSelectColor.colorPicker().setOptionLayout(self.__actionSelectBrushScratchpadColor.colorPicker().optionLayout())
+        self.__ignoreMenuUpdate=False
 
     def closeEvent(self, event):
         """Dialog is about to be closed..."""

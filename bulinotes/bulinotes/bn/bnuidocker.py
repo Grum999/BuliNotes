@@ -29,6 +29,7 @@ from PyQt5.QtWidgets import (
 from pktk.modules.about import AboutWindow
 from pktk.modules.uitheme import UITheme
 
+from .bnsettings import BNSettings
 from .bnutils import loadXmlUi
 from .bnnotes import (BNNote,
                       BNNotes,
@@ -36,11 +37,6 @@ from .bnnotes import (BNNote,
                     )
 from .bnwnotes import BNNotesModel
 from .bnnote_postit import BNNotePostIt
-
-
-# signals:
-# activeView changed
-# no documents
 
 
 class BNUiDocker(QWidget):
@@ -52,6 +48,7 @@ class BNUiDocker(QWidget):
         self.__bnId=bnId
         self.__bnVersion=bnVersion
         self.__docker=docker
+        BNSettings.load()
         UITheme.load()
         UITheme.load(os.path.join(os.path.dirname(__file__), 'resources'))
         self.__notes=BNNotes()
