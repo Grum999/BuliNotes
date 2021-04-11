@@ -36,14 +36,6 @@ from pktk import *
 from pktk.modules.edialog import EDialog
 
 # -----------------------------------------------------------------------------
-PkTk.setModuleInfo(
-    'about',
-    '1.0.0',
-    'AboutWindow',
-    'Provides a generic "About" dialog box'
-)
-
-# -----------------------------------------------------------------------------
 class AboutWindow(EDialog):
     """A generic 'about' window
 
