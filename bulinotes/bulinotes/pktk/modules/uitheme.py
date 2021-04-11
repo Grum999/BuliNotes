@@ -44,14 +44,6 @@ from PyQt5.QtWidgets import (
 from pktk import PkTk
 
 # -----------------------------------------------------------------------------
-PkTk.setModuleInfo(
-    'uitheme',
-    '1.0.0',
-    'UITheme',
-    'Provides a class to manage resources for theme easily'
-)
-
-# -----------------------------------------------------------------------------
 class UITheme(object):
     """Manage theme
 

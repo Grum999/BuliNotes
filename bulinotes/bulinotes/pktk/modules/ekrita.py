@@ -56,19 +56,7 @@ from PyQt5.QtGui import (
 from PyQt5.Qt import QObject
 
 
-
 # -----------------------------------------------------------------------------
-PkTk.setModuleInfo(
-    'ekrita',
-    '1.1.0',
-    'PyKrita Toolkit EKrita',
-    'Extent Krita API to simplify some commons actions'
-)
-
-# -----------------------------------------------------------------------------
-
-
-
 
 class EKritaDocument:
     """Provides methods to manage Krita Documents"""

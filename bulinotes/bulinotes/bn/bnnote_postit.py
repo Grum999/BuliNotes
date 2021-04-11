@@ -46,7 +46,8 @@ from .bnwlinkedlayers import (
                     BNLinkedLayersModel,
                     BNWLinkedLayers
                 )
-from pktk.modules.utils import buildIcon
+from pktk.modules.imgutils import buildIcon
+from pktk.modules.timeutils import Timer
 from pktk.modules.ekrita import EKritaDocument
 from pktk.widgets.wtoolbox import WToolBox
 
@@ -451,7 +452,7 @@ class BNNotePostItText(QTextEdit):
                 #
                 # having a 1ms timer is enough to fix the problem
                 # suspecting something with too much event or something like that...
-                BCTimer.sleep(1)
+                Timer.sleep(1)
                 # --
 
                 self.__parent.move(self.__parent.x() + delta.x(), self.__parent.y() + delta.y())

@@ -33,7 +33,7 @@ from .bnnotes import (
                 BNNotes
             )
 
-from pktk.modules.utils import tsToStr
+from pktk.modules.timeutils import tsToStr
 from pktk.widgets.wstandardcolorselector import (
         WStandardColorSelector,
         WMenuStandardColorSelector

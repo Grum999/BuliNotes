@@ -28,16 +28,15 @@ from PyQt5.QtWidgets import (
 
 from pktk.modules.about import AboutWindow
 from pktk.modules.uitheme import UITheme
+from pktk.modules.utils import loadXmlUi
 
 from .bnsettings import BNSettings
-from .bnutils import loadXmlUi
 from .bnnotes import (BNNote,
                       BNNotes,
                       BNNoteEditor
                     )
 from .bnwnotes import BNNotesModel
 from .bnnote_postit import BNNotePostIt
-
 
 class BNUiDocker(QWidget):
     """Current selection interface"""

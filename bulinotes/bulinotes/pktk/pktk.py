@@ -42,32 +42,6 @@ class PkTk:
     PATH_RESOURCES = os.path.join(os.path.dirname(__file__), 'resources')
 
     @staticmethod
-    def setModuleInfo(id, version, name, description):
-        """Declare informations for PkTk module"""
-        PkTk.__libraries[id]={
-                'version': version,
-                'name': name,
-                'description': description
-            }
-
-    @staticmethod
-    def getModuleInfo(id):
-        """Return informations for PkTk module"""
-        if id in PkTk.__libraries.keys():
-            return PkTk.__libraries[id]
-        else:
-            return {
-                    'version': '0.0.0',
-                    'name': 'Unknown',
-                    'description': f'No module found for given id "{id}"'
-                }
-
-    @staticmethod
-    def getModules():
-        """Return PkTk modules id list"""
-        return [key for key in PkTk.__libraries.keys()]
-
-    @staticmethod
     def getPath(name=None):
         """Return path for library"""
 
@@ -77,14 +51,3 @@ class PkTk:
             return os.path.join(os.path.realpath(os.path.dirname(__file__)), *name)
         else:
             return os.path.realpath(os.path.dirname(__file__))
-
-
-
-
-# -----------------------------------------------------------------------------
-PkTk.setModuleInfo(
-    'pktk',
-    '1.0.0',
-    'PyKrita Toolkit core',
-    'Base functions'
-)

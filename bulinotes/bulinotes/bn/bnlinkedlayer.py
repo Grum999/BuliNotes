@@ -29,7 +29,8 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (stripHtml, qImageToPngQByteArray)
+from pktk.modules.imgutils import qImageToPngQByteArray
+from pktk.modules.strutils import stripHtml
 from pktk.modules.bytesrw import BytesRW
 from pktk.modules.ekrita import EKritaNode
 
@@ -218,6 +219,15 @@ class BNLinkedLayer(QObject):
             return
 
         self.fromLayer(self.__uuid)
+
+    def exportAsText(self):
+        """Return synthetised brush information (Text)"""
+        returned=[]
+        returned.append(f'{self.__name}')
+        returned.append(stripHtml(self.__comments))
+
+        return "\n".join(returned)
+
 
 
 class BNLinkedLayers(QObject):

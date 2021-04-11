@@ -21,6 +21,7 @@
 import time
 import struct
 import re
+import base64
 
 import krita
 from krita import (
@@ -38,13 +39,17 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (
-                        secToStrTime,
+from pktk.modules.timeutils import (
                         tsToStr,
-                        qImageToPngQByteArray,
-                        BCTimer,
-                        stripHtml
+                        secToStrTime,
+                        Timer
                     )
+from pktk.modules.imgutils import (
+                        qImageToPngQByteArray,
+                        imgBoxSize
+                    )
+from pktk.modules.strutils import (indent, stripHtml)
+from pktk.modules.strtable import (TextTable, TextTableSettingsText)
 from pktk.modules.edialog import EDialog
 from pktk.modules.ekrita import EKritaNode
 from pktk.modules.bytesrw import BytesRW
@@ -881,6 +886,148 @@ class BNNote(QObject):
         elif self.__emitUpdated==0:
             self.__updated('*')
 
+    def exportAsText(self):
+        """Export note as raw text"""
+        returned=TextTable()
+
+        returned.addRow(["Title", self.__title])
+        returned.addRow(["Description", self.__description])
+        returned.addRow(["Color", WStandardColorSelector.getColorName(self.__colorIndex)])
+
+
+        returned.addSeparator()
+        returned.addRow(["Created", tsToStr(self.__timestampCreated)])
+        returned.addRow(["Modified", tsToStr(self.__timestampUpdated)])
+
+
+        returned.addSeparator()
+        if stripHtml(self.__text).strip()!='':
+            returned.addRow(["Text notes", stripHtml(self.__text)])
+        else:
+            returned.addRow(["Text notes", "-"])
+
+
+        returned.addSeparator()
+        if self.__scratchpadImage is None:
+            returned.addRow(["Hand written notes", "-"])
+        else:
+            returned.addRow(["Hand written notes", f"{self.__scratchpadImage.width()}x{self.__scratchpadImage.height()}"])
+
+
+        returned.addSeparator()
+        if len(self.__brushes.idList())==0:
+            returned.addRow(["Brushes notes", "-"])
+        else:
+            tmpText=[]
+            for brush in self.__brushes.idList():
+                tmpText.append(indent(self.__brushes.get(brush).exportAsText(), "* ", "     ", True))
+            returned.addRow(["Brushes notes", "\n\n".join(tmpText)])
+
+
+        returned.addSeparator()
+        if len(self.__linkedLayers.idList())==0:
+            returned.addRow(["Linked layers notes", "-"])
+        else:
+            tmpText=[]
+            for layer in self.__linkedLayers.idList():
+                tmpText.append(indent(self.__linkedLayers.get(layer).exportAsText(), "* ", "     ", True))
+            returned.addRow(["Linked layers notes", "\n\n".join(tmpText)])
+
+        tableSettings=TextTableSettingsText()
+
+
+        return returned.asText(tableSettings)
+
+    def exportAsHtml(self):
+        """Export note as raw text"""
+        def imgMarkup(image, size=''):
+            return f'<img style="{size}" src="data:image/png;base64,{base64.b64encode(bytes(qImageToPngQByteArray(image))).decode()}">'
+
+        returned=[]
+
+        # WStandardColorSelector.getColorName(self.__colorIndex)
+
+        if self.__title.strip()=='':
+            returned.append('<h1>(No title)</h1>')
+        else:
+            returned.append(f'<h1>{self.__title}</h1>')
+
+        if self.__description.strip()!='':
+            text=self.__description.replace("\n","<br>")
+            returned.append(f'<p>{text}</p>')
+
+        returned.append('<table>')
+        returned.append('<tr>')
+        returned.append(f'<th>{i18n("Created")}</th>')
+        returned.append(f'<td>{tsToStr(self.__timestampCreated)}</td>')
+        returned.append('</tr>')
+        returned.append('<tr>')
+        returned.append(f'<th>{i18n("Modified")}</th>')
+        returned.append(f'<td>{tsToStr(self.__timestampUpdated)}</td>')
+        returned.append('</tr>')
+        returned.append('</table>')
+
+        returned.append(f'<h2>{i18n("Text note")}</h2>')
+
+        if stripHtml(self.__text).strip()!='':
+            returned.append(self.__text)
+        else:
+            text=i18n("Doesn't contains text note")
+            returned.append(f'<div><i>{text}</i><div>')
+
+
+        returned.append(f'<h2>{i18n("Hand written note")}</h2>')
+
+        if self.__scratchpadImage is None:
+            text=i18n("Doesn't contains hand written note")
+            returned.append(f'<p><i>{text}</i><p>')
+        else:
+            returned.append(f'<p><i>{i18n("Size")}: {self.__scratchpadImage.width()}x{self.__scratchpadImage.height()}px</i><p>')
+            returned.append(imgMarkup(self.__scratchpadImage, 'width: 100%; object-fit: contain;'))
+
+
+        returned.append(f'<h2>{i18n("Brushes notes")}</h2>')
+
+        if len(self.__brushes.idList())==0:
+            text=i18n("Doesn't contains brushes notes")
+            returned.append(f'<p><i>{text}</i><p>')
+        else:
+            tmpText=[]
+            returned.append('<table>')
+            for brushId in self.__brushes.idList():
+                brush=self.__brushes.get(brushId)
+
+                size=imgBoxSize(brush.image().size(), QSize(192, 192))
+
+                returned.append('<tr>')
+                returned.append(f'<td>{imgMarkup(brush.image(), f"width: {size.width()}; height: {size.height()};")}</th>')
+                returned.append(f'<td>{brush.information()}</td>')
+                returned.append('</tr>')
+            returned.append('</table>')
+
+
+        returned.append(f'<h2>{i18n("Linked layers notes")}</h2>')
+
+        if len(self.__brushes.idList())==0:
+            text=i18n("Doesn't contains linked layers notes")
+            returned.append(f'<p><i>{text}</i><p>')
+        else:
+            tmpText=[]
+            returned.append('<table>')
+            for layerId in self.__linkedLayers.idList():
+                layer=self.__linkedLayers.get(layerId)
+
+                size=imgBoxSize(layer.thumbnail().size(), QSize(BNLinkedLayer.THUMB_SIZE, BNLinkedLayer.THUMB_SIZE))
+
+                returned.append('<tr>')
+                returned.append(f'<td>{imgMarkup(layer.thumbnail(), f"width: {size.width()}; height: {size.height()};")}</th>')
+                returned.append(f'<td><b>{layer.name()}</b><div>{layer.comments()}</div></td>')
+                returned.append('</tr>')
+            returned.append('</table>')
+
+        return "\n".join(returned)
+
+
 
 class BNNotes(QObject):
     """Collection of notes"""
@@ -1070,8 +1217,12 @@ class BNNotes(QObject):
             for note in notes:
                 if isinstance(note, BNNote):
                     binaryList.append(note.exportData(False))
-                    #htmlList.append(note.toHtml())
-                    #plainTextList.append(note.toPlainText())
+                    htmlList.append(note.exportAsHtml())
+                    plainTextList.append(note.exportAsText())
+
+        clipboardContent=False
+        clipboard = QGuiApplication.clipboard()
+        mimeContent=QMimeData()
 
         if len(binaryList)>0:
             dataWrite=BytesRW()
@@ -1080,13 +1231,18 @@ class BNNotes(QObject):
                 dataWrite.writeUInt4(len(data))
                 dataWrite.write(data)
 
-            mimeContent=QMimeData()
             mimeContent.setData(BNNotes.MIME_TYPE, QByteArray(dataWrite.getvalue()))
 
-            clipboard = QGuiApplication.clipboard()
-            clipboard.setMimeData(mimeContent)
+        if len(plainTextList)>0:
+            mimeContent.setData('text/plain', ("\n\n".join(plainTextList)).encode())
 
+        if len(htmlList)>0:
+            mimeContent.setData('text/html', ("\n\n".join(htmlList)).encode())
+
+        if len(mimeContent.formats())>0:
+            clipboard.setMimeData(mimeContent)
             return True
+
         return False
 
     def clipboardCut(self, notes):
@@ -1685,7 +1841,6 @@ class BNNoteEditor(EDialog):
         """Remove layer from linked layer list"""
         selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
 
-        print('__actionLinkedLayerDelete', selectedLinkedLayers)
         if len(selectedLinkedLayers)>0:
             self.__tmpLinkedLayers.remove(selectedLinkedLayers)
             self.__updateLinkedLayersUi()
