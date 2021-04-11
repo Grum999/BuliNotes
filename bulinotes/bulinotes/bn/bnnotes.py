@@ -1002,6 +1002,7 @@ class BNNote(QObject):
                 returned.append('<tr>')
                 returned.append(f'<td>{imgMarkup(brush.image(), f"width: {size.width()}; height: {size.height()};")}</th>')
                 returned.append(f'<td>{brush.information()}</td>')
+                returned.append(f'<td>{brush.comments()}</td>')
                 returned.append('</tr>')
             returned.append('</table>')
 

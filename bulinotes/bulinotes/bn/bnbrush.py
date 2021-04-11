@@ -330,6 +330,9 @@ class BNBrush(QObject):
         returned.append(f'- Opacity:       {100*self.__opacity:0.2f}%')
         returned.append(f'- Flow:          {100*self.__flow:0.2f}%')
 
+        if stripHtml(self.__comments)!='':
+            returned.append(stripHtml(self.__comments))
+
         return "\n".join(returned)
 
 
