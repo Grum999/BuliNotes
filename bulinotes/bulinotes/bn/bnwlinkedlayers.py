@@ -34,6 +34,7 @@ from pktk.widgets.wtextedit import (WTextEdit, WTextEditBtBarOption)
 from pktk.widgets.wdocnodesview import DocNodesModel
 
 from .bnlinkedlayer import BNLinkedLayer
+from .bnsettings import (BNSettings, BNSettingsKey)
 
 
 class BNLinkedLayersModel(QAbstractTableModel):
@@ -631,7 +632,10 @@ class BNLinkedLayerEditor(EDialog):
 
         self.wDescription.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
         self.wDescription.setHtml(self.__linkedLayer.comments())
+        self.wDescription.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
+
         self.tvDocNodesView.setDocument(self.__document)
+        self.tvDocNodesView.setThumbSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_ADDLAYERTREE_ZOOMLEVEL))
 
         self.wDocNodesViewTBar.setNodesView(self.tvDocNodesView)
 
@@ -644,6 +648,7 @@ class BNLinkedLayerEditor(EDialog):
     def showEvent(self, event):
         self.tvDocNodesView.selectionModel().selectionChanged.connect(self.__linkedLayerSelectionChanged)
         self.tvDocNodesView.selectItems(self.__linkedLayer.id(), True)
+        self.__updateUi()
 
     def __accept(self):
         """Accept modifications and return result"""
@@ -652,6 +657,8 @@ class BNLinkedLayerEditor(EDialog):
         self.__linkedLayer.setComments(self.wDescription.toHtml())
 
         self.__linkedLayer.endUpdate()
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_ADDLAYERTREE_ZOOMLEVEL, self.tvDocNodesView.thumbSizeIndex())
+        BNSettings.setTxtColorPickerLayout(self.wDescription.colorPickerLayout())
         self.accept()
 
     def __reject(self):
