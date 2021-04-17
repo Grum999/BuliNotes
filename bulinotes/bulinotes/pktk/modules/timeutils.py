@@ -27,7 +27,7 @@ from math import floor
 import time
 import re
 
-from PyQt5.Qt import QTimer
+from PyQt5.Qt import (QTimer, QEventLoop)
 
 
 def tsToStr(value, pattern=None, valueNone=''):
