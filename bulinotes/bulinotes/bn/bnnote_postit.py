@@ -133,8 +133,6 @@ width: 0px;
 }
 """
 
-
-
     def __init__(self, note):
         super(BNNotePostIt, self).__init__(Krita.instance().activeWindow().qwindow())
 
@@ -401,7 +399,7 @@ width: 0px;
         if len(selectedLayer)==1:
             document=Krita.instance().activeDocument()
             node=EKritaDocument.findLayerById(document, selectedLayer[0].id())
-            if node:
+            if node and node!=document.activeNode():
                 document.setActiveNode(node)
 
 
