@@ -1,7 +1,24 @@
 # Buli Notes :: Release 0.3.0a [2021-XX-XX]
 
 
+## Improve Post-it mode - Linked Layers
 
+In post-it mode, it's now possible to change linked layer properties by clicking on icon:
+- Visibility
+- Pinned to timeline
+- Lock
+- Inherit alpha
+- Alpha lock
+
+
+It’s also possible to quickly change properties of all linked layers in one click.
+Like in blender:
+- Click on icon, it will switch status ON/OFF for layer
+- Maintain mouse button pressed and move down over other layers:
+  - If *left* button is pressed, will apply the same status ON/OFF of first clicked layer to other layer(s)
+  - If *right* button is pressed, will invert status ON/OFF of layer(s)
+
+![Linked layers properties](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-3-0a_note-multilayer-modif.webm)
 
 ## Improve color picker
 

@@ -176,6 +176,7 @@ Plugin hasn't been tested on Windows and MacOs
 ### What's new?
 
 _[2021-XX-XX] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.3.0a.md)
+- *Post-it mode* - allows to change linked layers properties
 - *Color picker* - improve color picker for text/hand written notes
 - *Docker* - add mime type "text/plain" and "text/html" for copy/paste action
 - *Settings* - implement global settings
