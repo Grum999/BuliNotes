@@ -1,4 +1,4 @@
-# Buli Notes :: Release 0.3.0a [2021-XX-XX]
+# Buli Notes :: Release 0.3.0a [2021-04-18]
 
 
 ## Improve Post-it mode - Linked Layers
