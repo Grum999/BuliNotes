@@ -1477,6 +1477,9 @@ class BNNoteEditor(EDialog):
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
         self.tvBrushes.setBrushes(self.__tmpBrushes)
         self.tvBrushes.setIconSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_BRUSHES_ZOOMLEVEL))
+        self.tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
+        self.hsBrushesThumbSize.setValue(self.tvBrushes.iconSizeIndex())
+        self.hsBrushesThumbSize.valueChanged.connect(self.__brushesSizeIndexSliderChanged)
 
         self.__updateBrushUi()
 
@@ -1488,6 +1491,9 @@ class BNNoteEditor(EDialog):
         self.tvLinkedLayers.doubleClicked.connect(self.__actionLinkedLayerEdit)
         self.tvLinkedLayers.setLinkedLayers(self.__tmpLinkedLayers)
         self.tvLinkedLayers.setIconSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_LIST_ZOOMLEVEL))
+        self.tvLinkedLayers.iconSizeIndexChanged.connect(self.__linkedLayersSizeIndexChanged)
+        self.hsLinkedLayerThumbSize.setValue(self.tvLinkedLayers.iconSizeIndex())
+        self.hsLinkedLayerThumbSize.valueChanged.connect(self.__linkedLayersSizeIndexSliderChanged)
 
         self.__tmpLinkedLayers.updateFromDocument()
         self.__updateLinkedLayersUi()
@@ -1558,7 +1564,7 @@ class BNNoteEditor(EDialog):
         """Update linked layers UI (enable/disable buttons...)"""
         nbSelectedLinkedLayers=self.tvLinkedLayers.nbSelectedItems()
         self.tbLinkedLayerEdit.setEnabled(nbSelectedLinkedLayers==1)
-        self.tbLinkedLayerDelete.setEnabled(nbSelectedLinkedLayers==1)
+        self.tbLinkedLayerDelete.setEnabled(nbSelectedLinkedLayers>=1)
 
     def __brushesSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
@@ -1570,6 +1576,26 @@ class BNNoteEditor(EDialog):
     def __linkedLayersSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
         self.__updateLinkedLayersUi()
+
+    def __linkedLayersSizeIndexChanged(self, newSize, newQSize):
+        """Thumbnail size has been changed from linked layers treeview"""
+        # update slider
+        self.hsLinkedLayerThumbSize.setValue(newSize)
+
+    def __linkedLayersSizeIndexSliderChanged(self, newSize):
+        """Thumbnail size has been changed from linked layers slider"""
+        # update treeview
+        self.tvLinkedLayers.setIconSizeIndex(newSize)
+
+    def __brushesSizeIndexChanged(self, newSize, newQSize):
+        """Thumbnail size has been changed from brushes treeview"""
+        # update slider
+        self.hsBrushesThumbSize.setValue(newSize)
+
+    def __brushesSizeIndexSliderChanged(self, newSize):
+        """Thumbnail size has been changed from brushes slider"""
+        # update treeview
+        self.tvBrushes.setIconSizeIndex(newSize)
 
     def __saveViewConfig(self):
         """Save current view properties"""
@@ -1814,21 +1840,27 @@ class BNNoteEditor(EDialog):
 
     def __actionLinkedLayerAdd(self):
         """Add layer to linked layer list"""
-        linkedLayer=BNLinkedLayerEditor.edit(None, i18n(f"{self.__name}::Add linked layer"))
+        linkedLayers=BNLinkedLayerEditor.edit(None, i18n(f"{self.__name}::Add linked layer"))
 
-        if linkedLayer:
-            self.__tmpLinkedLayers.add(linkedLayer)
+        if len(linkedLayers)>0:
+            self.__tmpLinkedLayers.beginUpdate()
+            for linkedLayer in linkedLayers:
+                self.__tmpLinkedLayers.add(linkedLayer)
+            self.__tmpLinkedLayers.endUpdate()
             self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
             self.__updateLinkedLayersUi()
+
 
     def __actionLinkedLayerEdit(self):
         """Edit layer from linked layer list"""
         selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
 
         if len(selectedLinkedLayers)==1:
-            linkedLayer=BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
+            linkedLayers=BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
 
-            if linkedLayer:
+            if len(linkedLayers)==1:
+                linkedLayer=linkedLayers[0]
+                print('__actionLinkedLayerEdit', linkedLayer.id(), selectedLinkedLayers[0].id())
                 if linkedLayer.id()==selectedLinkedLayers[0].id():
                     self.__tmpLinkedLayers.update(linkedLayer)
                 else:

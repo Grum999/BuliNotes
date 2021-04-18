@@ -75,6 +75,17 @@ class BNLinkedLayersModel(QAbstractTableModel):
         self.__linkedLayers.updateAdded.connect(self.__dataUpdatedAdd)
         self.__linkedLayers.updateRemoved.connect(self.__dataUpdateRemove)
         self.__items=self.__linkedLayers.idList()
+        self.__cache={}
+        self.__cacheTimer=None
+
+        # define cache for icons, as calling QIcon() seems to be very time consumming
+        self.__iconCache_warning=QIcon(':/pktk/images/normal/warning')
+        self.__iconCache_visibilityOn=QIcon(':/pktk/images/normal/visibility_on')
+        self.__iconCache_visibilityOff=QIcon(':/pktk/images/disabled/visibility_off')
+        self.__iconCache_pinnedOn=QIcon(':/pktk/images/normal/pinned')
+        self.__iconCache_pinnedOff=QIcon(':/pktk/images/disabled/pinned')
+        self.__iconCache_animatedOn=QIcon(':/pktk/images/normal/animation')
+        self.__iconCache_animatedOff=QIcon(':/pktk/images/disabled/animation')
 
     def __repr__(self):
         return f'<BNLinkedLayersModel()>'
@@ -110,6 +121,43 @@ class BNLinkedLayersModel(QAbstractTableModel):
         indexE=self.createIndex(self.__idRow(item.id()), BNLinkedLayersModel.COLNUM_LAST)
         self.dataChanged.emit(indexS, indexE, [Qt.DisplayRole])
 
+    def __itemFromCache(self, rowNumber):
+        """Return item from cache
+
+        If cache is outdated, update cache
+        Cache is cleared every 1500ms
+
+        Cache is implemented mostly for QTreeView update: resize/update content
+        is time consumming when looking for node in active document
+        Then using a cache allows to reduce resources usage
+        """
+        if rowNumber<0 or rowNumber>len(self.__items):
+            return None
+
+        if self.__cacheTimer:
+            # cancel current timer
+            self.killTimer(self.__cacheTimer)
+
+        self.__cacheTimer=self.startTimer(1500)
+
+        uuid=self.__items[rowNumber]
+        if uuid in self.__cache:
+            return self.__cache[uuid]
+        else:
+            document=Krita.instance().activeDocument()
+            if not document:
+                return None
+
+            self.__cache[uuid]=document.nodeByUniqueID(uuid)
+            return self.__cache[uuid]
+
+    def timerEvent(self, event):
+        """occurs to clear cache"""
+        self.__cache={}
+        if self.__cacheTimer:
+            self.killTimer(self.__cacheTimer)
+            self.__cacheTimer=None
+
     def columnCount(self, parent=QModelIndex()):
         """Return total number of column"""
         return BNLinkedLayersModel.COLNUM_LAST+1
@@ -125,11 +173,7 @@ class BNLinkedLayersModel(QAbstractTableModel):
 
         if role == Qt.DecorationRole:
             # can return icons only if document is provided to model
-            document=Krita.instance().activeDocument()
-            if not document:
-                return None
-
-            item=document.nodeByUniqueID(self.__items[row])
+            item=self.__itemFromCache(row)
             if item is None:
                 if index.column()==BNLinkedLayersModel.COLNUM_ICON_TYPE:
                     return QIcon(':/pktk/images/normal/warning')
@@ -138,16 +182,17 @@ class BNLinkedLayersModel(QAbstractTableModel):
 
             if index.column()==BNLinkedLayersModel.COLNUM_ICON_VISIBLE:
                 if item.visible():
-                    return QIcon(':/pktk/images/normal/visibility_on')
+                    return self.__iconCache_visibilityOn
                 else:
-                    return QIcon(':/pktk/images/disabled/visibility_off')
+                    return self.__iconCache_visibilityOff
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_TYPE:
+                return None
                 return item.icon()
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_PINNED:
                 if item.isPinnedToTimeline():
-                    return QIcon(':/pktk/images/normal/pinned')
+                    return self.__iconCache_pinnedOn
                 else:
-                    return QIcon(':/pktk/images/disabled/pinned')
+                    return self.__iconCache_pinnedOff
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_ANIMATED:
                 # ideally:
                 #   - no animation: return None
@@ -155,9 +200,9 @@ class BNLinkedLayersModel(QAbstractTableModel):
                 #   - animated + onion skin ON: return Krita.instance().icon('onionOn')
                 # But currently can't determinate if onion skin is active or not
                 if item.animated():
-                    return QIcon(':/pktk/images/normal/animation')
+                    return self.__iconCache_animatedOn
                 else:
-                    return QIcon(':/pktk/images/disabled/animation')
+                    return self.__iconCache_animatedOff
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_LOCK:
                 if item.locked():
                     return Krita.instance().icon('layer-locked')
@@ -180,11 +225,7 @@ class BNLinkedLayersModel(QAbstractTableModel):
                     return Krita.instance().icon('transparency-unlocked')
         elif role == Qt.ToolTipRole:
             # can return icons only if document is provided to model
-            document=Krita.instance().activeDocument()
-            if not document:
-                return None
-
-            item=document.nodeByUniqueID(self.__items[row])
+            item=self.__itemFromCache(row)
             if item is None:
                 return i18n('Layer not found in document!')
 
@@ -243,17 +284,9 @@ class BNLinkedLayersModel(QAbstractTableModel):
             id=self.__items[row]
             return self.__linkedLayers.get(id)
         elif role == BNLinkedLayersModel.ROLE_FOUND:
-            document=Krita.instance().activeDocument()
-            if not document:
-                return False
-
-            item=document.nodeByUniqueID(self.__items[row])
+            item=self.__itemFromCache(row)
             return (not item is None)
 
-
-        #elif role == Qt.SizeHintRole:
-        #    if column==BNLinkedLayersModel.COLNUM_THUMB:
-        #        return
         return None
 
     def headerData(self, section, orientation, role):
@@ -803,7 +836,7 @@ class BNLinkedLayerEditor(EDialog):
         if returned == QDialog.Accepted:
             return dlgBox.linkedLayer()
         else:
-            return None
+            return []
 
     def __init__(self, linkedLayer=None, name="Buli Notes", parent=None):
         super(BNLinkedLayerEditor, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bnlinkedlayereditor.ui'), parent)
@@ -812,17 +845,21 @@ class BNLinkedLayerEditor(EDialog):
         self.setWindowTitle(f"{name}::Linked layer")
         self.setSizeGripEnabled(True)
 
-        self.__selectedUuid=None
-
         if not isinstance(linkedLayer, BNLinkedLayer):
-            self.__linkedLayer=BNLinkedLayer()
+            # edit a new linked layer
+            self.__linkedLayers=[BNLinkedLayer()]
+            # allows to create multiple linked layers at once
+            self.tvDocNodesView.setSelectionMode(QAbstractItemView.ExtendedSelection)
         else:
-            self.__linkedLayer=BNLinkedLayer(linkedLayer)
+            # update a linked layer
+            self.__linkedLayers=[BNLinkedLayer(linkedLayer)]
+            # in modification mode, can only update the current linked layer
+            self.tvDocNodesView.setSelectionMode(QAbstractItemView.SingleSelection)
 
         self.__document=Krita.instance().activeDocument()
 
         self.wDescription.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
-        self.wDescription.setHtml(self.__linkedLayer.comments())
+        self.wDescription.setHtml(self.__linkedLayers[0].comments())
         self.wDescription.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
 
         self.tvDocNodesView.setDocument(self.__document)
@@ -838,38 +875,39 @@ class BNLinkedLayerEditor(EDialog):
 
     def showEvent(self, event):
         self.tvDocNodesView.selectionModel().selectionChanged.connect(self.__linkedLayerSelectionChanged)
-        self.tvDocNodesView.selectItems(self.__linkedLayer.id(), True)
+        self.tvDocNodesView.selectItems(self.__linkedLayers[0].id(), True)
         self.__updateUi()
 
     def __accept(self):
         """Accept modifications and return result"""
-        self.__linkedLayer.beginUpdate()
-        self.__linkedLayer.fromLayer(self.__selectedUuid)
-        self.__linkedLayer.setComments(self.wDescription.toHtml())
+        self.__linkedLayers=[None] * self.tvDocNodesView.nbSelectedItems()
+        comments=self.wDescription.toHtml()
+        for index, layerId in enumerate(self.tvDocNodesView.selectedItems()):
+            linkedLayer=BNLinkedLayer()
+            linkedLayer.beginUpdate()
+            linkedLayer.fromLayer(layerId)
+            linkedLayer.setComments(comments)
+            linkedLayer.endUpdate()
+            self.__linkedLayers[index]=linkedLayer
+            print('__accept', index, linkedLayer, layerId)
 
-        self.__linkedLayer.endUpdate()
         BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_ADDLAYERTREE_ZOOMLEVEL, self.tvDocNodesView.thumbSizeIndex())
         BNSettings.setTxtColorPickerLayout(self.wDescription.colorPickerLayout())
         self.accept()
 
     def __reject(self):
         """reject modifications and return None"""
+        self.__linkedLayers=[]
         self.reject()
 
     def __updateUi(self):
         """Check if content is valid"""
-        self.pbOk.setEnabled(self.tvDocNodesView.nbSelectedItems()==1)
+        self.pbOk.setEnabled(self.tvDocNodesView.nbSelectedItems()>=1)
 
     def __linkedLayerSelectionChanged(self, selected, deselected):
         """Layer selection has been changed"""
         self.__updateUi()
-        if selected.count()==0:
-            self.__selectedUuid=None
-        else:
-            for index in selected.indexes():
-                self.__selectedUuid=QUuid(index.data(DocNodesModel.ROLE_NODE_ID))
-                return
 
     def linkedLayer(self):
         """Return current linked layer definition"""
-        return self.__linkedLayer
+        return self.__linkedLayers
