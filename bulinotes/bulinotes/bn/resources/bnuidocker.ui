@@ -58,6 +58,9 @@
       </property>
       <item>
        <widget class="QToolButton" name="btAddNote">
+        <property name="toolTip">
+         <string>Add a new note</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
@@ -79,6 +82,9 @@
       </item>
       <item>
        <widget class="QToolButton" name="btEditNote">
+        <property name="toolTip">
+         <string>Edit current note</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
@@ -100,6 +106,9 @@
       </item>
       <item>
        <widget class="QToolButton" name="btRemoveNote">
+        <property name="toolTip">
+         <string>Remove selected notes</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
@@ -128,6 +137,9 @@
       </item>
       <item>
        <widget class="QToolButton" name="btMoveNoteUp">
+        <property name="toolTip">
+         <string>Move notes Up</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
@@ -143,6 +155,9 @@
       </item>
       <item>
        <widget class="QToolButton" name="btMoveNoteDown">
+        <property name="toolTip">
+         <string>Move notes Down</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
