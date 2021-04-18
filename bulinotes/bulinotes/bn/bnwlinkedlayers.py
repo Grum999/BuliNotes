@@ -803,7 +803,7 @@ class BNLinkedLayerEditor(EDialog):
         if returned == QDialog.Accepted:
             return dlgBox.linkedLayer()
         else:
-            return None
+            return []
 
     def __init__(self, linkedLayer=None, name="Buli Notes", parent=None):
         super(BNLinkedLayerEditor, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bnlinkedlayereditor.ui'), parent)
@@ -812,17 +812,21 @@ class BNLinkedLayerEditor(EDialog):
         self.setWindowTitle(f"{name}::Linked layer")
         self.setSizeGripEnabled(True)
 
-        self.__selectedUuid=None
-
         if not isinstance(linkedLayer, BNLinkedLayer):
-            self.__linkedLayer=BNLinkedLayer()
+            # edit a new linked layer
+            self.__linkedLayers=[BNLinkedLayer()]
+            # allows to create multiple linked layers at once
+            self.tvDocNodesView.setSelectionMode(QAbstractItemView.ExtendedSelection)
         else:
-            self.__linkedLayer=BNLinkedLayer(linkedLayer)
+            # update a linked layer
+            self.__linkedLayers=[BNLinkedLayer(linkedLayer)]
+            # in modification mode, can only update the current linked layer
+            self.tvDocNodesView.setSelectionMode(QAbstractItemView.SingleSelection)
 
         self.__document=Krita.instance().activeDocument()
 
         self.wDescription.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
-        self.wDescription.setHtml(self.__linkedLayer.comments())
+        self.wDescription.setHtml(self.__linkedLayers[0].comments())
         self.wDescription.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
 
         self.tvDocNodesView.setDocument(self.__document)
@@ -838,38 +842,39 @@ class BNLinkedLayerEditor(EDialog):
 
     def showEvent(self, event):
         self.tvDocNodesView.selectionModel().selectionChanged.connect(self.__linkedLayerSelectionChanged)
-        self.tvDocNodesView.selectItems(self.__linkedLayer.id(), True)
+        self.tvDocNodesView.selectItems(self.__linkedLayers[0].id(), True)
         self.__updateUi()
 
     def __accept(self):
         """Accept modifications and return result"""
-        self.__linkedLayer.beginUpdate()
-        self.__linkedLayer.fromLayer(self.__selectedUuid)
-        self.__linkedLayer.setComments(self.wDescription.toHtml())
+        self.__linkedLayers=[None] * self.tvDocNodesView.nbSelectedItems()
+        comments=self.wDescription.toHtml()
+        for index, layerId in enumerate(self.tvDocNodesView.selectedItems()):
+            linkedLayer=BNLinkedLayer()
+            linkedLayer.beginUpdate()
+            linkedLayer.fromLayer(layerId)
+            linkedLayer.setComments(comments)
+            linkedLayer.endUpdate()
+            self.__linkedLayers[index]=linkedLayer
+            print('__accept', index, linkedLayer, layerId)
 
-        self.__linkedLayer.endUpdate()
         BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_ADDLAYERTREE_ZOOMLEVEL, self.tvDocNodesView.thumbSizeIndex())
         BNSettings.setTxtColorPickerLayout(self.wDescription.colorPickerLayout())
         self.accept()
 
     def __reject(self):
         """reject modifications and return None"""
+        self.__linkedLayers=[]
         self.reject()
 
     def __updateUi(self):
         """Check if content is valid"""
-        self.pbOk.setEnabled(self.tvDocNodesView.nbSelectedItems()==1)
+        self.pbOk.setEnabled(self.tvDocNodesView.nbSelectedItems()>=1)
 
     def __linkedLayerSelectionChanged(self, selected, deselected):
         """Layer selection has been changed"""
         self.__updateUi()
-        if selected.count()==0:
-            self.__selectedUuid=None
-        else:
-            for index in selected.indexes():
-                self.__selectedUuid=QUuid(index.data(DocNodesModel.ROLE_NODE_ID))
-                return
 
     def linkedLayer(self):
         """Return current linked layer definition"""
-        return self.__linkedLayer
+        return self.__linkedLayers
