@@ -143,7 +143,7 @@ class BNNote(QObject):
         self.endUpdate()
 
     def __repr__(self):
-        return f'<BNNote({self.__id}, {self.__title}, {self.__pinned}, {self.__locked}, {self.__windowPostItCompact})>'
+        return f'<BNNote({self.__id}, {self.__title}, {self.__pinned}, {self.__locked}, {self.__windowPostItCompact}, {self.__position})>'
 
     def __updatedBrushes(self, property=None):
         """Brushes have been udpated"""
@@ -258,7 +258,7 @@ class BNNote(QObject):
 
     def setPosition(self, position):
         """Set note position"""
-        if not self.__locked and isinstance(position, int) and self.__position!=position:
+        if not self.__locked and isinstance(position, int) and self.__position!=position and position>=0:
             self.__position=position
             self.__updated('position')
 
@@ -1036,7 +1036,7 @@ class BNNotes(QObject):
     updateReset = Signal()
     updateAdded = Signal(list)
     updateRemoved = Signal(list)
-    updateMoved = Signal(list)
+    updateMoved = Signal()
 
     MIME_TYPE='application/x-kritaplugin-bulinotes'
 
@@ -1102,12 +1102,23 @@ class BNNotes(QObject):
         if self.__document:
             self.__document.removeAnnotation(f'BuliNotes/Note({note.id()})')
 
+    def __recalculatePositionValues(self):
+        """Recalculate positions values"""
+        sortedList=self.idList(True)
+        for position, id in enumerate(sortedList):
+            self.__notes[id].setPosition(position)
+        if not self.__temporaryDisabled:
+            self.updateMoved.emit()
+
     def length(self):
         """Return number of notes"""
         return len(self.__notes)
 
-    def idList(self):
-        """Return list of id; no sort"""
+    def idList(self, sortByPosition=False):
+        """Return list of id"""
+        if sortByPosition:
+            return sorted(self.__notes, key=lambda id: self.__notes[id].position())
+
         return list(self.__notes.keys())
 
     def get(self, id):
@@ -1204,6 +1215,7 @@ class BNNotes(QObject):
                         if note.pinned():
                             note.openWindowPostIt()
 
+            self.__recalculatePositionValues()
             self.__temporaryDisabled=False
             self.__emitUpdateReset()
 
@@ -1278,6 +1290,46 @@ class BNNotes(QObject):
         """Return True if there's pastable notes in clipboard"""
         clipboardMimeContent = QGuiApplication.clipboard().mimeData(QClipboard.Clipboard)
         return clipboardMimeContent.hasFormat(BNNotes.MIME_TYPE)
+
+    def movePosition(self, notes, offset):
+        """Move all notes position up for 1"""
+        if isinstance(notes, BNNote):
+            notes=[notes]
+
+        if not isinstance(notes, list) or len(notes)==0 or offset==0:
+            return
+
+        # update positions
+        sortedList=self.idList(True)
+        if offset>0:
+            sortedList.reverse()
+        resultList=[]
+
+        currentSize=0
+        for id in sortedList:
+            if self.__notes[id] in notes:
+                resultList.insert(currentSize-abs(offset), id)
+            else:
+                resultList.append(id)
+            currentSize+=1
+
+        if offset>0:
+            resultList.reverse()
+
+        for index, id in enumerate(resultList):
+            self.__notes[id].setPosition(index)
+
+        # recalculate all positions
+        self.__recalculatePositionValues()
+
+    def movePositionUp(self, notes):
+        """Move all notes position up for 1"""
+        self.movePosition(notes, -1)
+
+    def movePositionDown(self, notes):
+        """Move all notes position down for 1"""
+        self.movePosition(notes, 1)
+
 
 
 class BNNoteEditor(EDialog):
@@ -1860,7 +1912,6 @@ class BNNoteEditor(EDialog):
 
             if len(linkedLayers)==1:
                 linkedLayer=linkedLayers[0]
-                print('__actionLinkedLayerEdit', linkedLayer.id(), selectedLinkedLayers[0].id())
                 if linkedLayer.id()==selectedLinkedLayers[0].id():
                     self.__tmpLinkedLayers.update(linkedLayer)
                 else:
