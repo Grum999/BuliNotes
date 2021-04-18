@@ -34,10 +34,11 @@ All options are available from context menu:
 
 ## Improve Docker
 
+### Copy/Cut to clipboard
 The *copy/cut to clipboard* action now manage additional mime types.
 
 
-### Mime type *text/plain*
+#### Mime type *text/plain*
 
 This mime type allows to paste a note in basic text editor:
 ```
@@ -90,13 +91,20 @@ This mime type allows to paste a note in basic text editor:
 ╚═══════════════════╧═════════════════════════════════════════════════════════════════════════════╝
 ```
 
-### Mime type *text/html*
+#### Mime type *text/html*
 
 This mime type allows to paste a note in a word processing software (like LibreOffice):
 
 ![Linked layers edit](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-3-0a_copy-html-paste-libreoffice.jpg)
 
 Page layout & style is minimal, but all text formatting defined in note are kept and images are also available in document.
+
+
+### Notes position
+
+Buttons *Move Up* and *Move Down* are now functional :-)
+You can modify position in list of selected note(s) by clicking these buttons.
+
 
 
 ## Implement global settings

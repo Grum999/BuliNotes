@@ -179,6 +179,7 @@ _[2021-XX-XX] Version 0.3.0a_ [>> Show detailed release content <<](https://gith
 - *Post-it mode* - allows to change linked layers properties
 - *Color picker* - improve color picker for text/hand written notes
 - *Docker* - add mime type "text/plain" and "text/html" for copy/paste action
+- *Docker* - allows to change notes positions in list
 - *Settings* - implement global settings
 - *Miscellaneous* - improve UI, improve performances, fix bugs
 
