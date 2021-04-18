@@ -28,9 +28,11 @@ from PyQt5.QtCore import (
     )
 
 from pktk.modules.iconsizes import IconSizes
-from pktk.modules.utils import stripHtml
+from pktk.modules.strutils import stripHtml
+from pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 
 from .bnbrush import BNBrush
+from .bnsettings import (BNSettings, BNSettingsKey)
 
 
 class BNBrushesModel(QAbstractTableModel):
@@ -194,6 +196,7 @@ class BNWBrushes(QTreeView):
                 # need to recalculate height for all rows
                 self.__delegate.sizeHintChanged.emit(self.__model.createIndex(rowNumber, index))
         elif index==BNBrushesModel.COLNUM_BRUSH and self.isColumnHidden(BNBrushesModel.COLNUM_COMMENT):
+            self.__delegate.setNSize(newSize)
             for rowNumber in range(self.__model.rowCount()):
                 # need to recalculate height for all rows
                 self.__delegate.sizeHintChanged.emit(self.__model.createIndex(rowNumber, index))
@@ -296,6 +299,7 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
         """Constructor, nothingspecial"""
         super(BNBrushesModelDelegate, self).__init__(parent)
         self.__csize=0
+        self.__nsize=0
         self.__isCompact=False
 
     def __applyCompactFactor(self, subResult):
@@ -327,6 +331,12 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
     def setCSize(self, value):
         """Force size for comments column"""
         self.__csize=value
+        self.__nsize=0
+
+    def setNSize(self, value):
+        """Force size for comments column"""
+        self.__nsize=value
+        self.__csize=0
 
     def setCompact(self, value):
         """Set compact mode"""
@@ -414,8 +424,8 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             textDocument.setDefaultFont(option.font)
             textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
             textDocument.setPageSize(QSizeF(4096, 1000)) # set 1000px size height arbitrary
-            if self.__csize==0:
-                textDocument.setPageSize(QSizeF(size.width(), 1000)) # set 1000px size height arbitrary
+            if self.__nsize>0:
+                textDocument.setPageSize(QSizeF(self.__nsize, 1000)) # set 1000px size height arbitrary
             else:
                 textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000)) # set 1000px size height arbitrary
             size=textDocument.size().toSize()+QSize(8, 8)
@@ -430,3 +440,29 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             size=QSize(self.__csize, textDocument.size().toSize().height())
 
         return size
+
+
+class BNBrushesEditor(WTextEditDialog):
+    """A simple dialog box to brushe comment
+
+    The WTextEditDialog doesn't allows to manage color picker configuration then,
+    create a dedicated dailog box
+    """
+
+    @staticmethod
+    def edit(title, text):
+        """Open a dialog box to edit text"""
+        dlgBox = BNBrushesEditor(None)
+        dlgBox.setHtml(text)
+        dlgBox.setWindowTitle(title)
+
+        dlgBox.editor.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+        dlgBox.editor.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
+
+        returned = dlgBox.exec()
+
+        if returned == QDialog.Accepted:
+            BNSettings.setTxtColorPickerLayout(dlgBox.editor.colorPickerLayout())
+            return dlgBox.toHtml()
+        else:
+            return None

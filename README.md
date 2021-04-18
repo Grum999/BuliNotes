@@ -38,7 +38,7 @@ As notes are embedded into *.kra* file, you're sure to never loose them :-)
 
 ![Handwritten note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note-brushes.jpg)
 
-*Editor - Brushes note*
+*Editor - Linked layers note*
 
 ![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-2-0a_edit_note-linked_layers.jpg)
 
@@ -143,7 +143,7 @@ When a note is displayed as a post-it, clicking on a linked layer will activate 
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.2.0a](https://github.com/Grum999/BuliNotes/releases/download/0.2.0a/bulinotes.zip)**
++ **[ZIP ARCHIVE - v0.3.0a](https://github.com/Grum999/BuliNotes/releases/download/0.3.0a/bulinotes.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 
@@ -175,6 +175,15 @@ Plugin hasn't been tested on Windows and MacOs
 
 ### What's new?
 
+_[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.3.0a.md)
+- *Post-it mode* - allows to change linked layers properties
+- *Color picker* - improve color picker for text/hand written notes
+- *Docker* - add mime type "text/plain" and "text/html" for copy/paste action
+- *Docker* - allows to change notes positions in list
+- *Settings* - implement global settings
+- *Miscellaneous* - improve UI, improve performances, fix bugs
+
+
 _[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.2.0a.md)
 - *Linked layers notes* - implement functionality
 - *Text notes* - implement strikethrough & bg colors styles
@@ -204,8 +213,6 @@ Some ideas currently in mind:
   - Allow to define notes position in list (currently, sorted by creation order)
   - Export/Import notes
   - Extend clipboad mime type (text + png), allowing to paste information in an editor
-- Note editor - Hand written content
-  - Fix color chooser (there's some bug interface)
 - Tasks
   - Implement tasks list note
 - Link layers

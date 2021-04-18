@@ -31,7 +31,11 @@
         <widget class="WDocNodesViewTBar" name="wDocNodesViewTBar" native="true"/>
        </item>
        <item>
-        <widget class="WDocNodesView" name="tvDocNodesView"/>
+        <widget class="WDocNodesView" name="tvDocNodesView">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::ExtendedSelection</enum>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -128,8 +132,8 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="dark_icons.qrc"/>
-  <include location="light_icons.qrc"/>
+  <include location="../../pktk/resources/svg/dark_icons.qrc"/>
+  <include location="../../pktk/resources/svg/light_icons.qrc"/>
  </resources>
  <connections/>
 </ui>

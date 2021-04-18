@@ -33,7 +33,7 @@ from .bnnotes import (
                 BNNotes
             )
 
-from pktk.modules.utils import tsToStr
+from pktk.modules.timeutils import tsToStr
 from pktk.widgets.wstandardcolorselector import (
         WStandardColorSelector,
         WMenuStandardColorSelector
@@ -68,7 +68,8 @@ class BNNotesModel(QAbstractTableModel):
         self.__notes.updateReset.connect(self.__dataUpdateReset)
         self.__notes.updateAdded.connect(self.__dataUpdatedAdd)
         self.__notes.updateRemoved.connect(self.__dataUpdateRemove)
-        self.__items=self.__notes.idList()
+        self.__notes.updateMoved.connect(self.__dataUpdateMove)
+        self.__items=self.__notes.idList(True)
         self.__iconSize=BNNotesModel.ICON_SIZE
         self.__icons=[self.__buildColorIcon(colorIndex) for colorIndex in range(WStandardColorSelector.NB_COLORS)]
         self.__isFreezed=False
@@ -102,21 +103,24 @@ class BNNotesModel(QAbstractTableModel):
 
     def __dataUpdateReset(self):
         """Data has entirely been changed (reset/reload)"""
-        self.__items=self.__notes.idList()
+        self.modelAboutToBeReset.emit()
+        self.__items=self.__notes.idList(True)
+        self.modelReset.emit()
+
+    def __dataUpdateMove(self):
+        """Item order has been modified"""
+        self.modelAboutToBeReset.emit()
+        self.__items=self.__notes.idList(True)
         self.modelReset.emit()
 
     def __dataUpdatedAdd(self, items):
-        # if nb items is the same, just update... ?
-        #self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.__notes.length()-1, BNNotesModel.COLNUM_LAST) )
-        print('TODO: need to update only for added items')
-        self.__items=self.__notes.idList()
+        self.modelAboutToBeReset.emit()
+        self.__items=self.__notes.idList(True)
         self.modelReset.emit()
 
     def __dataUpdateRemove(self, items):
-        # if nb items is the same, just update... ?
-        #self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.__notes.length()-1, BNNotesModel.COLNUM_LAST) )
-        print('TODO: need to update only for removed items')
-        self.__items=self.__notes.idList()
+        self.modelAboutToBeReset.emit()
+        self.__items=self.__notes.idList(True)
         self.modelReset.emit()
 
     def __dataUpdated(self, item, property):
@@ -284,6 +288,8 @@ class BNWNotes(QTreeView):
         delegate=BNNotesModelDelegate(self)
         self.setItemDelegateForColumn(BNNotesModel.COLNUM_COLOR, delegate)
 
+        self.__selectedItems=[]
+
     def __itemClicked(self, index):
         """A cell has been clicked, check if it's a persistent column"""
         if index.column()==BNNotesModel.COLNUM_VIEW:
@@ -367,6 +373,36 @@ class BNWNotes(QTreeView):
         """Paste notes from clipboard (if any)"""
         self.__model.notes().clipboardPaste()
 
+    def __beforeReset(self):
+        """Model is about to be reseted, keep selection"""
+        self.__selectedItems=[item.id() for item in self.selectedItems()]
+
+    def __afterReset(self):
+        """Model has been reseted, restore selection"""
+        if len(self.__selectedItems)==0:
+            return
+
+        index=self.rootIndex()
+        nbChild=self.__model.rowCount(index)
+
+        if nbChild>0:
+            model=self.model()
+            if isinstance(model, QSortFilterProxyModel):
+                # Need to use 'mapFromSource()' due to model() is using a proxy
+                index=self.model().mapFromSource(index)
+            else:
+                index=index
+
+            newSelection=QItemSelection()
+            for row in range(nbChild):
+                item=self.__model.index(row, 0, index)
+                id=item.data(BNNotesModel.ROLE_ID)
+                if id in self.__selectedItems:
+                    newSelection.merge(QItemSelection(item, item), QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
+            self.selectionModel().select(newSelection, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
+
+        self.__selectedItems=[]
+
     def setNotes(self, notes):
         """Initialise treeview header & model"""
         self.__model = BNNotesModel(notes)
@@ -375,6 +411,9 @@ class BNWNotes(QTreeView):
         self.__proxyModel.setSourceModel(self.__model)
 
         self.setModel(self.__proxyModel)
+
+        self.__model.modelAboutToBeReset.connect(self.__beforeReset)
+        self.__model.modelReset.connect(self.__afterReset)
 
         # set colums size rules
         header = self.header()

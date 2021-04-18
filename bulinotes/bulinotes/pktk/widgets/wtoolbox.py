@@ -28,7 +28,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import BCTimer
+from pktk.modules.timeutils import Timer
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
 
 
@@ -157,7 +157,7 @@ background-color: rgba(0,0,0,50);
             #
             # having a 1ms timer is enough to fix the problem
             # suspecting something with too much event or something like that...
-            BCTimer.sleep(1)
+            Timer.sleep(1)
             # --
 
             self.move(self.x() + delta.x(), self.y() + delta.y())
@@ -227,13 +227,23 @@ background-color: rgba(0,0,0,50);
 
     def bottomBarAddWidget(self, widget, applyCss=True):
         """Add a widget in bottom bar"""
-        if isinstance(widget, QToolButton) and applyCss:
-            widget.setStyleSheet(WToolBox.__BBAR_TOOLBUTTON_CSS)
+        if isinstance(widget, QToolButton):
+            if applyCss==True:
+                widget.setStyleSheet(WToolBox.__BBAR_TOOLBUTTON_CSS)
+            elif isinstance(applyCss, str):
+                widget.setStyleSheet(applyCss)
+            # do not use addWidget() because of resize item
+            self.__layoutBBar.insertWidget(self.__layoutBBar.count()-1, widget)
+        elif isinstance(widget, QWidget):
+            if isinstance(applyCss, str):
+                widget.setStyleSheet(applyCss)
+            # do not use addWidget() because of resize item
             self.__layoutBBar.insertWidget(self.__layoutBBar.count()-1, widget)
 
     def bottomBarAddStretch(self, stretch=0):
         """Add a stretch in bottom bar"""
-        self.__layoutBBar.insertStrech(self.__layoutBBar.count()-1, strech)
+        # do not use addStretch() because of resize item
+        self.__layoutBBar.insertStretch(self.__layoutBBar.count()-1, stretch)
 
     def title(self):
         """Return title"""

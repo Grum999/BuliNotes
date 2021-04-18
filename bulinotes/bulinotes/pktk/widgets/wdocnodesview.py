@@ -34,7 +34,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (buildIcon, checkerBoardBrush)
+from pktk.modules.imgutils import (buildIcon, checkerBoardBrush)
 from pktk.modules.ekrita import EKritaNode
 from pktk.modules.iconsizes import IconSizes
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
@@ -678,13 +678,12 @@ class WDocNodesViewDialog(QDialog):
 
         self.__tvNodes = WDocNodesView(self)
         self.__tvNodes.setDocument(document)
-        self.__tvNodes.selectionModel().selectionChanged.connect(self.__selectionChanged)
 
-        dbbxOkCancel = QDialogButtonBox(self)
-        dbbxOkCancel.setOrientation(Qt.Horizontal)
-        dbbxOkCancel.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        dbbxOkCancel.accepted.connect(self.accept)
-        dbbxOkCancel.rejected.connect(self.reject)
+        self.__dbbxOkCancel = QDialogButtonBox(self)
+        self.__dbbxOkCancel.setOrientation(Qt.Horizontal)
+        self.__dbbxOkCancel.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.__dbbxOkCancel.accepted.connect(self.accept)
+        self.__dbbxOkCancel.rejected.connect(self.reject)
 
         self.__tbar=WDocNodesViewTBar()
         self.__tbar.setNodesView(self.__tvNodes)
@@ -692,14 +691,19 @@ class WDocNodesViewDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(self.__tbar)
         layout.addWidget(self.__tvNodes)
-        layout.addWidget(dbbxOkCancel)
+        layout.addWidget(self.__dbbxOkCancel)
 
+        # after toolbar because toolbat modify the selection model...
+        self.__tvNodes.selectionModel().selectionChanged.connect(self.__selectionChanged)
         self.__selectedUuid=None
+        self.__dbbxOkCancel.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def __selectionChanged(self, selected, deselected):
         if selected.count()==0:
             self.__selectedUuid=None
+            self.__dbbxOkCancel.button(QDialogButtonBox.Ok).setEnabled(False)
         else:
+            self.__dbbxOkCancel.button(QDialogButtonBox.Ok).setEnabled(True)
             for index in selected.indexes():
                 self.__selectedUuid=QUuid(index.data(DocNodesModel.ROLE_NODE_ID))
                 return

@@ -34,15 +34,6 @@ from PyQt5.QtWidgets import (
 from pktk import *
 
 # -----------------------------------------------------------------------------
-PkTk.setModuleInfo(
-    'edialog',
-    '1.0.0',
-    'EDialog',
-    'Extent QDialog to simplify signals/event management for ui interface'
-)
-
-
-# -----------------------------------------------------------------------------
 
 class EDialog(QDialog):
     """Extended QDialog provides some signals and event to manage ui"""

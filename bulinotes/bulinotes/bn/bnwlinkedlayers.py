@@ -27,13 +27,15 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (checkerBoardBrush, warningAreaBrush, stripHtml)
+from pktk.modules.imgutils import (checkerBoardBrush, warningAreaBrush)
+from pktk.modules.strutils import stripHtml
 from pktk.modules.iconsizes import IconSizes
 from pktk.modules.edialog import EDialog
 from pktk.widgets.wtextedit import (WTextEdit, WTextEditBtBarOption)
 from pktk.widgets.wdocnodesview import DocNodesModel
 
 from .bnlinkedlayer import BNLinkedLayer
+from .bnsettings import (BNSettings, BNSettingsKey)
 
 
 class BNLinkedLayersModel(QAbstractTableModel):
@@ -51,8 +53,9 @@ class BNLinkedLayersModel(QAbstractTableModel):
     COLNUM_NAME = 2
     COLNUM_COMMENT = 3
 
-    COLNUM_ICON_VISIBLE = 4
-    COLNUM_ICON_ANIMATED = 5
+    COLNUM_ICON_FIRST=4
+    COLNUM_ICON_ANIMATED = 4
+    COLNUM_ICON_VISIBLE = 5
     COLNUM_ICON_PINNED = 6
     COLNUM_ICON_LOCK = 7
     COLNUM_ICON_INHERITALPHA = 8
@@ -72,6 +75,17 @@ class BNLinkedLayersModel(QAbstractTableModel):
         self.__linkedLayers.updateAdded.connect(self.__dataUpdatedAdd)
         self.__linkedLayers.updateRemoved.connect(self.__dataUpdateRemove)
         self.__items=self.__linkedLayers.idList()
+        self.__cache={}
+        self.__cacheTimer=None
+
+        # define cache for icons, as calling QIcon() seems to be very time consumming
+        self.__iconCache_warning=QIcon(':/pktk/images/normal/warning')
+        self.__iconCache_visibilityOn=QIcon(':/pktk/images/normal/visibility_on')
+        self.__iconCache_visibilityOff=QIcon(':/pktk/images/disabled/visibility_off')
+        self.__iconCache_pinnedOn=QIcon(':/pktk/images/normal/pinned')
+        self.__iconCache_pinnedOff=QIcon(':/pktk/images/disabled/pinned')
+        self.__iconCache_animatedOn=QIcon(':/pktk/images/normal/animation')
+        self.__iconCache_animatedOff=QIcon(':/pktk/images/disabled/animation')
 
     def __repr__(self):
         return f'<BNLinkedLayersModel()>'
@@ -107,6 +121,43 @@ class BNLinkedLayersModel(QAbstractTableModel):
         indexE=self.createIndex(self.__idRow(item.id()), BNLinkedLayersModel.COLNUM_LAST)
         self.dataChanged.emit(indexS, indexE, [Qt.DisplayRole])
 
+    def __itemFromCache(self, rowNumber):
+        """Return item from cache
+
+        If cache is outdated, update cache
+        Cache is cleared every 1500ms
+
+        Cache is implemented mostly for QTreeView update: resize/update content
+        is time consumming when looking for node in active document
+        Then using a cache allows to reduce resources usage
+        """
+        if rowNumber<0 or rowNumber>len(self.__items):
+            return None
+
+        if self.__cacheTimer:
+            # cancel current timer
+            self.killTimer(self.__cacheTimer)
+
+        self.__cacheTimer=self.startTimer(1500)
+
+        uuid=self.__items[rowNumber]
+        if uuid in self.__cache:
+            return self.__cache[uuid]
+        else:
+            document=Krita.instance().activeDocument()
+            if not document:
+                return None
+
+            self.__cache[uuid]=document.nodeByUniqueID(uuid)
+            return self.__cache[uuid]
+
+    def timerEvent(self, event):
+        """occurs to clear cache"""
+        self.__cache={}
+        if self.__cacheTimer:
+            self.killTimer(self.__cacheTimer)
+            self.__cacheTimer=None
+
     def columnCount(self, parent=QModelIndex()):
         """Return total number of column"""
         return BNLinkedLayersModel.COLNUM_LAST+1
@@ -122,11 +173,7 @@ class BNLinkedLayersModel(QAbstractTableModel):
 
         if role == Qt.DecorationRole:
             # can return icons only if document is provided to model
-            document=Krita.instance().activeDocument()
-            if not document:
-                return None
-
-            item=document.nodeByUniqueID(self.__items[row])
+            item=self.__itemFromCache(row)
             if item is None:
                 if index.column()==BNLinkedLayersModel.COLNUM_ICON_TYPE:
                     return QIcon(':/pktk/images/normal/warning')
@@ -135,16 +182,17 @@ class BNLinkedLayersModel(QAbstractTableModel):
 
             if index.column()==BNLinkedLayersModel.COLNUM_ICON_VISIBLE:
                 if item.visible():
-                    return QIcon(':/pktk/images/normal/visibility_on')
+                    return self.__iconCache_visibilityOn
                 else:
-                    return QIcon(':/pktk/images/disabled/visibility_off')
+                    return self.__iconCache_visibilityOff
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_TYPE:
+                return None
                 return item.icon()
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_PINNED:
                 if item.isPinnedToTimeline():
-                    return QIcon(':/pktk/images/normal/pinned')
+                    return self.__iconCache_pinnedOn
                 else:
-                    return QIcon(':/pktk/images/disabled/pinned')
+                    return self.__iconCache_pinnedOff
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_ANIMATED:
                 # ideally:
                 #   - no animation: return None
@@ -152,9 +200,9 @@ class BNLinkedLayersModel(QAbstractTableModel):
                 #   - animated + onion skin ON: return Krita.instance().icon('onionOn')
                 # But currently can't determinate if onion skin is active or not
                 if item.animated():
-                    return QIcon(':/pktk/images/normal/animation')
+                    return self.__iconCache_animatedOn
                 else:
-                    return QIcon(':/pktk/images/disabled/animation')
+                    return self.__iconCache_animatedOff
             elif index.column()==BNLinkedLayersModel.COLNUM_ICON_LOCK:
                 if item.locked():
                     return Krita.instance().icon('layer-locked')
@@ -177,11 +225,7 @@ class BNLinkedLayersModel(QAbstractTableModel):
                     return Krita.instance().icon('transparency-unlocked')
         elif role == Qt.ToolTipRole:
             # can return icons only if document is provided to model
-            document=Krita.instance().activeDocument()
-            if not document:
-                return None
-
-            item=document.nodeByUniqueID(self.__items[row])
+            item=self.__itemFromCache(row)
             if item is None:
                 return i18n('Layer not found in document!')
 
@@ -240,17 +284,9 @@ class BNLinkedLayersModel(QAbstractTableModel):
             id=self.__items[row]
             return self.__linkedLayers.get(id)
         elif role == BNLinkedLayersModel.ROLE_FOUND:
-            document=Krita.instance().activeDocument()
-            if not document:
-                return False
-
-            item=document.nodeByUniqueID(self.__items[row])
+            item=self.__itemFromCache(row)
             return (not item is None)
 
-
-        #elif role == Qt.SizeHintRole:
-        #    if column==BNLinkedLayersModel.COLNUM_THUMB:
-        #        return
         return None
 
     def headerData(self, section, orientation, role):
@@ -262,15 +298,36 @@ class BNLinkedLayersModel(QAbstractTableModel):
         """Expose BNLinkedLayers object"""
         return self.__linkedLayers
 
+    def emitUpdated(self, row=None, column=None):
+        """Allows to emit data row has been updated"""
+        if row is None:
+            # refresh all rows
+            indexS=self.createIndex(0, 0)
+            indexE=self.createIndex(self.rowCount(), BNLinkedLayersModel.COLNUM_LAST)
+        elif column is None:
+            indexS=self.createIndex(row, 0)
+            indexE=self.createIndex(row, BNLinkedLayersModel.COLNUM_LAST)
+        else:
+            indexS=self.createIndex(row, column)
+            indexE=indexS
+        self.dataChanged.emit(indexS, indexE, [Qt.DisplayRole])
+
 
 class BNWLinkedLayers(QTreeView):
     """Tree view linkedLayers (editing mode)"""
     iconSizeIndexChanged = Signal(int, QSize)
 
+    ACTION_NONE = 0
+    ACTION_INVERT = -1
+    ACTION_ENABLED = 1
+    ACTION_DISABLED = 2
+
+
     def __init__(self, parent=None):
         super(BNWLinkedLayers, self).__init__(parent)
         self.setAutoScroll(False)
         self.setAlternatingRowColors(True)
+        self.setMouseTracking(True)
 
         self.__parent=parent
         self.__model = None
@@ -280,6 +337,10 @@ class BNWLinkedLayers(QTreeView):
 
         self.__isCompact=False
         self.__proxyModel = None
+
+        self.__mouseColumn=-1
+        self.__mouseRow=-1
+        self.__mouseAction=BNWLinkedLayers.ACTION_NONE
 
         self.setIconSize(QSize(BNLinkedLayersModel.ICON_SIZE,BNLinkedLayersModel.ICON_SIZE))
 
@@ -300,6 +361,170 @@ class BNWLinkedLayers(QTreeView):
     def __initMenu(self):
         """Initialise context menu"""
         pass
+
+    def __updateLayerFlag(self, node):
+        """Update layer flag according to:
+        - current column index
+        - current column row
+        - current action
+        """
+        if self.__mouseRow==-1 or self.__mouseColumn<BNLinkedLayersModel.COLNUM_ICON_FIRST or self.__mouseAction==BNWLinkedLayers.ACTION_NONE:
+            # should not occurs but...
+            return
+
+        if self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_VISIBLE:
+            if self.__mouseAction==BNWLinkedLayers.ACTION_INVERT:
+                node.setVisible(not node.visible())
+            else:
+                node.setVisible(self.__mouseAction==BNWLinkedLayers.ACTION_ENABLED)
+        elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_PINNED:
+            if self.__mouseAction==BNWLinkedLayers.ACTION_INVERT:
+                node.setPinnedToTimeline(not node.isPinnedToTimeline())
+            else:
+                node.setPinnedToTimeline(self.__mouseAction==BNWLinkedLayers.ACTION_ENABLED)
+        elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_LOCK:
+            if self.__mouseAction==BNWLinkedLayers.ACTION_INVERT:
+                node.setLocked(not node.locked())
+            else:
+                node.setLocked(self.__mouseAction==BNWLinkedLayers.ACTION_ENABLED)
+        elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA:
+            if self.__mouseAction==BNWLinkedLayers.ACTION_INVERT:
+                node.setInheritAlpha(not node.inheritAlpha())
+            else:
+                node.setInheritAlpha(self.__mouseAction==BNWLinkedLayers.ACTION_ENABLED)
+        elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK:
+            if self.__mouseAction==BNWLinkedLayers.ACTION_INVERT:
+                node.setAlphaLocked(not node.alphaLocked())
+            else:
+                node.setAlphaLocked(self.__mouseAction==BNWLinkedLayers.ACTION_ENABLED)
+
+        self.__model.emitUpdated(self.__mouseRow, self.__mouseColumn)
+
+    def __setCursor(self, index):
+        """Set current curosr according to current column on which mouse is over"""
+        if index and index.column() in (BNLinkedLayersModel.COLNUM_ICON_VISIBLE,
+                                        BNLinkedLayersModel.COLNUM_ICON_PINNED,
+                                        BNLinkedLayersModel.COLNUM_ICON_LOCK,
+                                        BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA,
+                                        BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK):
+            self.setCursor(Qt.PointingHandCursor)
+        else:
+            self.unsetCursor()
+
+
+    def mousePressEvent(self, event):
+        """Mouse is pressed
+
+        If button is pressed and initial column is an icon:
+        - Do not apply selection
+        - Change status status
+        """
+        index =  self.indexAt(event.pos())
+
+        if index.column()>=BNLinkedLayersModel.COLNUM_ICON_FIRST:
+            id=index.data(BNLinkedLayersModel.ROLE_ID)
+            if id is None:
+                return
+            document=Krita.instance().activeDocument()
+            layer=document.nodeByUniqueID(id)
+            if layer is None:
+                return
+
+            self.__mouseColumn=index.column()
+            self.__mouseRow=index.row()
+
+            if int(event.buttons() & Qt.LeftButton)==Qt.LeftButton:
+                flagOn=False
+                if self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_VISIBLE:
+                    flagOn=not layer.visible()
+                elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_PINNED:
+                    flagOn=not layer.isPinnedToTimeline()
+                elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_LOCK:
+                    flagOn=not layer.locked()
+                elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA:
+                    flagOn=not layer.inheritAlpha()
+                elif self.__mouseColumn==BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK:
+                    flagOn=not layer.alphaLocked()
+
+                if flagOn:
+                    self.__mouseAction=BNWLinkedLayers.ACTION_ENABLED
+                else:
+                    self.__mouseAction=BNWLinkedLayers.ACTION_DISABLED
+            elif int(event.buttons() & Qt.RightButton)==Qt.RightButton:
+                self.__mouseAction=BNWLinkedLayers.ACTION_INVERT
+
+            self.__updateLayerFlag(layer)
+        else:
+            self.__mouseColumn=-1
+            self.__mouseAction=BNWLinkedLayers.ACTION_NONE
+            super(BNWLinkedLayers, self).mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Mouse is moved
+
+        If button is pressed and initial column is an icon:
+        - Do not apply selection
+        - Change status status
+        """
+        index =  self.indexAt(event.pos())
+
+        if self.__mouseColumn>-1:
+            if index.row()!=self.__mouseRow:
+                id=index.data(BNLinkedLayersModel.ROLE_ID)
+                if id is None:
+                    return
+                document=Krita.instance().activeDocument()
+                layer=document.nodeByUniqueID(id)
+                if layer is None:
+                    return
+
+                self.__mouseRow=index.row()
+                self.__updateLayerFlag(layer)
+        else:
+            self.__setCursor(index)
+            super(BNWLinkedLayers, self).mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Mouse button is released
+
+        Reinit flags
+        """
+        index =  self.indexAt(event.pos())
+        self.__setCursor(index)
+
+        if index and index.column() in (BNLinkedLayersModel.COLNUM_ICON_VISIBLE,
+                                        BNLinkedLayersModel.COLNUM_ICON_INHERITALPHA,
+                                        BNLinkedLayersModel.COLNUM_ICON_ALPHALOCK):
+            Krita.instance().activeDocument().refreshProjection()
+
+        self.__mouseColumn=-1
+        self.__mouseRow=-1
+        self.__mouseAction=BNWLinkedLayers.ACTION_NONE
+        super(BNWLinkedLayers, self).mouseReleaseEvent(event)
+
+    def enterEvent(self, event):
+        """Mouse enter over bnote, update content because maybe nodes has been
+        updated
+        """
+        self.__model.emitUpdated()
+
+        # check if selected item need to be updated
+        document=Krita.instance().activeDocument()
+        if document:
+            activeNode=document.activeNode()
+            if activeNode:
+                uuid=activeNode.uniqueId()
+
+                for row in range(self.model().rowCount()):
+                    indexS=self.model().index(row, 0)
+                    id=indexS.data(BNLinkedLayersModel.ROLE_ID)
+                    if id==uuid:
+                        indexE=self.model().index(row, BNLinkedLayersModel.COLNUM_LAST)
+                        self.selectionModel().select(QItemSelection(indexS, indexE), QItemSelectionModel.ClearAndSelect)
+                        return
+            # if here, means that current active node is not in linked layer list
+            # (or no active node? possible?)
+            self.selectionModel().clearSelection()
 
     def resizeColumns(self):
         """Resize columns"""
@@ -611,7 +836,7 @@ class BNLinkedLayerEditor(EDialog):
         if returned == QDialog.Accepted:
             return dlgBox.linkedLayer()
         else:
-            return None
+            return []
 
     def __init__(self, linkedLayer=None, name="Buli Notes", parent=None):
         super(BNLinkedLayerEditor, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bnlinkedlayereditor.ui'), parent)
@@ -620,18 +845,25 @@ class BNLinkedLayerEditor(EDialog):
         self.setWindowTitle(f"{name}::Linked layer")
         self.setSizeGripEnabled(True)
 
-        self.__selectedUuid=None
-
         if not isinstance(linkedLayer, BNLinkedLayer):
-            self.__linkedLayer=BNLinkedLayer()
+            # edit a new linked layer
+            self.__linkedLayers=[BNLinkedLayer()]
+            # allows to create multiple linked layers at once
+            self.tvDocNodesView.setSelectionMode(QAbstractItemView.ExtendedSelection)
         else:
-            self.__linkedLayer=BNLinkedLayer(linkedLayer)
+            # update a linked layer
+            self.__linkedLayers=[BNLinkedLayer(linkedLayer)]
+            # in modification mode, can only update the current linked layer
+            self.tvDocNodesView.setSelectionMode(QAbstractItemView.SingleSelection)
 
         self.__document=Krita.instance().activeDocument()
 
         self.wDescription.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
-        self.wDescription.setHtml(self.__linkedLayer.comments())
+        self.wDescription.setHtml(self.__linkedLayers[0].comments())
+        self.wDescription.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
+
         self.tvDocNodesView.setDocument(self.__document)
+        self.tvDocNodesView.setThumbSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_ADDLAYERTREE_ZOOMLEVEL))
 
         self.wDocNodesViewTBar.setNodesView(self.tvDocNodesView)
 
@@ -643,35 +875,39 @@ class BNLinkedLayerEditor(EDialog):
 
     def showEvent(self, event):
         self.tvDocNodesView.selectionModel().selectionChanged.connect(self.__linkedLayerSelectionChanged)
-        self.tvDocNodesView.selectItems(self.__linkedLayer.id(), True)
+        self.tvDocNodesView.selectItems(self.__linkedLayers[0].id(), True)
+        self.__updateUi()
 
     def __accept(self):
         """Accept modifications and return result"""
-        self.__linkedLayer.beginUpdate()
-        self.__linkedLayer.fromLayer(self.__selectedUuid)
-        self.__linkedLayer.setComments(self.wDescription.toHtml())
+        self.__linkedLayers=[None] * self.tvDocNodesView.nbSelectedItems()
+        comments=self.wDescription.toHtml()
+        for index, layerId in enumerate(self.tvDocNodesView.selectedItems()):
+            linkedLayer=BNLinkedLayer()
+            linkedLayer.beginUpdate()
+            linkedLayer.fromLayer(layerId)
+            linkedLayer.setComments(comments)
+            linkedLayer.endUpdate()
+            self.__linkedLayers[index]=linkedLayer
+            print('__accept', index, linkedLayer, layerId)
 
-        self.__linkedLayer.endUpdate()
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_ADDLAYERTREE_ZOOMLEVEL, self.tvDocNodesView.thumbSizeIndex())
+        BNSettings.setTxtColorPickerLayout(self.wDescription.colorPickerLayout())
         self.accept()
 
     def __reject(self):
         """reject modifications and return None"""
+        self.__linkedLayers=[]
         self.reject()
 
     def __updateUi(self):
         """Check if content is valid"""
-        self.pbOk.setEnabled(self.tvDocNodesView.nbSelectedItems()==1)
+        self.pbOk.setEnabled(self.tvDocNodesView.nbSelectedItems()>=1)
 
     def __linkedLayerSelectionChanged(self, selected, deselected):
         """Layer selection has been changed"""
         self.__updateUi()
-        if selected.count()==0:
-            self.__selectedUuid=None
-        else:
-            for index in selected.indexes():
-                self.__selectedUuid=QUuid(index.data(DocNodesModel.ROLE_NODE_ID))
-                return
 
     def linkedLayer(self):
         """Return current linked layer definition"""
-        return self.__linkedLayer
+        return self.__linkedLayers

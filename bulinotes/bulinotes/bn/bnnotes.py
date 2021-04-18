@@ -21,14 +21,14 @@
 import time
 import struct
 import re
+import base64
 
 import krita
 from krita import (
                 Scratchpad,
                 View,
                 ManagedColor,
-                Resource,
-                PresetChooser
+                Resource
             )
 
 from pktk import *
@@ -39,19 +39,23 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (
-                        secToStrTime,
+from pktk.modules.timeutils import (
                         tsToStr,
-                        qImageToPngQByteArray,
-                        BCTimer,
-                        stripHtml
+                        secToStrTime,
+                        Timer
                     )
+from pktk.modules.imgutils import (
+                        qImageToPngQByteArray,
+                        imgBoxSize
+                    )
+from pktk.modules.strutils import (indent, stripHtml)
+from pktk.modules.strtable import (TextTable, TextTableSettingsText)
 from pktk.modules.edialog import EDialog
 from pktk.modules.ekrita import EKritaNode
 from pktk.modules.bytesrw import BytesRW
 from pktk.widgets.wstandardcolorselector import WStandardColorSelector
-from pktk.widgets.wmenuitem import WMenuBrushesPresetSelector
-from pktk.widgets.wcolorselector import WMenuColorPicker
+from pktk.widgets.wmenuitem import (WMenuBrushesPresetSelector, WMenuColorPicker)
+from pktk.widgets.wcolorselector import WColorPicker
 from pktk.widgets.wdocnodesview import WDocNodesViewDialog
 from pktk.widgets.wtextedit import (
                                 WTextEditDialog,
@@ -63,8 +67,9 @@ from pktk.widgets.wefiledialog import WEFileDialog
 from .bnbrush import (BNBrush, BNBrushes)
 from .bnlinkedlayer import (BNLinkedLayer, BNLinkedLayers)
 from .bnwlinkedlayers import BNLinkedLayerEditor
-from .bnwbrushes import BNBrushesModel
+from .bnwbrushes import (BNBrushesModel, BNBrushesEditor)
 from .bnnote_postit import BNNotePostIt
+from .bnsettings import (BNSettings, BNSettingsKey)
 
 
 class BNNote(QObject):
@@ -138,7 +143,7 @@ class BNNote(QObject):
         self.endUpdate()
 
     def __repr__(self):
-        return f'<BNNote({self.__id}, {self.__title}, {self.__pinned}, {self.__locked}, {self.__windowPostItCompact})>'
+        return f'<BNNote({self.__id}, {self.__title}, {self.__pinned}, {self.__locked}, {self.__windowPostItCompact}, {self.__position})>'
 
     def __updatedBrushes(self, property=None):
         """Brushes have been udpated"""
@@ -253,7 +258,7 @@ class BNNote(QObject):
 
     def setPosition(self, position):
         """Set note position"""
-        if not self.__locked and isinstance(position, int) and self.__position!=position:
+        if not self.__locked and isinstance(position, int) and self.__position!=position and position>=0:
             self.__position=position
             self.__updated('position')
 
@@ -881,6 +886,149 @@ class BNNote(QObject):
         elif self.__emitUpdated==0:
             self.__updated('*')
 
+    def exportAsText(self):
+        """Export note as raw text"""
+        returned=TextTable()
+
+        returned.addRow(["Title", self.__title])
+        returned.addRow(["Description", self.__description])
+        returned.addRow(["Color", WStandardColorSelector.getColorName(self.__colorIndex)])
+
+
+        returned.addSeparator()
+        returned.addRow(["Created", tsToStr(self.__timestampCreated)])
+        returned.addRow(["Modified", tsToStr(self.__timestampUpdated)])
+
+
+        returned.addSeparator()
+        if stripHtml(self.__text).strip()!='':
+            returned.addRow(["Text notes", stripHtml(self.__text)])
+        else:
+            returned.addRow(["Text notes", "-"])
+
+
+        returned.addSeparator()
+        if self.__scratchpadImage is None:
+            returned.addRow(["Hand written notes", "-"])
+        else:
+            returned.addRow(["Hand written notes", f"{self.__scratchpadImage.width()}x{self.__scratchpadImage.height()}"])
+
+
+        returned.addSeparator()
+        if len(self.__brushes.idList())==0:
+            returned.addRow(["Brushes notes", "-"])
+        else:
+            tmpText=[]
+            for brush in self.__brushes.idList():
+                tmpText.append(indent(self.__brushes.get(brush).exportAsText(), "* ", "     ", True))
+            returned.addRow(["Brushes notes", "\n\n".join(tmpText)])
+
+
+        returned.addSeparator()
+        if len(self.__linkedLayers.idList())==0:
+            returned.addRow(["Linked layers notes", "-"])
+        else:
+            tmpText=[]
+            for layer in self.__linkedLayers.idList():
+                tmpText.append(indent(self.__linkedLayers.get(layer).exportAsText(), "* ", "     ", True))
+            returned.addRow(["Linked layers notes", "\n\n".join(tmpText)])
+
+        tableSettings=TextTableSettingsText()
+
+
+        return returned.asText(tableSettings)
+
+    def exportAsHtml(self):
+        """Export note as raw text"""
+        def imgMarkup(image, size=''):
+            return f'<img style="{size}" src="data:image/png;base64,{base64.b64encode(bytes(qImageToPngQByteArray(image))).decode()}">'
+
+        returned=[]
+
+        # WStandardColorSelector.getColorName(self.__colorIndex)
+
+        if self.__title.strip()=='':
+            returned.append('<h1>(No title)</h1>')
+        else:
+            returned.append(f'<h1>{self.__title}</h1>')
+
+        if self.__description.strip()!='':
+            text=self.__description.replace("\n","<br>")
+            returned.append(f'<p>{text}</p>')
+
+        returned.append('<table>')
+        returned.append('<tr>')
+        returned.append(f'<th>{i18n("Created")}</th>')
+        returned.append(f'<td>{tsToStr(self.__timestampCreated)}</td>')
+        returned.append('</tr>')
+        returned.append('<tr>')
+        returned.append(f'<th>{i18n("Modified")}</th>')
+        returned.append(f'<td>{tsToStr(self.__timestampUpdated)}</td>')
+        returned.append('</tr>')
+        returned.append('</table>')
+
+        returned.append(f'<h2>{i18n("Text note")}</h2>')
+
+        if stripHtml(self.__text).strip()!='':
+            returned.append(self.__text)
+        else:
+            text=i18n("Doesn't contains text note")
+            returned.append(f'<div><i>{text}</i><div>')
+
+
+        returned.append(f'<h2>{i18n("Hand written note")}</h2>')
+
+        if self.__scratchpadImage is None:
+            text=i18n("Doesn't contains hand written note")
+            returned.append(f'<p><i>{text}</i><p>')
+        else:
+            returned.append(f'<p><i>{i18n("Size")}: {self.__scratchpadImage.width()}x{self.__scratchpadImage.height()}px</i><p>')
+            returned.append(imgMarkup(self.__scratchpadImage, 'width: 100%; object-fit: contain;'))
+
+
+        returned.append(f'<h2>{i18n("Brushes notes")}</h2>')
+
+        if len(self.__brushes.idList())==0:
+            text=i18n("Doesn't contains brushes notes")
+            returned.append(f'<p><i>{text}</i><p>')
+        else:
+            tmpText=[]
+            returned.append('<table>')
+            for brushId in self.__brushes.idList():
+                brush=self.__brushes.get(brushId)
+
+                size=imgBoxSize(brush.image().size(), QSize(192, 192))
+
+                returned.append('<tr>')
+                returned.append(f'<td>{imgMarkup(brush.image(), f"width: {size.width()}; height: {size.height()};")}</th>')
+                returned.append(f'<td>{brush.information()}</td>')
+                returned.append(f'<td>{brush.comments()}</td>')
+                returned.append('</tr>')
+            returned.append('</table>')
+
+
+        returned.append(f'<h2>{i18n("Linked layers notes")}</h2>')
+
+        if len(self.__brushes.idList())==0:
+            text=i18n("Doesn't contains linked layers notes")
+            returned.append(f'<p><i>{text}</i><p>')
+        else:
+            tmpText=[]
+            returned.append('<table>')
+            for layerId in self.__linkedLayers.idList():
+                layer=self.__linkedLayers.get(layerId)
+
+                size=imgBoxSize(layer.thumbnail().size(), QSize(BNLinkedLayer.THUMB_SIZE, BNLinkedLayer.THUMB_SIZE))
+
+                returned.append('<tr>')
+                returned.append(f'<td>{imgMarkup(layer.thumbnail(), f"width: {size.width()}; height: {size.height()};")}</th>')
+                returned.append(f'<td><b>{layer.name()}</b><div>{layer.comments()}</div></td>')
+                returned.append('</tr>')
+            returned.append('</table>')
+
+        return "\n".join(returned)
+
+
 
 class BNNotes(QObject):
     """Collection of notes"""
@@ -888,7 +1036,7 @@ class BNNotes(QObject):
     updateReset = Signal()
     updateAdded = Signal(list)
     updateRemoved = Signal(list)
-    updateMoved = Signal(list)
+    updateMoved = Signal()
 
     MIME_TYPE='application/x-kritaplugin-bulinotes'
 
@@ -954,12 +1102,23 @@ class BNNotes(QObject):
         if self.__document:
             self.__document.removeAnnotation(f'BuliNotes/Note({note.id()})')
 
+    def __recalculatePositionValues(self):
+        """Recalculate positions values"""
+        sortedList=self.idList(True)
+        for position, id in enumerate(sortedList):
+            self.__notes[id].setPosition(position)
+        if not self.__temporaryDisabled:
+            self.updateMoved.emit()
+
     def length(self):
         """Return number of notes"""
         return len(self.__notes)
 
-    def idList(self):
-        """Return list of id; no sort"""
+    def idList(self, sortByPosition=False):
+        """Return list of id"""
+        if sortByPosition:
+            return sorted(self.__notes, key=lambda id: self.__notes[id].position())
+
         return list(self.__notes.keys())
 
     def get(self, id):
@@ -1056,6 +1215,7 @@ class BNNotes(QObject):
                         if note.pinned():
                             note.openWindowPostIt()
 
+            self.__recalculatePositionValues()
             self.__temporaryDisabled=False
             self.__emitUpdateReset()
 
@@ -1070,8 +1230,12 @@ class BNNotes(QObject):
             for note in notes:
                 if isinstance(note, BNNote):
                     binaryList.append(note.exportData(False))
-                    #htmlList.append(note.toHtml())
-                    #plainTextList.append(note.toPlainText())
+                    htmlList.append(note.exportAsHtml())
+                    plainTextList.append(note.exportAsText())
+
+        clipboardContent=False
+        clipboard = QGuiApplication.clipboard()
+        mimeContent=QMimeData()
 
         if len(binaryList)>0:
             dataWrite=BytesRW()
@@ -1080,13 +1244,18 @@ class BNNotes(QObject):
                 dataWrite.writeUInt4(len(data))
                 dataWrite.write(data)
 
-            mimeContent=QMimeData()
             mimeContent.setData(BNNotes.MIME_TYPE, QByteArray(dataWrite.getvalue()))
 
-            clipboard = QGuiApplication.clipboard()
-            clipboard.setMimeData(mimeContent)
+        if len(plainTextList)>0:
+            mimeContent.setData('text/plain', ("\n\n".join(plainTextList)).encode())
 
+        if len(htmlList)>0:
+            mimeContent.setData('text/html', ("\n\n".join(htmlList)).encode())
+
+        if len(mimeContent.formats())>0:
+            clipboard.setMimeData(mimeContent)
             return True
+
         return False
 
     def clipboardCut(self, notes):
@@ -1122,6 +1291,46 @@ class BNNotes(QObject):
         clipboardMimeContent = QGuiApplication.clipboard().mimeData(QClipboard.Clipboard)
         return clipboardMimeContent.hasFormat(BNNotes.MIME_TYPE)
 
+    def movePosition(self, notes, offset):
+        """Move all notes position up for 1"""
+        if isinstance(notes, BNNote):
+            notes=[notes]
+
+        if not isinstance(notes, list) or len(notes)==0 or offset==0:
+            return
+
+        # update positions
+        sortedList=self.idList(True)
+        if offset>0:
+            sortedList.reverse()
+        resultList=[]
+
+        currentSize=0
+        for id in sortedList:
+            if self.__notes[id] in notes:
+                resultList.insert(currentSize-abs(offset), id)
+            else:
+                resultList.append(id)
+            currentSize+=1
+
+        if offset>0:
+            resultList.reverse()
+
+        for index, id in enumerate(resultList):
+            self.__notes[id].setPosition(index)
+
+        # recalculate all positions
+        self.__recalculatePositionValues()
+
+    def movePositionUp(self, notes):
+        """Move all notes position up for 1"""
+        self.movePosition(notes, -1)
+
+    def movePositionDown(self, notes):
+        """Move all notes position down for 1"""
+        self.movePosition(notes, 1)
+
+
 
 class BNNoteEditor(EDialog):
 
@@ -1156,6 +1365,8 @@ class BNNoteEditor(EDialog):
         self.__tmpNote=BNNote.clone(self.__note)
         self.__tmpBrushes=BNBrushes(self.__note.brushes())
         self.__tmpLinkedLayers=BNLinkedLayers(self.__note.linkedLayers())
+
+        self.__ignoreMenuUpdate=False
 
         self.__activeView=Krita.instance().activeWindow().activeView()
         self.__activeViewCurrentConfig={}
@@ -1206,22 +1417,10 @@ class BNNoteEditor(EDialog):
         # -- TEXT Note properties
         self.wteText.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
         self.wteText.setHtml(self.__note.text())
+        self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
+        self.wteText.colorMenuUiChanged.connect(BNSettings.setTxtColorPickerLayout)
 
         # -- HAND WRITTEN Note properties
-        self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
-        self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorRGB(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCMYK(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSV(True)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSL(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorAlpha(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionCompactUi(True)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionPreviewColor(True)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCombination(False)
-
-        menuBrushScratchpadColor = QMenu(self.tbColor)
-        menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
-
         img=self.__note.scratchpadImage()
         if not img is None:
             self.__scratchpadHandWritting.loadScratchpadImage(img)
@@ -1244,14 +1443,24 @@ class BNNoteEditor(EDialog):
         self.__actionSelectBrush.presetChooser().presetClicked.connect(self.__actionScratchpadSetBrushPreset)
         self.__actionSelectColor=WMenuColorPicker()
         self.__actionSelectColor.colorPicker().colorUpdated.connect(self.__actionScratchpadSetColor)
-        self.__actionSelectColor.colorPicker().setOptionShowColorRGB(False)
-        self.__actionSelectColor.colorPicker().setOptionShowColorCMYK(False)
-        self.__actionSelectColor.colorPicker().setOptionShowColorHSV(True)
-        self.__actionSelectColor.colorPicker().setOptionShowColorHSL(False)
+        self.__actionSelectColor.colorPicker().setOptionCompactUi(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorPalette(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionColorPalette(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorWheel(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionShowPreviewColor(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW))
+        self.__actionSelectColor.colorPicker().setOptionShowColorCombination(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION))
+        self.__actionSelectColor.colorPicker().setOptionShowCssRgb(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS))
+        self.__actionSelectColor.colorPicker().setOptionShowColorRGB(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorRGB(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorCMYK(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorCMYK(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorHSV(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorHSV(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT))
+        self.__actionSelectColor.colorPicker().setOptionShowColorHSL(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE))
+        self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorHSL(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT))
         self.__actionSelectColor.colorPicker().setOptionShowColorAlpha(False)
-        self.__actionSelectColor.colorPicker().setOptionCompactUi(True)
-        self.__actionSelectColor.colorPicker().setOptionPreviewColor(True)
-        self.__actionSelectColor.colorPicker().setOptionShowColorCombination(False)
+        self.__actionSelectColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.__actionSelectColor.colorPicker().uiChanged.connect(self.__selectColorMenuChanged)
 
 
         self.__actionImportFromFile=QAction(i18n('Import from file...'), self)
@@ -1302,6 +1511,15 @@ class BNNoteEditor(EDialog):
 
 
         # -- BRUSHES Note properties
+        self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
+        self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionLayout(self.__actionSelectColor.colorPicker().optionLayout())
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.__actionSelectBrushScratchpadColor.colorPicker().uiChanged.connect(self.__selectBrushScratchpadColorMenuChanged)
+
+        menuBrushScratchpadColor = QMenu(self.tbColor)
+        menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
+
         self.tbBrushAdd.clicked.connect(self.__actionBrushAdd)
         self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
         self.tbBrushDelete.clicked.connect(self.__actionBrushDelete)
@@ -1310,6 +1528,10 @@ class BNNoteEditor(EDialog):
 
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
         self.tvBrushes.setBrushes(self.__tmpBrushes)
+        self.tvBrushes.setIconSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_BRUSHES_ZOOMLEVEL))
+        self.tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
+        self.hsBrushesThumbSize.setValue(self.tvBrushes.iconSizeIndex())
+        self.hsBrushesThumbSize.valueChanged.connect(self.__brushesSizeIndexSliderChanged)
 
         self.__updateBrushUi()
 
@@ -1320,6 +1542,10 @@ class BNNoteEditor(EDialog):
 
         self.tvLinkedLayers.doubleClicked.connect(self.__actionLinkedLayerEdit)
         self.tvLinkedLayers.setLinkedLayers(self.__tmpLinkedLayers)
+        self.tvLinkedLayers.setIconSizeIndex(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_LIST_ZOOMLEVEL))
+        self.tvLinkedLayers.iconSizeIndexChanged.connect(self.__linkedLayersSizeIndexChanged)
+        self.hsLinkedLayerThumbSize.setValue(self.tvLinkedLayers.iconSizeIndex())
+        self.hsLinkedLayerThumbSize.valueChanged.connect(self.__linkedLayersSizeIndexSliderChanged)
 
         self.__tmpLinkedLayers.updateFromDocument()
         self.__updateLinkedLayersUi()
@@ -1328,6 +1554,32 @@ class BNNoteEditor(EDialog):
         self.tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
         self.tvLinkedLayers.selectionModel().selectionChanged.connect(self.__linkedLayersSelectionChanged)
         self.leTitle.setFocus()
+
+    def __saveSettings(self):
+        """Save current settings"""
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_BRUSHES_ZOOMLEVEL, self.tvBrushes.iconSizeIndex())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_LIST_ZOOMLEVEL, self.tvLinkedLayers.iconSizeIndex())
+
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT, self.__actionSelectBrushScratchpadColor.colorPicker().optionCompactUi())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorPalette())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT, self.__actionSelectBrushScratchpadColor.colorPicker().optionColorPalette())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorWheel())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowPreviewColor())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCombination())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCssRGB())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorRGB())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorRGB())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCMYK())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorCMYK())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorHSL())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorHSL())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorHSV())
+        BNSettings.set(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorHSV())
+
+        BNSettings.setTxtColorPickerLayout(self.wteText.colorPickerLayout())
+
+        if BNSettings.modified():
+            BNSettings.save()
 
     def __updateImportMenuUi(self):
         """Menu import is about to be displayed"""
@@ -1364,7 +1616,7 @@ class BNNoteEditor(EDialog):
         """Update linked layers UI (enable/disable buttons...)"""
         nbSelectedLinkedLayers=self.tvLinkedLayers.nbSelectedItems()
         self.tbLinkedLayerEdit.setEnabled(nbSelectedLinkedLayers==1)
-        self.tbLinkedLayerDelete.setEnabled(nbSelectedLinkedLayers==1)
+        self.tbLinkedLayerDelete.setEnabled(nbSelectedLinkedLayers>=1)
 
     def __brushesSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
@@ -1376,6 +1628,26 @@ class BNNoteEditor(EDialog):
     def __linkedLayersSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
         self.__updateLinkedLayersUi()
+
+    def __linkedLayersSizeIndexChanged(self, newSize, newQSize):
+        """Thumbnail size has been changed from linked layers treeview"""
+        # update slider
+        self.hsLinkedLayerThumbSize.setValue(newSize)
+
+    def __linkedLayersSizeIndexSliderChanged(self, newSize):
+        """Thumbnail size has been changed from linked layers slider"""
+        # update treeview
+        self.tvLinkedLayers.setIconSizeIndex(newSize)
+
+    def __brushesSizeIndexChanged(self, newSize, newQSize):
+        """Thumbnail size has been changed from brushes treeview"""
+        # update slider
+        self.hsBrushesThumbSize.setValue(newSize)
+
+    def __brushesSizeIndexSliderChanged(self, newSize):
+        """Thumbnail size has been changed from brushes slider"""
+        # update treeview
+        self.tvBrushes.setIconSizeIndex(newSize)
 
     def __saveViewConfig(self):
         """Save current view properties"""
@@ -1447,6 +1719,9 @@ class BNNoteEditor(EDialog):
 
         self.__restoreViewConfig()
         self.__note.endUpdate()
+
+        self.__saveSettings()
+
         self.accept()
 
     def __reject(self):
@@ -1587,19 +1862,21 @@ class BNNoteEditor(EDialog):
 
     def __actionBrushAdd(self):
         """Add current brush definition to brushes list"""
-        result=WTextEditDialog.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "", None, None, WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+        result=BNBrushesEditor.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "")
         if not result is None:
             self.__currentUiBrush.setComments(result)
             self.__tmpBrushes.add(self.__currentUiBrush)
+            self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
             self.__updateBrushUi()
 
     def __actionBrushEdit(self):
         """Edit comment for current selected brush"""
         selection=self.tvBrushes.selectedItems()
         if len(selection)==1:
-            result=WTextEditDialog.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments(), None, None, WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+            result=BNBrushesEditor.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments())
             if not result is None:
                 selection[0].setComments(result)
+                self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
                 self.__updateBrushUi()
 
     def __actionBrushDelete(self):
@@ -1615,38 +1892,58 @@ class BNNoteEditor(EDialog):
 
     def __actionLinkedLayerAdd(self):
         """Add layer to linked layer list"""
-        linkedLayer=BNLinkedLayerEditor.edit(None, i18n(f"{self.__name}::Add linked layer"))
+        linkedLayers=BNLinkedLayerEditor.edit(None, i18n(f"{self.__name}::Add linked layer"))
 
-        if linkedLayer:
-            self.__tmpLinkedLayers.add(linkedLayer)
+        if len(linkedLayers)>0:
+            self.__tmpLinkedLayers.beginUpdate()
+            for linkedLayer in linkedLayers:
+                self.__tmpLinkedLayers.add(linkedLayer)
+            self.__tmpLinkedLayers.endUpdate()
+            self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
             self.__updateLinkedLayersUi()
+
 
     def __actionLinkedLayerEdit(self):
         """Edit layer from linked layer list"""
         selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
 
         if len(selectedLinkedLayers)==1:
-            linkedLayer=BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
+            linkedLayers=BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
 
-            print('__actionLinkedLayerEdit', linkedLayer)
-            if linkedLayer:
+            if len(linkedLayers)==1:
+                linkedLayer=linkedLayers[0]
                 if linkedLayer.id()==selectedLinkedLayers[0].id():
                     self.__tmpLinkedLayers.update(linkedLayer)
                 else:
                     self.__tmpLinkedLayers.remove(selectedLinkedLayers[0])
                     self.__tmpLinkedLayers.add(linkedLayer)
 
+                self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
                 self.__updateLinkedLayersUi()
 
     def __actionLinkedLayerDelete(self):
         """Remove layer from linked layer list"""
         selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
 
-        print('__actionLinkedLayerDelete', selectedLinkedLayers)
         if len(selectedLinkedLayers)>0:
             self.__tmpLinkedLayers.remove(selectedLinkedLayers)
             self.__updateLinkedLayersUi()
 
+    def __selectColorMenuChanged(self):
+        """option for color menu 'handwritten notes' has been modified"""
+        if self.__ignoreMenuUpdate:
+            return
+        self.__ignoreMenuUpdate=True
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionLayout(self.__actionSelectColor.colorPicker().optionLayout())
+        self.__ignoreMenuUpdate=False
+
+    def __selectBrushScratchpadColorMenuChanged(self):
+        """option for color menu 'brushes notes' has been modified"""
+        if self.__ignoreMenuUpdate:
+            return
+        self.__ignoreMenuUpdate=True
+        self.__actionSelectColor.colorPicker().setOptionLayout(self.__actionSelectBrushScratchpadColor.colorPicker().optionLayout())
+        self.__ignoreMenuUpdate=False
 
     def closeEvent(self, event):
         """Dialog is about to be closed..."""

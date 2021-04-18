@@ -28,20 +28,15 @@ from PyQt5.QtWidgets import (
 
 from pktk.modules.about import AboutWindow
 from pktk.modules.uitheme import UITheme
+from pktk.modules.utils import loadXmlUi
 
-from .bnutils import loadXmlUi
+from .bnsettings import BNSettings
 from .bnnotes import (BNNote,
                       BNNotes,
                       BNNoteEditor
                     )
 from .bnwnotes import BNNotesModel
 from .bnnote_postit import BNNotePostIt
-
-
-# signals:
-# activeView changed
-# no documents
-
 
 class BNUiDocker(QWidget):
     """Current selection interface"""
@@ -52,6 +47,7 @@ class BNUiDocker(QWidget):
         self.__bnId=bnId
         self.__bnVersion=bnVersion
         self.__docker=docker
+        BNSettings.load()
         UITheme.load()
         UITheme.load(os.path.join(os.path.dirname(__file__), 'resources'))
         self.__notes=BNNotes()
@@ -80,6 +76,8 @@ class BNUiDocker(QWidget):
         self.btAddNote.clicked.connect(self.__addNote)
         self.btEditNote.clicked.connect(self.__editNote)
         self.btRemoveNote.clicked.connect(self.__removeNote)
+        self.btMoveNoteUp.clicked.connect(self.__moveNoteUp)
+        self.btMoveNoteDown.clicked.connect(self.__moveNoteDown)
         self.__updateUi()
 
     def __about(self):
@@ -131,6 +129,14 @@ class BNUiDocker(QWidget):
             self.__docker.setWindowTitle(f'{self.__bnName} ({self.__notes.length()})')
         else:
             self.__docker.setWindowTitle(self.__bnName)
+
+    def __moveNoteUp(self):
+        """Move all selected notes up"""
+        self.__notes.movePositionUp(self.tvNotes.selectedItems())
+
+    def __moveNoteDown(self):
+        """Move all selected notes down"""
+        self.__notes.movePositionDown(self.tvNotes.selectedItems())
 
 
     def canvasChanged(self, canvas):

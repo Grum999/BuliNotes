@@ -29,7 +29,8 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.utils import (stripHtml, qImageToPngQByteArray)
+from pktk.modules.imgutils import qImageToPngQByteArray
+from pktk.modules.strutils import stripHtml
 from pktk.modules.bytesrw import BytesRW
 from pktk.modules.ekrita import EKritaNode
 
@@ -219,6 +220,15 @@ class BNLinkedLayer(QObject):
 
         self.fromLayer(self.__uuid)
 
+    def exportAsText(self):
+        """Return synthetised brush information (Text)"""
+        returned=[]
+        returned.append(f'{self.__name}')
+        returned.append(stripHtml(self.__comments))
+
+        return "\n".join(returned)
+
+
 
 class BNLinkedLayers(QObject):
     """Collection of linked layers"""
@@ -236,7 +246,7 @@ class BNLinkedLayers(QObject):
         # value = BNNotes
         self.__linkedLayers = {}
 
-        self.__temporaryDisabled=True
+        self.__inUpdate=1
 
         # list of added hash
         self.__updateAdd=[]
@@ -246,19 +256,19 @@ class BNLinkedLayers(QObject):
             for linkedLayerId in linkedLayers.idList():
                 self.add(BNLinkedLayer(linkedLayers.get(linkedLayerId)))
 
-        self.__temporaryDisabled=False
+        self.__inUpdate=0
 
     def __repr__(self):
         return f"<BNLinkedLayers({self.length()})>"
 
     def __itemUpdated(self, item, property):
         """A linked layer have been updated"""
-        if not self.__temporaryDisabled:
+        if self.__inUpdate==0:
             self.updated.emit(item, property)
 
     def __emitUpdateReset(self):
         """List have been cleared/loaded"""
-        if not self.__temporaryDisabled:
+        if self.__inUpdate==0:
             self.updateReset.emit()
 
     def __emitUpdateAdded(self):
@@ -268,7 +278,7 @@ class BNLinkedLayers(QObject):
         """
         items=self.__updateAdd.copy()
         self.__updateAdd=[]
-        if not self.__temporaryDisabled:
+        if self.__inUpdate==0:
             self.updateAdded.emit(items)
 
     def __emitUpdateRemoved(self):
@@ -278,7 +288,7 @@ class BNLinkedLayers(QObject):
         """
         items=self.__updateRemove.copy()
         self.__updateRemove=[]
-        if not self.__temporaryDisabled:
+        if self.__inUpdate==0:
             self.updateRemoved.emit(items)
 
     def length(self):
@@ -305,14 +315,12 @@ class BNLinkedLayers(QObject):
 
     def clear(self):
         """Clear all linkedLayers"""
-        state=self.__temporaryDisabled
+        self.beginUpdate()
 
-        self.__temporaryDisabled=True
         for key in list(self.__linkedLayers.keys()):
             self.remove(self.__linkedLayers[key])
-        self.__temporaryDisabled=state
-        if not self.__temporaryDisabled:
-            self.__emitUpdateReset()
+
+        self.endUpdate()
 
     def add(self, item):
         """Add linked layer to list"""
@@ -329,11 +337,10 @@ class BNLinkedLayers(QObject):
         removedLinkedLayer=None
 
         if isinstance(item, list) and len(item)>0:
-            self.__temporaryDisabled=True
+            self.beginUpdate()
             for linkedLayer in item:
                 self.remove(linkedLayer)
-            self.__temporaryDisabled=False
-            self.__emitUpdateRemoved()
+            self.endUpdate()
             return True
 
         if isinstance(item, QUuid) and item in self.__linkedLayers:
@@ -342,7 +349,11 @@ class BNLinkedLayers(QObject):
             removedLinkedLayer=self.__linkedLayers.pop(item.id(), None)
 
         if not removedLinkedLayer is None:
-            removedLinkedLayer.updated.disconnect(self.__itemUpdated)
+            try:
+                removedLinkedLayer.updated.disconnect(self.__itemUpdated)
+            except:
+                # ignore case if there wasn't connection
+                pass
             self.__updateRemove.append(removedLinkedLayer.id())
             self.__emitUpdateRemoved()
             return True
@@ -360,12 +371,11 @@ class BNLinkedLayers(QObject):
     def copyFrom(self, linkedLayers):
         """Copy linkedLayers from another linkedLayers"""
         if isinstance(linkedLayers, BNLinkedLayers):
-            self.__temporaryDisabled=True
+            self.beginUpdate()
             self.clear()
             for linkedLayerId in linkedLayers.idList():
                 self.add(BNLinkedLayer(linkedLayers.get(linkedLayerId)))
-        self.__temporaryDisabled=False
-        self.__emitUpdateReset()
+        self.endUpdate()
 
     def updateFromDocument(self, document=None):
         """Update name and thumbnail from given `document` for all layers
@@ -380,12 +390,21 @@ class BNLinkedLayers(QObject):
         if not isinstance(document, Document):
             return
 
-        state=self.__temporaryDisabled
-        self.__temporaryDisabled=True
+        self.beginUpdate()
 
         for key in list(self.__linkedLayers.keys()):
             self.__linkedLayers[key].updateFromDocument(document)
 
-        self.__temporaryDisabled=state
-        if not self.__temporaryDisabled:
+        self.endUpdate()
+
+    def beginUpdate(self):
+        """Start to update model content, avoid to emit change signals"""
+        self.__inUpdate+=1
+
+    def endUpdate(self):
+        """End to update model content, emit change signals"""
+        self.__inUpdate-=1
+        if self.__inUpdate<0:
+            self.__inUpdate=0
+        elif self.__inUpdate==0:
             self.__emitUpdateReset()
