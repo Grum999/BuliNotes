@@ -209,14 +209,8 @@ There's some bugs, and many functionalities are not yet implemented (even if but
 ### What’s next?
 
 Some ideas currently in mind:
-- Note manager
-  - Allow to define notes position in list (currently, sorted by creation order)
-  - Export/Import notes
-  - Extend clipboad mime type (text + png), allowing to paste information in an editor
 - Tasks
   - Implement tasks list note
-- Link layers
-  - Allow to apply some basics action on linked layers (show/hide all, lock/unlock all)
 
 
 ## License
