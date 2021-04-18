@@ -175,7 +175,7 @@ Plugin hasn't been tested on Windows and MacOs
 
 ### What's new?
 
-_[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.3.0a.md)
+_[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.3.0a.md)
 - *Post-it mode* - allows to change linked layers properties
 - *Color picker* - improve color picker for text/hand written notes
 - *Docker* - add mime type "text/plain" and "text/html" for copy/paste action
@@ -184,7 +184,7 @@ _[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](https://gith
 - *Miscellaneous* - improve UI, improve performances, fix bugs
 
 
-_[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.2.0a.md)
+_[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.2.0a.md)
 - *Linked layers notes* - implement functionality
 - *Text notes* - implement strikethrough & bg colors styles
 - *Text notes* - implement shortcuts
@@ -192,7 +192,7 @@ _[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://gith
 - *Hand written notes* - implement import/export
 - *Brushes notes* - improve post-it mode
 
-_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/master/releases-notes/RELEASE-0.1.0a.md)
+_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.1.0a.md)
 - First implemented/released version
 
 
