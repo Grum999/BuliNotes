@@ -132,11 +132,45 @@ margin: 0px 0px 0px 0px;
 width: 0px;
 }
 """
+    HSLIDER_NORMAL_CSS="""
+QSlider::groove:horizontal {
+background-color: palette(base);
+height: 14px;
+margin: 0px;
+border: 1px transparent #000000;
+border-radius: 7px;
+}
+
+QSlider::handle:horizontal {
+background-color: palette(text);
+height: 14px;
+width: 14px;
+border-radius: 7px;
+}
+"""
+
+    HSLIDER_COMPACT_CSS="""
+QSlider::groove:horizontal {
+background-color: palette(base);
+height: 10px;
+margin: 0px;
+border: 1px transparent #000000;
+border-radius: 5px;
+}
+
+QSlider::handle:horizontal {
+background-color: palette(text);
+height: 10px;
+width: 10px;
+border-radius: 5px;
+}
+"""
 
     def __init__(self, note):
         super(BNNotePostIt, self).__init__(Krita.instance().activeWindow().qwindow())
 
         self.__note=note
+        self.__pageNumber=0
 
         self.__note.updated.connect(self.__updatedNote)
 
@@ -239,10 +273,18 @@ width: 0px;
         self.__buttonGroup.addButton(self.__btShowBrushes)
         self.__buttonGroup.addButton(self.__btShowLinkedLayers)
 
+        self.__hsThumbSize=QSlider(Qt.Horizontal)
+        self.__hsThumbSize.setStyleSheet(BNNotePostIt.HSLIDER_NORMAL_CSS)
+        self.__hsThumbSize.setMaximumWidth(100)
+        self.__hsThumbSize.setPageStep(1)
+        self.__hsThumbSize.valueChanged.connect(self.__hsThumbSizeChanged)
+
         self.bottomBarAddWidget(self.__btShowText)
         self.bottomBarAddWidget(self.__btShowScratchpad)
         self.bottomBarAddWidget(self.__btShowBrushes)
         self.bottomBarAddWidget(self.__btShowLinkedLayers)
+        self.bottomBarAddStretch()
+        self.bottomBarAddWidget(self.__hsThumbSize)
 
         # -1 because note type start from 1 and page from 0
         self.__showNotePage(self.__note.selectedType()-1)
@@ -290,11 +332,13 @@ width: 0px;
             self.__brushesList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_COMPACT_CSS)
             self.__linkedLayersList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_COMPACT_CSS)
             self.__linkedLayersList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_COMPACT_CSS)
+            self.__hsThumbSize.setStyleSheet(BNNotePostIt.HSLIDER_COMPACT_CSS)
         else:
             self.__brushesList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_NORMAL_CSS)
             self.__brushesList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_NORMAL_CSS)
             self.__linkedLayersList.verticalScrollBar().setStyleSheet(BNNotePostIt.VSCROLLBAR_NORMAL_CSS)
             self.__linkedLayersList.horizontalScrollBar().setStyleSheet(BNNotePostIt.HSCROLLBAR_NORMAL_CSS)
+            self.__hsThumbSize.setStyleSheet(BNNotePostIt.HSLIDER_NORMAL_CSS)
 
         self.setCompact(value)
 
@@ -373,7 +417,21 @@ width: 0px;
             elif pageNumber==3:
                 self.__btShowLinkedLayers.setChecked(True)
 
-        self.__stackedWidgets.setCurrentIndex(pageNumber)
+        self.__pageNumber=pageNumber
+        self.__stackedWidgets.setCurrentIndex(self.__pageNumber)
+
+        if self.__pageNumber==2:
+            # brushes
+            self.__hsThumbSize.setVisible(True)
+            self.__hsThumbSize.setMaximum(4)
+            self.__hsThumbSize.setValue(self.__brushesList.iconSizeIndex())
+        elif self.__pageNumber==3:
+            # linkedLayers
+            self.__hsThumbSize.setVisible(True)
+            self.__hsThumbSize.setMaximum(5)
+            self.__hsThumbSize.setValue(self.__linkedLayersList.iconSizeIndex())
+        else:
+            self.__hsThumbSize.setVisible(False)
 
     def __updateNoteGeometry(self, value):
         """Update note geometry"""
@@ -382,6 +440,8 @@ width: 0px;
     def __brushesListIconSizeIndexChanged(self, index, size):
         """Icon size index has been changed"""
         self.__note.setWindowPostItBrushIconSizeIndex(index)
+        if self.__pageNumber==2:
+            self.__hsThumbSize.setValue(index)
 
     def __brushesListSelectionChanged(self, selected, deselected):
         """Selection in brush list has changed"""
@@ -392,6 +452,8 @@ width: 0px;
     def __linkedLayersListIconSizeIndexChanged(self, index, size):
         """Icon size index has been changed"""
         self.__note.setWindowPostItLinkedLayersIconSizeIndex(index)
+        if self.__pageNumber==3:
+            self.__hsThumbSize.setValue(index)
 
     def __linkedLayersListSelectionChanged(self, selected, deselected):
         """Selection in linked layer list has changed"""
@@ -401,6 +463,13 @@ width: 0px;
             node=EKritaDocument.findLayerById(document, selectedLayer[0].id())
             if node and node!=document.activeNode():
                 document.setActiveNode(node)
+
+    def __hsThumbSizeChanged(self, value):
+        """Value for thumb size has been modified from slider"""
+        if self.__pageNumber==2:
+            self.__brushesList.setIconSizeIndex(value)
+        elif self.__pageNumber==3:
+            self.__linkedLayersList.setIconSizeIndex(value)
 
 
     def closeEvent(self, event):
