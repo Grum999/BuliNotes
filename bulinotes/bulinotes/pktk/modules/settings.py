@@ -212,7 +212,7 @@ class Settings(object):
         return cls.__settings.isModified()
 
     # --------------------------------------------------------------------------
-    def __init__(self, pluginId):
+    def __init__(self, pluginId, rules=None):
         """Initialise settings"""
         if pluginId is None or pluginId=='':
             pluginId = ''
@@ -227,6 +227,8 @@ class Settings(object):
         # configuration has been modified and need to be saved?
         self.__modified = False
 
+        if not rules is None:
+            self.setRules(rules)
         self.setDefaultConfig()
         self.loadConfig()
 

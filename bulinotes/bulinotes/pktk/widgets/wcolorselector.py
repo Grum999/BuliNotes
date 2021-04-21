@@ -2247,6 +2247,8 @@ class WColorPicker(QWidget):
 
         self.__inUpdate=True
 
+        self.__alphaAsColor=True
+
         self.__compactWidth=350
         self.__normalWidth=450
 
@@ -2674,7 +2676,7 @@ class WColorPicker(QWidget):
         if updating!=WColorPicker.__COLOR_CSSRGB:
             self.__colorCssEdit.setColor(self.__color)
 
-        if updating!=WColorPicker.__COLOR_ALPHA:
+        if self.__alphaAsColor or updating!=WColorPicker.__COLOR_ALPHA:
             # when only alpha is modified, do not consider color is changed
             if updating==WColorPicker.__COLOR_NONE:
                 # is none, consider it's a programmatically change
@@ -3137,3 +3139,63 @@ class WColorPicker(QWidget):
 
         self.__inUpdate=False
         self.__updateSize()
+
+    def setStandardLayout(self, layout, limited=False):
+        """Provided as convenience method to simplify standard usage configuration
+
+        Given `layout` can be:
+        - "palette"
+            Display palette only, no alpha color available
+        - "hsv"
+            Display color wheel+HSV only
+        - "hsva"
+            Display color wheel+HSV&Alpha only
+        - "hsl"
+            Display color wheel+HSL only
+        - "hsla"
+            Display color wheel+HSL&Alpha only
+        - "rgb"
+            Display color wheel+RGB only
+        - "rgba"
+            Display color wheel+RGB&Alpha only
+        - "cmyk"
+            Display color wheel+CMYK only
+        - "cmyka"
+            Display color wheel+CMYK&Alpha only
+
+        If `limited` is True, all context menu are disabled
+        """
+        if layout=='palette':
+            self.setOptionLayout(['colorPalette'])
+        elif layout=='hsv':
+            self.setOptionLayout(['colorHSV', 'colorWheel', 'colorPreview'])
+        elif layout=='hsl':
+            self.setOptionLayout(['colorHSL', 'colorWheel', 'colorPreview'])
+        elif layout=='rgb':
+            self.setOptionLayout(['colorRGB', 'colorWheel', 'colorPreview'])
+        elif layout=='cmyk':
+            self.setOptionLayout(['colorCMYK', 'colorWheel', 'colorPreview'])
+        elif layout=='hsva':
+            self.setOptionLayout(['colorHSV', 'colorAlpha', 'colorWheel', 'colorPreview'])
+        elif layout=='hsla':
+            self.setOptionLayout(['colorHSL', 'colorAlpha', 'colorWheel', 'colorPreview'])
+        elif layout=='rgba':
+            self.setOptionLayout(['colorRGB', 'colorAlpha', 'colorWheel', 'colorPreview'])
+        elif layout=='cmyka':
+            self.setOptionLayout(['colorCMYK', 'colorAlpha', 'colorWheel', 'colorPreview'])
+
+        if limited:
+            self.setOptionMenu(0)
+
+    def alphaAsColor(self):
+        """Return True is alpha is considered as color"""
+        return self.__alphaAsColor
+
+    def setAlphaAsColor(self, value):
+        """Set if alpha is considered as color
+
+        When considered as a color (default), modifying alpha channel emit a
+        colorUpdated signal, otherwise not
+        """
+        if isinstance(value, bool):
+            self.__alphaAsColor=value

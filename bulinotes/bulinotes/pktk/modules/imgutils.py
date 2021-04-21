@@ -92,39 +92,69 @@ def checkerBoardImage(size, checkerSize=32):
 
     return pixmap
 
-def buildIcon(icons):
-    """Return a QIcon from given icons"""
+def buildIcon(icons, size=None):
+    """Return a QIcon build from given icons
+
+
+    Given `icons` can be:
+    - A string "pktk:XXXX"
+        Where XXXX is name of a PkTk icon
+        Return QIcon() will provide normal/disable icons
+    - A list of tuple
+        Each tuple can be:
+            (QPixmap,)
+            (QPixmap, QIcon.Mode)
+            (QPixmap, QIcon.Mode, QIcon.State)
+            (str,)
+            (str, QIcon.Mode)
+            (str, QIcon.Mode, QIcon.State)
+
+    If provided, given `size` can be an <int> or an <QSize>
+    """
     if isinstance(icons, QIcon):
         return icons
     elif isinstance(icons, list) and len(icons)>0:
         returned = QIcon()
 
-        pixmapList=[]
+        if isinstance(size, int):
+            appliedSize=QSize(size, size)
+        elif isinstance(size, QSize):
+            appliedSize=size
+        else:
+            appliedSize=QSize()
+
         for icon in icons:
+            addPixmap=False
             if isinstance(icon[0], QPixmap):
-                pixmapListItem=[icon[0]]
+                addPixmap=True
+                iconListItem=[icon[0]]
             elif isinstance(icon[0], str):
-                pixmapListItem=[QPixmap(icon[0])]
+                iconListItem=[icon[0], appliedSize]
+            else:
+                continue
 
             for index in range(1,3):
                 if index == 1:
                     if len(icon) >= 2:
-                        pixmapListItem.append(icon[index])
+                        iconListItem.append(icon[index])
                     else:
-                        pixmapListItem.append(QIcon.Normal)
+                        iconListItem.append(QIcon.Normal)
                 elif index == 2:
                     if len(icon) >= 3:
-                        pixmapListItem.append(icon[index])
+                        iconListItem.append(icon[index])
                     else:
-                        pixmapListItem.append(QIcon.Off)
+                        iconListItem.append(QIcon.Off)
 
-            returned.addPixmap(*tuple(pixmapListItem))
+            if addPixmap:
+                returned.addPixmap(*tuple(iconListItem))
+            else:
+                returned.addFile(*tuple(iconListItem))
         return returned
     elif isinstance(icons, str) and (rfind:=re.match("pktk:(.*)", icons)):
         return buildIcon([(f':/pktk/images/normal/{rfind.groups()[0]}', QIcon.Normal),
-                          (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)])
+                          (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)], size)
     else:
-        raise EInvalidType("Given `icons` must be a list of tuples")
+        raise EInvalidType("Given `icons` must be a <str> or a <list> of <tuples>")
 
 def qImageToPngQByteArray(image):
     """Convert a QImage as PNG and return a QByteArray"""
