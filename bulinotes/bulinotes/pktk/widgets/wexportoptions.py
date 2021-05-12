@@ -37,9 +37,9 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 
-from pktk.modules.utils import loadXmlUi
-from pktk.widgets.wcolorselector import WColorPicker
-
+from ..modules.utils import loadXmlUi
+from .wcolorselector import WColorPicker
+from ..pktk import *
 
 class WExportOptionsPng(QWidget):
     """A wdiget to manage PNG export options"""

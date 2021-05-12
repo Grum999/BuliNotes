@@ -27,10 +27,7 @@ import os
 import re
 
 from .strutils import strToMaxLength
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from ..pktk import *
 
 class TextTableSettingsText(object):
     """Define settings to render a table"""

@@ -27,12 +27,9 @@ import re
 import time
 
 from PyQt5.Qt import *
-from pktk.modules.elist import EList
-from pktk.modules.uitheme import UITheme
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from .elist import EList
+from .uitheme import UITheme
+from ..pktk import *
 
 
 class TokenType(Enum):

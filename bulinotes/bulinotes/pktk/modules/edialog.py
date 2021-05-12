@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import (
         QDialog
     )
 
-from pktk import *
+from ..pktk import *
 
 # -----------------------------------------------------------------------------
 

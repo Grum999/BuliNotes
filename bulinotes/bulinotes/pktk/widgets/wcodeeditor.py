@@ -38,17 +38,14 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import (
         QSyntaxHighlighter
     )
-from pktk.modules.languagedef import LanguageDef
-from pktk.modules.tokenizer import (
+from ..modules.languagedef import LanguageDef
+from ..modules.tokenizer import (
         TokenStyle,
         TokenType,
         Tokenizer
     )
 
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from ..pktk import *
 
 
 class WCodeEditor(QPlainTextEdit):

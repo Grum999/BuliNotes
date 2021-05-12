@@ -38,7 +38,7 @@ from PyQt5.QtWidgets import (
     )
 
 from .imgutils import buildIcon
-
+from ..pktk import *
 
 
 def buildQAction(icons, title, parent, action=None, parameters=[]):

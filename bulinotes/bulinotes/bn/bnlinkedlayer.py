@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------------
 import os.path
 
-from pktk import *
+from bulinotes.pktk import *
 from krita import (Node, Document)
 
 import PyQt5.uic
@@ -29,10 +29,10 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.imgutils import qImageToPngQByteArray
-from pktk.modules.strutils import stripHtml
-from pktk.modules.bytesrw import BytesRW
-from pktk.modules.ekrita import EKritaNode
+from bulinotes.pktk.modules.imgutils import qImageToPngQByteArray
+from bulinotes.pktk.modules.strutils import stripHtml
+from bulinotes.pktk.modules.bytesrw import BytesRW
+from bulinotes.pktk.modules.ekrita import EKritaNode
 
 
 class BNLinkedLayer(QObject):

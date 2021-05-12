@@ -45,14 +45,11 @@ from PyQt5.QtGui import (
         QPixmap
     )
 
-from pktk.modules.imgutils import (
+from ..modules.imgutils import (
         checkerBoardBrush,
         buildIcon
     )
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from ..pktk import *
 
 # -----------------------------------------------------------------------------
 

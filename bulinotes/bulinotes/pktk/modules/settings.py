@@ -37,10 +37,7 @@ import shutil
 
 from .utils import Debug
 
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from ..pktk import *
 
 
 class SettingsFmt(object):

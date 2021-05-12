@@ -26,9 +26,9 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 
-from pktk.modules.about import AboutWindow
-from pktk.modules.uitheme import UITheme
-from pktk.modules.utils import loadXmlUi
+from bulinotes.pktk.modules.about import AboutWindow
+from bulinotes.pktk.modules.uitheme import UITheme
+from bulinotes.pktk.modules.utils import loadXmlUi
 
 from .bnsettings import BNSettings
 from .bnnotes import (BNNote,

@@ -20,16 +20,16 @@
 # -----------------------------------------------------------------------------
 import re
 
-from pktk import *
+from bulinotes.pktk import *
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.iconsizes import IconSizes
-from pktk.modules.strutils import stripHtml
-from pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
+from bulinotes.pktk.modules.iconsizes import IconSizes
+from bulinotes.pktk.modules.strutils import stripHtml
+from bulinotes.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 
 from .bnbrush import BNBrush
 from .bnsettings import (BNSettings, BNSettingsKey)

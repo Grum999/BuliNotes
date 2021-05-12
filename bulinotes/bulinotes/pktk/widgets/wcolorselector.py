@@ -47,7 +47,8 @@ from PyQt5.QtWidgets import (
         QHBoxLayout
     )
 
-from pktk.modules.imgutils import (checkerBoardImage, checkerBoardBrush)
+from ..modules.imgutils import (checkerBoardImage, checkerBoardBrush)
+from ..pktk import *
 
 # todo:
 #   * Fix management with CMYK colorspace

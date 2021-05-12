@@ -34,12 +34,8 @@ from PyQt5.QtCore import (
         QTimer
     )
 
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
-
-from pktk.modules.timeutils import Timer
+from ..pktk import *
+from .timeutils import Timer
 
 
 class WorkerSignals(QObject):

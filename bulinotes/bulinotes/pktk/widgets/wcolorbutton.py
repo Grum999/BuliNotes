@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import (
         QPushButton,
     )
 
-from pktk.modules.imgutils import checkerBoardBrush
+from ..modules.imgutils import checkerBoardBrush
 from .wmenuitem import WMenuColorPicker
 
 

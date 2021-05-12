@@ -26,12 +26,7 @@
 from enum import Enum
 import re
 
-from pktk import (
-        PkTk,
-        EInvalidType,
-        EInvalidValue,
-        EInvalidStatus
-    )
+from ..pktk import *
 from krita import (
         Document,
         Node
@@ -340,7 +335,9 @@ class EKritaNode:
         # Need to check what todo for:
         # - masks (8bit/pixels)
         # - other color space (need to convert to 8bits/rgba...?)
-        if layerNode.type() in ('transparencymask', 'filtermask', 'transformmask', 'selectionmask'):
+        if (layerNode.type() in ('transparencymask', 'filtermask', 'transformmask', 'selectionmask') or
+            layerNode.colorModel() != 'RGBA' or
+            layerNode.colorDepth() != 'U8'):
             # pixelData/projectionPixelData return a 8bits/pixel matrix
             # didn't find how to convert pixel data to QImlage then use thumbnail() function
             return layerNode.thumbnail(rect.width(), rect.height())

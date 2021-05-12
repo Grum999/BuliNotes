@@ -33,7 +33,7 @@ from PyQt5.QtGui import (
 
 import re
 
-from pktk import *
+from ..pktk import *
 
 def warningAreaBrush(size=32):
     """Return a checker board brush"""
@@ -186,3 +186,47 @@ def imgBoxSize(imageSize, boxSize):
         h=w/imageRatio
 
     return QSize(w,h)
+
+def combineChannels(bytesPerChannel, *channels):
+    """Combine given channels
+
+    Given `bytesPerChannel` define how many byte are used for one pixel in channels
+    Given `channels` are bytes or bytesarray (or memory view on bytes/bytearray)
+
+    Return a bytearray
+
+    Example:
+        bytes per channel = 1
+        channels =  red=[0xff,0x01,0x02]
+                    green=[0x03,0xff,0x04]
+                    blue=[0x05,0x06,0xff]
+
+        returned byte array will be
+        (0xff, 0x03, 0x05,
+         0x01, 0xff, 0x06,
+         0x02, 0x06, 0xff)
+    """
+    # First, need to ensure that all channels have the same size
+    channelSize=None
+    for channel in channels:
+        if channelSize is None:
+            channelSize=len(channel)
+        elif channelSize!=len(channel):
+            raise EInvalidValue("All `channels` must have the same size")
+
+    channelCount=len(channels)
+    offsetTargetInc=channelCount*bytesPerChannel
+    targetSize=channelSize*offsetTargetInc
+    target=bytearray(targetSize)
+
+    channelNumber=0
+    for channel in channels:
+        offsetTarget=channelNumber*bytesPerChannel
+        offsetSource=0
+        for index in range(channelSize//bytesPerChannel):
+            target[offsetTarget]=channel[offsetSource]
+            offsetTarget+=offsetTargetInc
+            offsetSource+=bytesPerChannel
+        channelNumber+=1
+
+    return target
