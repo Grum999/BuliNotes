@@ -1762,8 +1762,8 @@ class BNNoteEditor(EDialog):
         self.hsBrushSize.setValue(5)
         self.hsBrushOpacity.setValue(100)
         self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
-        self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
-        self.__tmpNote.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
+        self.__tmpNote.setScratchpadBrushSize(5)
+        self.__tmpNote.setScratchpadBrushOpacity(100)
 
     def __actionScratchpadSetBrushCurrent(self):
         """Set current painting brush"""
@@ -1773,8 +1773,8 @@ class BNNoteEditor(EDialog):
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
         self.hsBrushSize.setValue(round(self.__activeViewCurrentConfig['brushSize']))
-        self.hsBrushOpacity.setValue(round(100*self.__activeViewCurrentConfig['brushOpacity']))
         self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
+        self.hsBrushOpacity.setValue(self.__activeViewCurrentConfig['brushOpacity'])
         self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
         self.__tmpNote.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
 

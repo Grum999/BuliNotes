@@ -175,7 +175,7 @@ Updated:</string>
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <property name="iconSize">
       <size>
@@ -297,7 +297,7 @@ Updated:</string>
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+             <iconset>
               <normaloff>:/pktk/images/normal/save</normaloff>
               <disabledoff>:/pktk/images/disabled/save</disabledoff>:/pktk/images/normal/save</iconset>
             </property>
@@ -432,6 +432,9 @@ Updated:</string>
             </property>
             <property name="maximum">
              <number>200</number>
+            </property>
+            <property name="value">
+             <number>5</number>
             </property>
            </widget>
           </item>
