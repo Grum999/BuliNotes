@@ -64,7 +64,7 @@ from bulinotes.pktk.widgets.wtextedit import (
                             )
 from bulinotes.pktk.widgets.wefiledialog import WEFileDialog
 
-from .bnbrush import (BNBrush, BNBrushes)
+from .bnbrush import (BNBrushPreset, BNBrush, BNBrushes)
 from .bnlinkedlayer import (BNLinkedLayer, BNLinkedLayers)
 from .bnwlinkedlayers import BNLinkedLayerEditor
 from .bnwbrushes import (BNBrushesModel, BNBrushesEditor)
@@ -110,7 +110,7 @@ class BNNote(QObject):
         self.__windowPostItBrushIconSizeIndex=1
         self.__windowPostItLinkedLayersIconSizeIndex=1
 
-        self.__scratchpadBrushName='b)_Basic-5_Size'
+        self.__scratchpadBrushName=BNBrushPreset.getName()
         self.__scratchpadBrushSize=5
         self.__scratchpadBrushOpacity=100
         self.__scratchpadBrushColor=QColor(Qt.black)
@@ -1333,6 +1333,7 @@ class BNNotes(QObject):
 
 
 class BNNoteEditor(EDialog):
+    """main window for note editor"""
 
     @staticmethod
     def edit(note):
@@ -1353,6 +1354,8 @@ class BNNoteEditor(EDialog):
         elif Krita.instance().activeWindow().activeView() is None:
             self.reject()
 
+        BNBrushPreset.initialise()
+
         self.__name=name
         self.setWindowTitle(name)
         self.setSizeGripEnabled(True)
@@ -1370,7 +1373,6 @@ class BNNoteEditor(EDialog):
 
         self.__activeView=Krita.instance().activeWindow().activeView()
         self.__activeViewCurrentConfig={}
-        self.__allBrushesPreset = Krita.instance().resources("preset")
 
         self.__scratchpadHandWritting=Scratchpad(self.__activeView, QColor(Qt.white), self)
         self.__scratchpadHandWritting.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
@@ -1435,7 +1437,7 @@ class BNNoteEditor(EDialog):
         layout.setContentsMargins(QMargins(0,0,0,0))
 
 
-        self.__actionSelectDefaultBrush=QAction(QIcon(QPixmap.fromImage(self.__allBrushesPreset['b)_Basic-5_Size'].image())), i18n('Default note brush'), self)
+        self.__actionSelectDefaultBrush=QAction(QIcon(QPixmap.fromImage(BNBrushPreset.getPreset().image())), i18n('Default note brush'), self)
         self.__actionSelectDefaultBrush.triggered.connect(self.__actionScratchpadSetBrushDefault)
         self.__actionSelectCurrentBrush=QAction(QIcon(QPixmap.fromImage(self.__activeViewCurrentConfig['brushPreset'].image())), i18n(f"Current painting brush ({self.__activeViewCurrentConfig['brushPreset'].name()})"), self)
         self.__actionSelectCurrentBrush.triggered.connect(self.__actionScratchpadSetBrushCurrent)
@@ -1623,7 +1625,8 @@ class BNNoteEditor(EDialog):
         self.__updateBrushUi()
         selectedBrushes=self.tvBrushes.selectedItems()
         if len(selectedBrushes)==1:
-            selectedBrushes[0].toBrush()
+            if selectedBrushes[0].found():
+                selectedBrushes[0].toBrush()
 
     def __linkedLayersSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
@@ -1650,9 +1653,9 @@ class BNNoteEditor(EDialog):
         self.tvBrushes.setIconSizeIndex(newSize)
 
     def __saveViewConfig(self):
-        """Save current view properties"""
+        """Save current Krita active view properties"""
         self.__activeViewCurrentConfig['brushSize']=self.__activeView.brushSize()
-        self.__activeViewCurrentConfig['brushPreset']=self.__activeView.currentBrushPreset()
+        self.__activeViewCurrentConfig['brushPreset']=BNBrushPreset.getPreset(self.__activeView.currentBrushPreset())
 
         self.__activeViewCurrentConfig['fgColor']=self.__activeView.foregroundColor()
         self.__activeViewCurrentConfig['bgColor']=self.__activeView.backgroundColor()
@@ -1671,8 +1674,8 @@ class BNNoteEditor(EDialog):
 
     def __initViewConfig(self):
         """Initialise view for Scratchpad"""
-        self.__actionSelectBrush.presetChooser().setCurrentPreset(self.__allBrushesPreset[self.__note.scratchpadBrushName()])
-        self.__activeView.setCurrentBrushPreset(self.__allBrushesPreset[self.__note.scratchpadBrushName()])
+        self.__actionSelectBrush.presetChooser().setCurrentPreset(BNBrushPreset.getPreset(self.__note.scratchpadBrushName()))
+        self.__activeView.setCurrentBrushPreset(BNBrushPreset.getPreset(self.__note.scratchpadBrushName()))
         self.__activeView.setForeGroundColor(ManagedColor.fromQColor(self.__note.scratchpadBrushColor(), self.__activeView.canvas()))
         self.__activeView.setBrushSize(self.__note.scratchpadBrushSize())
         self.__activeView.setPaintingOpacity(self.__note.scratchpadBrushOpacity()/100)
@@ -1706,7 +1709,7 @@ class BNNoteEditor(EDialog):
         self.__note.setColorIndex(self.wColorIndex.colorIndex())
         self.__note.setText(self.wteText.toHtml())
 
-        self.__note.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
+        self.__note.setScratchpadBrushName(BNBrushPreset.getName(self.__activeView.currentBrushPreset()))
         self.__note.setScratchpadBrushSize(int(self.__activeView.brushSize()))
         self.__note.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
         self.__note.setScratchpadBrushColor(self.__activeView.foregroundColor().colorForCanvas(self.__activeView.canvas()))
@@ -1734,7 +1737,7 @@ class BNNoteEditor(EDialog):
         self.__activeView.setCurrentBrushPreset(resource)
         self.hsBrushSize.setValue(round(self.__activeView.brushSize()))
         self.hsBrushOpacity.setValue(round(100*self.__activeView.paintingOpacity()))
-        self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
+        self.__tmpNote.setScratchpadBrushName(BNBrushPreset.getName(self.__activeView.currentBrushPreset()))
         self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
         self.__tmpNote.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
 
@@ -1754,14 +1757,14 @@ class BNNoteEditor(EDialog):
 
     def __actionScratchpadSetBrushDefault(self):
         """Set default brush"""
-        self.__activeView.setCurrentBrushPreset(self.__allBrushesPreset['b)_Basic-5_Size'])
+        self.__activeView.setCurrentBrushPreset(BNBrushPreset.getPreset())
         self.__activeView.setBrushSize(5.0)
         self.__activeView.setCurrentBlendingMode('normal')
         self.__activeView.setPaintingOpacity(1)
         self.__activeView.setPaintingFlow(1)
         self.hsBrushSize.setValue(5)
         self.hsBrushOpacity.setValue(100)
-        self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
+        self.__tmpNote.setScratchpadBrushName(BNBrushPreset.getName(self.__activeView.currentBrushPreset()))
         self.__tmpNote.setScratchpadBrushSize(5)
         self.__tmpNote.setScratchpadBrushOpacity(100)
 
@@ -1773,14 +1776,14 @@ class BNNoteEditor(EDialog):
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
         self.hsBrushSize.setValue(round(self.__activeViewCurrentConfig['brushSize']))
-        self.__tmpNote.setScratchpadBrushName(self.__activeView.currentBrushPreset().name())
-        self.hsBrushOpacity.setValue(self.__activeViewCurrentConfig['brushOpacity'])
+        self.hsBrushOpacity.setValue(round(100*self.__activeViewCurrentConfig['paintingOpacity']))
+        self.__tmpNote.setScratchpadBrushName(BNBrushPreset.getName(self.__activeView.currentBrushPreset()))
         self.__tmpNote.setScratchpadBrushSize(int(self.__activeView.brushSize()))
         self.__tmpNote.setScratchpadBrushOpacity(int(100*self.__activeView.paintingOpacity()))
 
     def __actionScratchpadSetBrushScratchpad(self):
         """Set last used scratchpad brush"""
-        self.__activeView.setCurrentBrushPreset(self.__allBrushesPreset[self.__tmpNote.scratchpadBrushName()])
+        self.__activeView.setCurrentBrushPreset(BNBrushPreset.getPreset(self.__tmpNote.scratchpadBrushName()))
         self.__activeView.setBrushSize(self.__tmpNote.scratchpadBrushSize())
         self.__activeView.setPaintingOpacity(self.__tmpNote.scratchpadBrushOpacity()/100)
         self.hsBrushSize.setValue(self.__tmpNote.scratchpadBrushSize())

@@ -29,6 +29,7 @@ from PyQt5.QtCore import (
 
 from bulinotes.pktk.modules.iconsizes import IconSizes
 from bulinotes.pktk.modules.strutils import stripHtml
+from bulinotes.pktk.modules.imgutils import warningAreaBrush
 from bulinotes.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 
 from .bnbrush import BNBrush
@@ -114,6 +115,13 @@ class BNBrushesModel(QAbstractTableModel):
                 if column==BNBrushesModel.COLNUM_ICON:
                     # QIcon
                     return QIcon(QPixmap.fromImage(item.image()))
+        elif role == Qt.ToolTipRole:
+            id=self.__items[row]
+            item = self.__brushes.get(id)
+
+            if item:
+                if not item.found():
+                    return i18n(f"Brush <i><b>{item.name()}</b></i> is not installed and/or activated on this Krita installation")
         elif role == Qt.DisplayRole:
             id=self.__items[row]
             item = self.__brushes.get(id)
@@ -354,6 +362,11 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
 
             painter.save()
 
+            if not brush.found():
+                if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
+                    option.state&=~QStyle.State_Selected
+                painter.fillRect(option.rect, warningAreaBrush())
+
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
                 painter.setPen(QPen(option.palette.color(QPalette.HighlightedText)))
@@ -387,6 +400,11 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             textDocument.setDefaultFont(option.font)
 
             painter.save()
+
+            if not brush.found():
+                if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
+                    option.state&=~QStyle.State_Selected
+                painter.fillRect(option.rect, warningAreaBrush())
 
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
