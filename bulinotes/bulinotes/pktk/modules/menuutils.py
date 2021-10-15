@@ -115,6 +115,7 @@ def buildQAction(icons, title, parent, action=None, parameters=[]):
     else:
         raise EInvalidType("Given `icons` must be a <str> or a <list> of <tuples>")
 
+
 def buildQMenu(icons, title, parent):
     """Build a QMenu and store icons resource path as properties
 
@@ -183,3 +184,79 @@ def buildQMenu(icons, title, parent):
                            (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)], title, parent)
     else:
         raise EInvalidType("Given `icons` must be a <str> or a <list> of <tuples>")
+
+
+def buildQMenuTree(menuTree, icons, parent):
+    """Build a menu with submenu from given `menuTree`
+
+    Call:
+        buildQMenuTree('Level1/Level11/Level111', None, qmenuParent)
+
+    Will create submenu from qmenuParent
+        qmenuParent
+            Level1
+                Level11
+                    Level111
+
+    Given `icons` can be:
+        - None: no icons defined for all built menu
+        - <String>: all menu/submenu will have the icon matching string name
+        - [<String>]: menu/submenu match in index will have the icon matching string name
+                        If number of icons is less than number of submenu, menu for which no index is available will get no icons
+                            buildQMenuTree('Level1/Level11/Level111', ['Icon1', 'Icon2'], qmenuParent)
+                                qmenuParent
+                                    Level1                  'Icon1'
+                                        Level11             'Icon2'
+                                            Level111        <no icon>
+
+
+    Returns a list of QMenu
+    """
+
+    if not isinstance(parent, QMenu):
+        raise EInvalidType('Given `parent` must be a <QMenu>')
+    elif not (isinstance(menuTree, str) or isinstance(menuTree, list)):
+        raise EInvalidType('Given `menuTree` must be a <str> or <list>')
+
+    returned=[]
+    if isinstance(menuTree, str):
+        menuTreeList=menuTree.split('/')
+    else:
+        menuTreeList=menuTree
+
+    if len(menuTreeList)==0:
+        return returned
+
+    if icons is None:
+        icons=[]
+    elif isinstance(icons, str):
+        icons=[icons]*len(menuTreeList)
+    elif not isinstance(icons, list):
+        raise EInvalidType('Given `icons` can be <None>, <str> or <list>')
+
+
+    # start by checking if first menuTreeList item exists as a child from parent
+    foundMenu=None
+    for item in parent.children():
+        if isinstance(item, QMenu) and item.title()==menuTreeList[0]:
+            foundMenu=item
+            break
+
+    if foundMenu is None:
+        # doesn't exist as submenu of parent menu:
+        # create a new one
+        if len(icons)==0:
+            foundMenu=QMenu(menuTreeList[0], parent)
+        else:
+            foundMenu=buildQMenu(icons[0], menuTreeList[0], parent)
+
+        parent.addMenu(foundMenu)
+
+    returned.append(foundMenu)
+    if len(menuTreeList)>1:
+        menu=buildQMenuTree(menuTreeList[1:], icons[1:], foundMenu)
+
+        if len(menu)>0:
+            returned+=menu
+
+    return returned

@@ -56,18 +56,23 @@ def warningAreaBrush(size=32):
 
     return QBrush(tmpPixmap)
 
-def checkerBoardBrush(size=32):
+def checkerBoardBrush(size=32, color1=QColor(255,255,255), color2=QColor(220,220,220), strictSize=True):
     """Return a checker board brush"""
+    s1 = size>>1
+    if strictSize:
+        s2 = size - s1
+    else:
+        s2 = s1
+
+    size=s1+s2
+
     tmpPixmap = QPixmap(size,size)
-    tmpPixmap.fill(QColor(255,255,255))
-    brush = QBrush(QColor(220,220,220))
+    tmpPixmap.fill(color1)
+    brush = QBrush(color2)
 
     canvas = QPainter()
     canvas.begin(tmpPixmap)
     canvas.setPen(Qt.NoPen)
-
-    s1 = size>>1
-    s2 = size - s1
 
     canvas.setRenderHint(QPainter.Antialiasing, False)
     canvas.fillRect(QRect(0, 0, s1, s1), brush)

@@ -31,6 +31,17 @@ class EList(object):
 
         self.__list = value
         self.__index = -1
+        self.__stack = []
+
+    def __repr__(self):
+        returned=[f"<EList({len(self.__list)}, {self.__index})>"]
+        for index, item in enumerate(self.__list):
+            if index==self.__index:
+                prefix='*'
+            else:
+                prefix=' '
+            returned.append(f"{prefix}[{index:05}] {self.__list[index]}")
+        return "\n".join(returned)
 
     def value(self, index=None):
         """Return current value
@@ -40,12 +51,22 @@ class EList(object):
         """
         if not index is None:
             if index >= 0 and index < len(self.__list):
-                return self.__list[self.__index]
+                return self.__list[index]
             return None
         elif self.__index >= 0 and self.__index < len(self.__list):
             return self.__list[self.__index]
         else:
             return None
+
+    def relativeValue(self, offset=0):
+        """Return value relative to current value, using given `offset`
+
+        If `offset` is provided (positive or negative), return value for current index+offset
+        If looked index is outside bounds, return 'None'
+        """
+        if isinstance(offset, int):
+            return self.value(self.__index + offset)
+        return None
 
     def next(self, move=True):
         """Move to next item and return value
@@ -105,6 +126,14 @@ class EList(object):
                 return self.__list[len(self.__list) - 1]
             return None
 
+    def eol(self):
+        """Return True if End Of list has been reached"""
+        return self.__index >= len(self.__list)
+
+    def bol(self):
+        """Return True if Begin Of list has been reached"""
+        return self.__index < 0
+
     def index(self):
         """Return current index"""
         return self.__index
@@ -137,3 +166,20 @@ class EList(object):
     def resetIndex(self):
         """Reset index to none"""
         self.__index=-1
+
+    def pushIndex(self):
+        """Push current index in stack"""
+        self.__stack.append(self.__index)
+
+    def popIndex(self):
+        """Pop index from stack
+
+        If stack is empty, does nothing
+        """
+        if len(self.__stack)==0:
+            return None
+        self.__index=self.__stack.pop()
+
+    def resetStack(self):
+        """Reset current stack content (action doesn't modify current index)"""
+        self.__stack=[]

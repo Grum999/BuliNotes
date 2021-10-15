@@ -62,7 +62,7 @@ class WColorButton(QToolButton):
             # don't let external code trying to set button text: there's no text :)
             pass
 
-        self.__color = Qt.white
+        self.__color = QEColor(Qt.white)
         self.__brush = QBrush(self.__color, Qt.SolidPattern)
         self.__cbBrush = checkerBoardBrush(16)
         self.__pen = QPen(QColor("#88888888"))

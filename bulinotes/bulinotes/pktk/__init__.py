@@ -9,4 +9,3 @@ if not pluginsPath in sys.path:
     # import <plugin>.pktk.modules.xxxxx
     # import <plugin>.pktk.widgets.xxxxx
     sys.path.append(pluginsPath)
-
