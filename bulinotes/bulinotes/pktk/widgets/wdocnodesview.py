@@ -34,11 +34,11 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.imgutils import (buildIcon, checkerBoardBrush)
-from pktk.modules.ekrita import EKritaNode
-from pktk.modules.iconsizes import IconSizes
-from pktk.widgets.wstandardcolorselector import WStandardColorSelector
-
+from ..modules.imgutils import (buildIcon, checkerBoardBrush)
+from ..modules.ekrita import EKritaNode
+from ..modules.iconsizes import IconSizes
+from .wstandardcolorselector import WStandardColorSelector
+from ..pktk import *
 
 class DocNodeUuid:
     """Maintain document tree nodes with unique id

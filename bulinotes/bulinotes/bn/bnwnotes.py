@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------------
 import time
 
-from pktk import *
+from bulinotes.pktk import *
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
@@ -33,8 +33,8 @@ from .bnnotes import (
                 BNNotes
             )
 
-from pktk.modules.timeutils import tsToStr
-from pktk.widgets.wstandardcolorselector import (
+from bulinotes.pktk.modules.timeutils import tsToStr
+from bulinotes.pktk.widgets.wstandardcolorselector import (
         WStandardColorSelector,
         WMenuStandardColorSelector
     )

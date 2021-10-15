@@ -31,7 +31,7 @@ from krita import (
                 Resource
             )
 
-from pktk import *
+from bulinotes.pktk import *
 
 import PyQt5.uic
 from PyQt5.Qt import *
@@ -39,30 +39,30 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.timeutils import (
+from bulinotes.pktk.modules.timeutils import (
                         tsToStr,
                         secToStrTime,
                         Timer
                     )
-from pktk.modules.imgutils import (
+from bulinotes.pktk.modules.imgutils import (
                         qImageToPngQByteArray,
                         imgBoxSize
                     )
-from pktk.modules.strutils import (indent, stripHtml)
-from pktk.modules.strtable import (TextTable, TextTableSettingsText)
-from pktk.modules.edialog import EDialog
-from pktk.modules.ekrita import EKritaNode
-from pktk.modules.bytesrw import BytesRW
-from pktk.widgets.wstandardcolorselector import WStandardColorSelector
-from pktk.widgets.wmenuitem import (WMenuBrushesPresetSelector, WMenuColorPicker)
-from pktk.widgets.wcolorselector import WColorPicker
-from pktk.widgets.wdocnodesview import WDocNodesViewDialog
-from pktk.widgets.wtextedit import (
+from bulinotes.pktk.modules.strutils import (indent, stripHtml)
+from bulinotes.pktk.modules.strtable import (TextTable, TextTableSettingsText)
+from bulinotes.pktk.modules.edialog import EDialog
+from bulinotes.pktk.modules.ekrita import EKritaNode
+from bulinotes.pktk.modules.bytesrw import BytesRW
+from bulinotes.pktk.widgets.wstandardcolorselector import WStandardColorSelector
+from bulinotes.pktk.widgets.wmenuitem import (WMenuBrushesPresetSelector, WMenuColorPicker)
+from bulinotes.pktk.widgets.wcolorselector import WColorPicker
+from bulinotes.pktk.widgets.wdocnodesview import WDocNodesViewDialog
+from bulinotes.pktk.widgets.wtextedit import (
                                 WTextEditDialog,
                                 WTextEdit,
                                 WTextEditBtBarOption
                             )
-from pktk.widgets.wefiledialog import WEFileDialog
+from bulinotes.pktk.widgets.wefiledialog import WEFileDialog
 
 from .bnbrush import (BNBrush, BNBrushes)
 from .bnlinkedlayer import (BNLinkedLayer, BNLinkedLayers)

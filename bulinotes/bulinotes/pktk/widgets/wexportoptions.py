@@ -26,6 +26,7 @@
 import PyQt5.uic
 
 import os
+import sys
 
 from krita import InfoObject
 
@@ -37,23 +38,47 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 
-from pktk.modules.utils import loadXmlUi
-from pktk.widgets.wcolorselector import WColorPicker
-
+from ..modules.utils import loadXmlUi
+from .wcolorselector import WColorPicker
+from .wcolorbutton import WColorButton
+from ..pktk import *
 
 class WExportOptionsPng(QWidget):
     """A wdiget to manage PNG export options"""
+    optionUpdated = Signal()          # when an option is changed from user interface
+    optionChanged = Signal()          # when options are changed programmatically
 
     def __init__(self, parent=None):
         super(WExportOptionsPng, self).__init__(parent)
 
         uiFileName = os.path.join(os.path.dirname(__file__), '..', 'resources', 'wexportoptionspng.ui')
+
+        # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
+        # because of WColorButton path that must be absolut in UI file
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
         loadXmlUi(uiFileName, self)
+
+        # remove temporary added path
+        sys.path.pop()
 
         self.rbStoreAlpha.toggled.connect(self.__transparentColorState)
         self.pbBgColor.colorPicker().setStandardLayout('hsv')
         self.pbBgColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
         self.__transparentColorState(self.rbStoreAlpha.isChecked())
+
+        self.hsCompressionLevel.valueChanged.connect(self.__propUpdated)
+        self.cbIndexed.stateChanged.connect(self.__propUpdated)
+        self.cbInterlacing.stateChanged.connect(self.__propUpdated)
+        self.cbSaveICCProfile.stateChanged.connect(self.__propUpdated)
+        self.cbForceConvertsRGB.stateChanged.connect(self.__propUpdated)
+        self.rbStoreAlpha.toggled.connect(self.__propUpdated)
+        self.rbUseBgColor.toggled.connect(self.__propUpdated)
+        self.pbBgColor.colorChanged.connect(self.__propUpdated)
+
+    def __propUpdated(self, value):
+        """A property has been updated"""
+        self.optionUpdated.emit()
 
     def __transparentColorState(self, checked):
         """Change Transparent color button state (enabled/disables) according to current 'Store Alpha Channel' option"""
@@ -74,7 +99,7 @@ class WExportOptionsPng(QWidget):
             returned.setProperty('saveSRGBProfile', self.cbSaveICCProfile.isChecked())
             returned.setProperty('forceSRGB', self.cbForceConvertsRGB.isChecked())
             returned.setProperty('alpha', self.rbStoreAlpha.isChecked())
-            returned.setProperty('transparencyFillcolor', [color.red(), color.green(), color.blue()])
+            returned.setProperty('transparencyFillcolor', QColor(color))
         else:
             returned={
                 'compression': self.hsCompressionLevel.value(),
@@ -124,18 +149,41 @@ class WExportOptionsPng(QWidget):
 
         self.__transparentColorState(self.rbStoreAlpha.isChecked())
 
+        self.optionChanged.emit()
 
 class WExportOptionsJpeg(QWidget):
     """A wdiget to manage JPEG export options"""
+    optionUpdated = Signal()          # when an option is changed from user interface
+    optionChanged = Signal()          # when options are changed programmatically
 
     def __init__(self, parent=None):
         super(WExportOptionsJpeg, self).__init__(parent)
 
         uiFileName = os.path.join(os.path.dirname(__file__), '..', 'resources', 'wexportoptionsjpeg.ui')
+
+        # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
+        # because of WColorButton path that must be absolut in UI file
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
         loadXmlUi(uiFileName, self)
+
+        # remove temporary added path
+        sys.path.pop()
 
         self.pbBgColor.colorPicker().setStandardLayout('hsv')
         self.pbBgColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+
+        self.hsQuality.valueChanged.connect(self.__propUpdated)
+        self.hsSmoothing.valueChanged.connect(self.__propUpdated)
+        self.cbxSubsampling.currentIndexChanged.connect(self.__propUpdated)
+        self.cbProgressive.stateChanged.connect(self.__propUpdated)
+        self.cbOptimize.stateChanged.connect(self.__propUpdated)
+        self.cbSaveICCProfile.stateChanged.connect(self.__propUpdated)
+        self.pbBgColor.colorChanged.connect(self.__propUpdated)
+
+    def __propUpdated(self, value=None):
+        """A property has been updated"""
+        self.optionUpdated.emit()
 
     def options(self, asInfoObject=False):
         """Return current options
@@ -152,7 +200,7 @@ class WExportOptionsJpeg(QWidget):
             returned.setProperty('progressive', self.cbProgressive.isChecked())
             returned.setProperty('optimize', self.cbOptimize.isChecked())
             returned.setProperty('saveProfile', self.cbSaveICCProfile.isChecked())
-            returned.setProperty('transparencyFillcolor', [color.red(), color.green(), color.blue()])
+            returned.setProperty('transparencyFillcolor', QColor(color))
         else:
             returned={
                 'quality': self.hsQuality.value(),
@@ -201,3 +249,5 @@ class WExportOptionsJpeg(QWidget):
             self.cbOptimize.setChecked(ioProp('optimize', True))
             self.cbSaveICCProfile.setChecked(ioProp('saveProfile', False))
             self.pbBgColor.setColor(ioProp('transparencyFillcolor', Qt.white))
+
+        self.optionChanged.emit()

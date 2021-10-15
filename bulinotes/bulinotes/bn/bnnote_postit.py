@@ -30,7 +30,7 @@ from krita import (
                 Resource
             )
 
-from pktk import *
+from bulinotes.pktk import *
 
 import PyQt5.uic
 from PyQt5.Qt import *
@@ -46,10 +46,10 @@ from .bnwlinkedlayers import (
                     BNLinkedLayersModel,
                     BNWLinkedLayers
                 )
-from pktk.modules.imgutils import buildIcon
-from pktk.modules.timeutils import Timer
-from pktk.modules.ekrita import EKritaDocument
-from pktk.widgets.wtoolbox import WToolBox
+from bulinotes.pktk.modules.imgutils import buildIcon
+from bulinotes.pktk.modules.timeutils import Timer
+from bulinotes.pktk.modules.ekrita import EKritaDocument
+from bulinotes.pktk.widgets.wtoolbox import WToolBox
 
 
 

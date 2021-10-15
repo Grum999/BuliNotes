@@ -20,19 +20,19 @@
 # -----------------------------------------------------------------------------
 import re
 
-from pktk import *
+from bulinotes.pktk import *
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.imgutils import (checkerBoardBrush, warningAreaBrush)
-from pktk.modules.strutils import stripHtml
-from pktk.modules.iconsizes import IconSizes
-from pktk.modules.edialog import EDialog
-from pktk.widgets.wtextedit import (WTextEdit, WTextEditBtBarOption)
-from pktk.widgets.wdocnodesview import DocNodesModel
+from bulinotes.pktk.modules.imgutils import (checkerBoardBrush, warningAreaBrush)
+from bulinotes.pktk.modules.strutils import stripHtml
+from bulinotes.pktk.modules.iconsizes import IconSizes
+from bulinotes.pktk.modules.edialog import EDialog
+from bulinotes.pktk.widgets.wtextedit import (WTextEdit, WTextEditBtBarOption)
+from bulinotes.pktk.widgets.wdocnodesview import DocNodesModel
 
 from .bnlinkedlayer import BNLinkedLayer
 from .bnsettings import (BNSettings, BNSettingsKey)

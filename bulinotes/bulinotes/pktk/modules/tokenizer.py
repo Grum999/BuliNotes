@@ -27,18 +27,21 @@ import re
 import time
 
 from PyQt5.Qt import *
-from pktk.modules.elist import EList
-from pktk.modules.uitheme import UITheme
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from .elist import EList
+from .uitheme import UITheme
+from ..pktk import *
 
 
 class TokenType(Enum):
+    # some default token type
     UNKNOWN = ('Unknown', 'This value is not know in grammar and might not be interpreted')
     NEWLINE = ('New line', 'A line feed')
     SPACE = ('Space', 'Space(s) character(s)')
+    INDENT = ('Indent', 'An indented block start')
+    DEDENT = ('Dedent', 'An indented block finished')
+    WRONG_INDENT = ('WrongIndent', 'An indent is found but doesn\'t match expected indentation value')
+    WRONG_DEDENT = ('WrongDedent', 'An dedent is found but doesn\'t match expected indentation value')
+    COMMENT = ('Comment', 'A comment text')
 
     def id(self, **param):
         """Return token Id value"""
@@ -53,6 +56,7 @@ class TokenType(Enum):
             return self.value[1].format(**param)
         else:
             return self.value[1]
+
 
 class TokenStyle:
     """Define styles applied for tokens types"""
@@ -115,6 +119,7 @@ class TokenStyle:
         if themeId in self.__currentThemeId:
             self.__currentThemeId=themeId
 
+
 class Token(object):
     """A token
 
@@ -133,7 +138,7 @@ class Token(object):
         Token.__LINE_NUMBER = 1
         Token.__LINE_POSSTART = 0
 
-    def __init__(self, text, rule, positionStart, positionEnd, length):
+    def __init__(self, text, rule, positionStart, positionEnd, length, simplifySpaces=False):
         self.__text = text.lstrip()
         self.__rule = rule
         self.__positionStart=positionStart
@@ -144,13 +149,24 @@ class Token(object):
         self.__linePositionEnd=self.__linePositionStart + length
         self.__next = None
         self.__previous = None
+        self.__simplifySpaces=simplifySpaces
 
         if self.type()==TokenType.NEWLINE:
             self.__indent=0
-            Token.__LINE_NUMBER+=1
+            Token.__LINE_NUMBER+=text.count('\n')
             Token.__LINE_POSSTART=positionEnd
         else:
             self.__indent=len(text) - len(self.__text)
+
+        if simplifySpaces and self.type()!=TokenType.COMMENT:
+            # do not simplify COMMENT token
+            self.__text=re.sub("\s+", " ", self.__text)
+
+        self.__caseInsensitive=self.__rule.caseInsensitive()
+        self.__iText=self.__text.lower()
+
+        self.__value=self.__rule.initValue(self.__text)
+
 
     def __repr__(self):
         if self.type()==TokenType.NEWLINE:
@@ -163,7 +179,7 @@ class Token(object):
                 f"Line[Start: {self.__linePositionStart}, End: {self.__linePositionEnd}, Number: {self.__lineNumber}])>")
 
     def __str__(self):
-        return f'| {self.__linePositionStart:>5} | {self.__lineNumber:>5} | {self.type():<50} | {self.__length:>2} | `{self.__text}`'
+        return f'| {self.__linePositionStart:>5} | {self.__lineNumber:>5} | {self.__indent:>2} | {self.type():<50} | {self.__length:>2} | `{self.__text}`'
 
     def type(self):
         """return token type"""
@@ -188,6 +204,15 @@ class Token(object):
     def text(self):
         """Return token text"""
         return self.__text
+
+    def value(self):
+        """Return token value
+
+        Value can differ from text:
+        - text is raw text, provided as string value
+        - value is a pre-processed text
+        """
+        return self.__value
 
     def rule(self):
         """Return token rule"""
@@ -220,6 +245,46 @@ class Token(object):
     def isUnknown(self):
         """return if it's an unknown token"""
         return (self.__rule.type() == TokenType.UNKNOWN)
+
+    def simplifySpaces(self):
+        """Return if spaces are simplified or not"""
+        return self.__simplifySpaces
+
+    def equal(self, value, doLower=False, caseInsensitive=None):
+        """Check if given text `value` equals or not text value from token
+
+        If given `value` is a list, check if token text is in given list
+
+        If `doLower` is True, equal() will lowercase value before comparison (if case insensitive)
+        If False, consider that when equal function is called, value are already provided as lowercase
+        (avoid to lowercase on each call can improve performance)
+
+        This method take in account if the rule is case sensitive or not
+        If `caseInsensitive` is provided (True or False) it will overrides the rule defined by tokenizerule
+        Otherwise (None value) comparison will use the rule defined by tokenizerule
+        """
+        if caseInsensitive is None:
+            checkCaseInsensitive=self.__caseInsensitive
+        else:
+            checkCaseInsensitive=(caseInsensitive==True)
+
+        if isinstance(value, str):
+            if checkCaseInsensitive:
+                if doLower:
+                    value=value.lower()
+
+                return (self.__iText==value)
+            else:
+                return (self.__text==value)
+        elif isinstance(value, list) or isinstance(value, tuple):
+            if checkCaseInsensitive:
+                if doLower:
+                    lValue=[v.lower() for v in value]
+                    return (self.__iText in lValue)
+                return (self.__iText in value)
+            else:
+                return (self.__text in value)
+
 
 class Tokens(EList):
     """A tokenized text with facilities to access and parse tokens"""
@@ -332,6 +397,7 @@ class Tokens(EList):
 
         return None
 
+
 class TokenizerRule(object):
     """Define a rule used by tokenizer to build a token
 
@@ -353,6 +419,7 @@ class TokenizerRule(object):
         *XXX* => italic
         --- => separator
         `` => monospace
+        (xx)[yy] => hyperlink <a href='yy'>xx</a>
         """
         def parsedText(text):
             text=text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
@@ -360,24 +427,42 @@ class TokenizerRule(object):
             text=re.sub(r'\*([^*]+)\*', r'<i>\1</i>', text)
             text=re.sub(r'`([^`]+)`', r'<span style="font-family:monospace">\1</span>', text)
             text=re.sub(r'\n*---\n*', '<hr>', text)
+            text=re.sub(r'\((.+)\)\[(.+)\]', r'<a href="\2">\1</a>', text)
             text=text.replace('\n', '<br>')
             return text
 
         returned=[]
 
         if isinstance(title, str) and title.strip()!='':
-            returned.append(f'<b>{title}</b><br>')
+            returned.append(f'<b><!-- title -->{parsedText(title)}<!-- title --></b><hr>')
 
         if isinstance(description, str) and description.strip()!='':
-            returned.append(parsedText(description))
+            returned.append(f'<!-- description -->{parsedText(description)}<!-- description -->')
 
         if isinstance(example, str) and example.strip()!='':
             returned.append('<hr><i>Example</i><br><br>')
-            returned.append(parsedText(example))
+            returned.append(f'<!-- example -->{parsedText(example)}<!-- example -->')
 
         return ''.join(returned)
 
-    def __init__(self, type, regex, description=None, autoCompletion=None, autoCompletionChar=None, caseInsensitive=True):
+    @staticmethod
+    def descriptionExtractSection(description, section="title"):
+        """Extract section from a TokenizerRule description
+
+        Possible `section` value are:
+        - "title"       (default)
+        - "description"
+        - "example"
+        """
+        regEx=fr'<!--\s+{section}\s+-->(.*)<!--\s+{section}\s+-->'
+
+        if result:=re.search(fr'<!--\s+{section}\s+-->(.*)<!--\s+{section}\s+-->', description):
+            return result.groups()[0]
+        else:
+            return ""
+
+
+    def __init__(self, type, regex, description=None, autoCompletion=None, autoCompletionChar=None, caseInsensitive=True, ignoreIndent=False, onInitValue=None):
         """Initialise a tokenizer rule
 
         Given `type` determinate which type of token will be generated by rule
@@ -388,13 +473,28 @@ class TokenizerRule(object):
             When given as a list(str), consider there's multiple possible autocompletion
             When given as a tuple, consider there's only one possible autocompletion; tuple is in form (value, description)
             When given as a list(tuple), consider there's multiple possible autocompletion; tuple is in form (value, description)
+        Given `caseInsensitive` allows to define if token is case sensitive or case insensitive (default)
+        Given `ignoreIndent` allows to define if token ignore or not indent (default False)
+            For example, no INDENT/DEDENT token is produced before a token with `ignoreIndent` set to True
+        Given `onInitValue` allows to define a function called when a Token is defined from rule
+            Called function will get TokenType and token value and return new value
+            Mainly, this can be used to pre-process tokens like:
+            - pre-convert a "number" as real number   (ie: value "45.7" <str> will be converted as 45.7 <float>)
         """
         self.__type = None
         self.__regEx = None
+        self.__regExSingle = None           # put in cache a QRegularExpression with '^....$' to match single values (improve speed!)
         self.__error = []
+        self.__description=description
         self.__autoCompletion = []
         self.__autoCompletionChar = None
         self.__caseInsensitive = caseInsensitive
+        self.__ignoreIndent=ignoreIndent
+
+        if callable(onInitValue):
+            self.__onInitValue=onInitValue
+        else:
+            self.__onInitValue=None
 
         if isinstance(autoCompletionChar, str):
             self.__autoCompletionChar = autoCompletionChar
@@ -453,6 +553,18 @@ class TokenizerRule(object):
 
         self.__regEx = regEx
 
+
+        pattern=regEx.pattern()
+        if pattern!='' and pattern[0]=='^':
+            pattern+='$'
+        else:
+            pattern=f'^{regEx.pattern()}$'
+
+        if self.__caseInsensitive:
+            self.__regExSingle = QRegularExpression(pattern, QRegularExpression.CaseInsensitiveOption)
+        else:
+            self.__regExSingle = QRegularExpression(pattern)
+
     def __setType(self, value):
         """Set current type for rule"""
         if isinstance(value, TokenType):
@@ -460,8 +572,10 @@ class TokenizerRule(object):
         else:
             self.__error.append("Given type must be a valid <TokenType>")
 
-    def regEx(self):
+    def regEx(self, single=False):
         """Return regular expression for rule (as QRegularExpression)"""
+        if single:
+            return self.__regExSingle
         return self.__regEx
 
     def type(self):
@@ -491,6 +605,25 @@ class TokenizerRule(object):
     def autoCompletionChar(self):
         """Return autoCompletion character"""
         return self.__autoCompletionChar
+
+    def onInitValue(self):
+        """Return callable function used for initValue() or None if no function has been defined"""
+        return self.__onInitValue
+
+    def initValue(self, value):
+        """Process given `value`
+
+        Return processed value from onInitValue() callable
+        Or just return value is no callable has been defined
+        """
+        if self.__onInitValue is None:
+            return value
+        else:
+            return self.__onInitValue(self.__type, value)
+
+    def ignoreIndent(self):
+        """Return if token ignore or not indent/dedent"""
+        return self.__ignoreIndent
 
     def matchText(self, matchText, full=False):
         """Return rule as a autoCompletion (return list of tuple (str, str, rule), or empty list if there's no text representation) and
@@ -525,6 +658,7 @@ class TokenizerRule(object):
 
         return returned
 
+
 class Tokenizer(object):
     """A tokenizer will 'split' a text into tokens, according to given rules
 
@@ -542,6 +676,11 @@ class Tokenizer(object):
     POP_RULE_FIRST = 1
     POP_RULE_ALL = 2
 
+    __TOKEN_INDENT_RULE=TokenizerRule(TokenType.INDENT, '')
+    __TOKEN_DEDENT_RULE=TokenizerRule(TokenType.DEDENT, '')
+    __TOKEN_WRONGINDENT_RULE=TokenizerRule(TokenType.WRONG_INDENT, '')
+    __TOKEN_WRONGDEDENT_RULE=TokenizerRule(TokenType.WRONG_DEDENT, '')
+
     def __init__(self, rules=None):
         # internal storage for rules (list of TokenizerRule)
         self.__rules = []
@@ -557,6 +696,19 @@ class Tokenizer(object):
         # a cache to store tokenized code
         self.__cache={}
         self.__cacheOrdered=[]
+
+        # when True, for token including spaces, reduce consecutive spaces to 1
+        # example: 'set    value'
+        #       => 'set value'
+        self.__simplifyTokenSpaces=False
+
+        # indent value
+        #   When
+        #       -1: indent value is defined automatically on first found indent,
+        #           and then is used
+        #       0:  ignore indent
+        #       N:  indent value is defined by given positive number
+        self.__indent=0
 
         if not rules is None:
             self.setRules(rules)
@@ -629,6 +781,22 @@ class Tokenizer(object):
             self.__cache[hashValue]=[time.time(), tokens, len(self.__cacheOrdered)]
             self.__cacheOrdered.append(hashValue)
             self.__cache[hashValue][1].resetIndex()
+
+    def indent(self):
+        """Return current indent value used to generate INDENT/DEDENT tokens"""
+        return self.__indent
+
+    def setIndent(self, value):
+        """Set indent value used to generate INDENT/DEDENT tokens"""
+        if not isinstance(value, int):
+            raise EInvalidType("Given `value` must be <int>")
+
+        if value<0 and self.__indent!=-1:
+            self.__indent=-1
+            self.__needUpdate=True
+        elif self.__indent!=value:
+            self.__indent=value
+            self.__needUpdate=True
 
     def addRule(self, rules, mode=None):
         """Add tokenizer rule(s)
@@ -720,7 +888,7 @@ class Tokenizer(object):
 
         Otherwise clear oldest values
         - At least 5 items are kept in cache
-        - At most, 50 items are kept in cache
+        - At most, 250 items are kept in cache
         """
         if full:
             self.__cache={}
@@ -738,9 +906,29 @@ class Tokenizer(object):
                 for key in keys:
                     self.__setCache(key, False)
 
+    def simplifyTokenSpaces(self):
+        """Return if option 'simplify token spaces' is active or not"""
+        return self.__simplifyTokenSpaces
+
+    def setSimplifyTokenSpaces(self, value):
+        """Set if option 'simplify token spaces' is active or not"""
+        if not isinstance(value, bool):
+            raise EInvalidType("Given ` value` must be a <bool>")
+
+        if value!=self.__simplifyTokenSpaces:
+            self.__simplifyTokenSpaces=value
+            self.__needUpdate=True
+
 
     def tokenize(self, text):
         """Tokenize given text
+
+        If ` stripSpaces` is True, token spaces are simplified
+
+        Example:
+            token 'set   value'
+            is returned as 'set value'
+
 
         Return a Tokens object
         """
@@ -772,34 +960,99 @@ class Tokenizer(object):
 
         Token.resetTokenizer()
 
+        indent = self.__indent
+        previousIndent = 0
         previousToken = None
         # iterate all found tokens
         while matchIterator.hasNext():
             match = matchIterator.next()
 
-            if match.hasMatch():
-                for textIndex in range(len(match.capturedTexts())):
-                    value = match.captured(textIndex)
+            for textIndex in range(len(match.capturedTexts())):
+                value = match.captured(textIndex)
 
-                    position = 0
-                    for rule in self.__rules:
-                        if rule.caseInsensitive():
-                            options=QRegularExpression.CaseInsensitiveOption
-                        else:
-                            options=QRegularExpression.NoPatternOption
+                position = 0
+                for rule in self.__rules:
+                    if rule.caseInsensitive():
+                        options=QRegularExpression.CaseInsensitiveOption
+                    else:
+                        options=QRegularExpression.NoPatternOption
 
-                        if QRegularExpression(f'^{rule.regEx().pattern()}$', options).match(value).hasMatch():
-                            token = Token(match.captured(textIndex), rule,
-                                            match.capturedStart(textIndex),
-                                            match.capturedEnd(textIndex),
-                                            match.capturedLength(textIndex))
-                            token.setPrevious(previousToken)
-                            if not previousToken is None:
-                                previousToken.setNext(token)
-                            returned.append(token)
-                            previousToken=token
-                            # do not need to continue to check for another token type
-                            break
+                    if rule.regEx(True).match(value).hasMatch():
+                        tokenText=match.captured(textIndex)
+                        token = Token(tokenText, rule,
+                                      match.capturedStart(textIndex),
+                                      match.capturedEnd(textIndex),
+                                      match.capturedLength(textIndex),
+                                      self.__simplifyTokenSpaces)
+
+                        # ---- manage indent/dedent ----
+                        if not rule.ignoreIndent() and indent!=0 and (re.search('^\s*$', tokenText) is None) and token.column()==1:
+                            # indent value is not zero => means that indent are managed
+                            # token is not empty string (only spaces and/or newline)
+                            if indent<0 and token.indent()>0:
+                                # if indent is negative, define indent value with first indented token
+                                indent=token.indent()
+
+                            if indent>0:
+                                if previousIndent<token.indent():
+                                    # token indent is greater than previous indent value
+                                    # need to add INDENT token
+                                    nbIndent, nbWrongIndent=divmod(token.indent() - previousIndent, indent)
+
+                                    for numIndent in range(nbIndent):
+                                        pStart=token.positionStart() + indent * numIndent
+                                        pEnd=token.positionStart() + indent * (numIndent + 1)
+                                        length=pEnd-pStart
+
+                                        tokenIndent=Token(' ' * indent, Tokenizer.__TOKEN_INDENT_RULE, pStart, pEnd, length)
+                                        tokenIndent.setPrevious(previousToken)
+                                        returned.append(tokenIndent)
+                                        previousToken=tokenIndent
+
+                                    if nbWrongIndent>0:
+                                        pStart=token.positionStart() + indent * (numIndent + 1)
+                                        pEnd=pStart+nbWrongIndent
+
+                                        tokenIndent=Token(' ' * nbWrongIndent, Tokenizer.__TOKEN_WRONGINDENT_RULE, pStart, pEnd, nbWrongIndent)
+                                        tokenIndent.setPrevious(previousToken)
+                                        returned.append(tokenIndent)
+                                        previousToken=tokenIndent
+
+                                elif previousIndent>token.indent():
+                                    # token indent is lower than previous indent value
+                                    # need to add DEDENT token
+                                    nbIndent, nbWrongIndent=divmod(previousIndent - token.indent(), indent)
+
+                                    for numIndent in range(nbIndent):
+                                        pStart=token.positionStart() + indent * numIndent
+                                        pEnd=token.positionStart() + indent * (numIndent + 1)
+                                        length=pEnd-pStart
+
+                                        tokenIndent=Token(' ' * indent, Tokenizer.__TOKEN_DEDENT_RULE, pStart, pEnd, length)
+                                        tokenIndent.setPrevious(previousToken)
+                                        returned.append(tokenIndent)
+                                        previousToken=tokenIndent
+
+                                    if nbWrongIndent>0:
+                                        pStart=token.positionStart() + indent * (numIndent + 1)
+                                        pEnd=pStart+nbWrongIndent
+
+                                        tokenIndent=Token(' ' * nbWrongIndent, Tokenizer.__TOKEN_WRONGDEDENT_RULE, pStart, pEnd, nbWrongIndent)
+                                        tokenIndent.setPrevious(previousToken)
+                                        returned.append(tokenIndent)
+                                        previousToken=tokenIndent
+
+                                previousIndent=token.indent()
+
+
+                        token.setPrevious(previousToken)
+                        if not previousToken is None:
+                            previousToken.setNext(token)
+                        returned.append(token)
+                        previousToken=token
+
+                        # do not need to continue to check for another token type
+                        break
 
         # add
         self.__setCache(hashValue, Tokens(text, returned))

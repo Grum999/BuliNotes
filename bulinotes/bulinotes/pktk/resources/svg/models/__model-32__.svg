@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    viewBox="0 0 16 16"
    version="1.1"
    id="svg5"
    sodipodi:docname="__model-32__.svg"
-   inkscape:version="1.0.2 (e86c870, 2021-01-15)"
+   inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
    width="32"
-   height="32">
+   height="32"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
   <metadata
      id="metadata9">
     <rdf:RDF>
@@ -22,7 +22,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -35,15 +34,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1912"
-     inkscape:window-height="1009"
+     inkscape:window-width="1711"
+     inkscape:window-height="1945"
      id="namedview7"
-     showgrid="false"
+     showgrid="true"
      inkscape:zoom="32"
-     inkscape:cx="12.822037"
-     inkscape:cy="1.3595339"
-     inkscape:window-x="3840"
-     inkscape:window-y="0"
+     inkscape:cx="17.84375"
+     inkscape:cy="9.375"
+     inkscape:window-x="1961"
+     inkscape:window-y="29"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg5"
      inkscape:snap-bbox="true"
@@ -51,7 +50,15 @@
      inkscape:snap-page="true"
      inkscape:document-rotation="0"
      inkscape:snap-bbox-edge-midpoints="true"
-     inkscape:object-nodes="false" />
+     inkscape:object-nodes="false"
+     inkscape:pagecheckerboard="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid1199"
+       units="px"
+       spacingx="0.5"
+       spacingy="0.5" />
+  </sodipodi:namedview>
   <defs
      id="defs3051">
     <style

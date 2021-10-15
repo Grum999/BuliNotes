@@ -47,8 +47,8 @@ if __name__ != '__main__':
             EInvalidValue,
             PkTk
         )
-    from pktk.modules.utils import checkKritaVersion
-    from .bn.bnuidocker import BNUiDocker
+    from bulinotes.pktk.modules.utils import checkKritaVersion
+    from bulinotes.bn.bnuidocker import BNUiDocker
 else:
     # Execution from 'Scripter' plugin?
     __PLUGIN_EXEC_FROM__ = 'SCRIPTER_PLUGIN'
@@ -69,8 +69,8 @@ else:
             EInvalidValue,
             PkTk
         )
-    from pktk.modules.utils import checkKritaVersion
-    from .bn.bnuidocker import BNUiDocker
+    from bulinotes.pktk.modules.utils import checkKritaVersion
+    from bulinotes.bn.bnuidocker import BNUiDocker
 
     print("======================================")
 

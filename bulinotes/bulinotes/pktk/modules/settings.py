@@ -37,10 +37,7 @@ import shutil
 
 from .utils import Debug
 
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from ..pktk import *
 
 
 class SettingsFmt(object):
@@ -62,20 +59,39 @@ class SettingsFmt(object):
             raise EInvalidType(f'Given `value` ({value}) is not from expected type ({checkType})')
 
         if not self.__values is None:
-            if isinstance(value, list) or isinstance(value, tuple):
-                # need to check all items
-                if isinstance(self.__values, type):
+            if isinstance(value, (list, tuple)):
+                # value is a list, need to check all items in the list
+                if isinstance(self.__values, (list, tuple)):
+                    # possible values provided as a list
                     # check if all items are of given type
                     for item in value:
-                        self.check(item, self.__values)
+                        if not item in self.__values:
+                            raise EInvalidValue('Given `value` ({0}) is not in authorized perimeter ({1})'.format(item, self.__values))
                 else:
                     # check items values
                     for item in value:
                         self.check(item)
-            elif isinstance(self.__values, list) or isinstance(self.__values, tuple):
+            elif isinstance(self.__values, list):
+                # check if given value is in list of defined values
                 if not value in self.__values:
                     raise EInvalidValue('Given `value` ({0}) is not in authorized perimeter ({1})'.format(value, self.__values))
+            elif isinstance(self.__values, tuple):
+                # check if given value is in range defined by tuple
+                if self.__values[0] is None and self.__values[1] is None:
+                    # stupid case but need to ensure taht both values are not None
+                    return
+                elif self.__values[0] is None:
+                    # no minimum value, just check maximum
+                    if value>self.__values[1]:
+                        raise EInvalidValue('Given `value` ({0}) is not in authorized perimeter [{0}<={1}])'.format(value, self.__values[1]))
+                elif self.__values[1] is None:
+                    # no maximum value, just check minimum
+                    if value<self.__values[0]:
+                        raise EInvalidValue('Given `value` ({0}) is not in authorized perimeter [{1}<={0}])'.format(value, self.__values[1]))
+                elif value<self.__values[0] or value>self.__values[1]:
+                    raise EInvalidValue('Given `value` ({0}) is not in authorized perimeter [{1}<={0}<={2}])'.format(value, self.__values[0], self.__values[1]))
             elif isinstance(self.__values, re.Pattern):
+                # check if value match regular expression
                 if self.__values.match(value) is None:
                     raise EInvalidValue('Given `value` ({0}) is not in authorized perimeter'.format(value))
 

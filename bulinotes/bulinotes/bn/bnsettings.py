@@ -20,13 +20,13 @@
 # -----------------------------------------------------------------------------
 
 
-from pktk.modules.settings import (
+from bulinotes.pktk.modules.settings import (
                         Settings,
                         SettingsFmt,
                         SettingsKey,
                         SettingsRule
                     )
-from pktk.widgets.wcolorselector import WColorPicker
+from bulinotes.pktk.widgets.wcolorselector import WColorPicker
 
 class BNSettingsKey(SettingsKey):
     """Configuration keys"""

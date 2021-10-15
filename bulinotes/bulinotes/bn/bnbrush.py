@@ -24,7 +24,7 @@ import struct
 from krita import View
 from hashlib import blake2b
 
-from pktk import *
+from bulinotes.pktk import *
 
 import PyQt5.uic
 from PyQt5.Qt import *
@@ -32,9 +32,9 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.imgutils import qImageToPngQByteArray
-from pktk.modules.strutils import stripHtml
-from pktk.modules.bytesrw import BytesRW
+from bulinotes.pktk.modules.imgutils import qImageToPngQByteArray
+from bulinotes.pktk.modules.strutils import stripHtml
+from bulinotes.pktk.modules.bytesrw import BytesRW
 
 
 class BNBrush(QObject):

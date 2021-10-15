@@ -59,7 +59,7 @@
     </widget>
    </item>
    <item row="8" column="0">
-    <widget class="QRadioButton" name="cbUseBgColor">
+    <widget class="QRadioButton" name="rbUseBgColor">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Don't save alpha channel (transparency)&lt;/p&gt;&lt;p&gt;If checked, for files with alpha channel, defined background color will be used&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
@@ -218,7 +218,7 @@
   <customwidget>
    <class>WColorButton</class>
    <extends>QToolButton</extends>
-   <header>bulicommander.pktk.widgets.wcolorbutton</header>
+   <header>pktk.widgets.wcolorbutton</header>
   </customwidget>
  </customwidgets>
  <resources/>

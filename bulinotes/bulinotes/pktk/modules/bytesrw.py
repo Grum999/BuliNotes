@@ -179,7 +179,7 @@ class BytesRW(io.BytesIO):
         (https://docs.python.org/3/library/codecs.html#standard-encodings)
         """
         size=self.readUShort()
-        if length>0:
+        if size>0:
             b=self.read(size)
             return b.decode(encoding)
         return ''
@@ -328,10 +328,10 @@ class BytesRW(io.BytesIO):
         if len(b)>0xFF:
             b=b[0:256]
 
-        self.writeUShort(len(b))
+        w=self.writeUShort(len(b))
         if len(b)>0:
-            return self.write(b)
-        return 0
+            return self.write(b)+w
+        return w
 
 
     def writePStr2(self, value, encoding='utf-8'):
@@ -348,10 +348,10 @@ class BytesRW(io.BytesIO):
         if len(b)>0xFFFF:
             b=b[0:0x10000]
 
-        self.writeUInt2(len(b))
+        w=self.writeUInt2(len(b))
         if len(b)>0:
-            return self.write(b)
-        return 0
+            return self.write(b)+w
+        return w
 
 
     def writePStr4(self, value, encoding='utf-8'):
@@ -368,7 +368,7 @@ class BytesRW(io.BytesIO):
         if len(b)>0xFFFFFFFF:
             b=b[0:0x100000000]
 
-        self.writeUInt4(len(b))
+        w=self.writeUInt4(len(b))
         if len(b)>0:
-            return self.write(b)
-        return 0
+            return self.write(b)+w
+        return w

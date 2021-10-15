@@ -41,7 +41,7 @@ from PyQt5.QtWidgets import (
     )
 
 
-from pktk import PkTk
+from ..pktk import *
 
 # -----------------------------------------------------------------------------
 class UITheme(object):
@@ -101,6 +101,20 @@ class UITheme(object):
                 if clearPixmapCache:
                     clearPixmapCache=False
 
+    @staticmethod
+    def style(name):
+        """Return style according to current theme"""
+        for theme in UITheme.__themes:
+            # return style from first theme (should be the same for all themes)
+            return UITheme.__themes[theme].getStyle(name)
+
+    @staticmethod
+    def theme():
+        """Return style according to current theme"""
+        for theme in UITheme.__themes:
+            # return style from first theme (should be the same for all themes)
+            return UITheme.__themes[theme].getTheme()
+
 
     def __init__(self, rccPath, autoReload=True):
         """The given `rccPath` is full path to directory where .rcc files can be found
@@ -145,12 +159,12 @@ class UITheme(object):
             self.__registeredResource = None
 
 
-    def theme(self):
+    def getTheme(self):
         """Return current theme"""
         return self.__theme
 
 
-    def style(self, name):
+    def getStyle(self, name):
         """Return style according to current theme"""
         if name in UITheme.STYLES_SHEET[self.__theme]:
             return UITheme.STYLES_SHEET[self.__theme][name]
@@ -158,6 +172,6 @@ class UITheme(object):
             return UITheme.STYLES_SHEET[UITheme.DARK_THEME][name]
         return ''
 
-    def autoReload(self):
+    def getAutoReload(self):
         """Return if autoreload is activated for theme"""
         return self.__autoReload
