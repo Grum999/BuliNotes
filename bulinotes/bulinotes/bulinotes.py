@@ -76,7 +76,7 @@ else:
 
 
 EXTENSION_ID = 'pykrita_bulinotes'
-PLUGIN_VERSION = '0.4.0a'
+PLUGIN_VERSION = '0.4.0b'
 PLUGIN_MENU_ENTRY = 'Buli Notes'
 
 REQUIRED_KRITA_VERSION = (5, 0, 0)
