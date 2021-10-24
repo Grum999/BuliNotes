@@ -19,6 +19,7 @@ Interface provides:
 When a note contains embedded font(s):
 - A *f* symbol is indicated in notes list
 - Tooltip indicates number of embedded fonts
+
 ![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-4-0b_docker-embeddedfonts.jpg)
 
 
