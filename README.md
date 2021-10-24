@@ -235,6 +235,8 @@ Please note that according to this [Krita bug](https://bugs.kde.org/show_bug.cgi
 Some ideas currently in mind:
 - Tasks
   - Implement tasks list note
+- Embbeded fonts
+  - Automatically load embedded fonts when document is opened
 
 
 ## License
