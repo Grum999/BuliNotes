@@ -153,10 +153,10 @@ This can be useful to store font in a document for the following reasons:
 > - Embeddability is defined within OpenType fonts, and sometimes Adobe Type1 fonts
 > - When no embeddability information is available, plugin consider the font can't be embedded
 > - According to OpenType specifications, there's 4 possible value for embeddability:
->   -- `Installable`: font can be embedded and then loaded and/or extracted from note for installation
->   -- `Editable`: font can be embedded and then loaded from note
->   -- `Preview & Print`: font can't be embedded (as it's not possible to open a Krita document as "read-only")
->   -- `Restricted`: font can't be embedded (as it's not allowed)
+>   - **Installable**: font can be embedded and then loaded and/or extracted from note for installation
+>   - **Editable**: font can be embedded and then loaded from note
+>   - **Preview & Print**: font can't be embedded (as it's not possible to open a Krita document as "read-only")
+>   - **Restricted**: font can't be embedded (as it's not allowed)
 
 
 ## Download, Install & Execute
