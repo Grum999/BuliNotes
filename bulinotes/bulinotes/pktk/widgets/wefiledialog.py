@@ -32,7 +32,7 @@ class WEFileDialog(QFileDialog):
 
     PREVIEW_WIDTH=250
 
-    def __init__(self, caption=None, directory=None, filter=None, message=None):
+    def __init__(self, caption=None, directory=None, filter=None, message=None, withImagePreview=True):
         QFileDialog.__init__(self, None, caption, directory, filter)
 
         self.setOption(QFileDialog.DontUseNativeDialog, True)
@@ -40,19 +40,21 @@ class WEFileDialog(QFileDialog):
 
         self.__box = QVBoxLayout()
 
-        self.__lblSize = QLabel(self)
-        font=self.__lblSize.font()
-        font.setPointSize(8)
-        self.__lblSize.setFont(font)
-        self.__lblSize.setAlignment(Qt.AlignCenter)
-        self.__lblSize.setStyleSheet('font-style: italic')
+        self.__withImagePreview=withImagePreview
 
+        if self.__withImagePreview:
+            self.__lblSize = QLabel(self)
+            font=self.__lblSize.font()
+            font.setPointSize(8)
+            self.__lblSize.setFont(font)
+            self.__lblSize.setAlignment(Qt.AlignCenter)
+            self.__lblSize.setStyleSheet('font-style: italic')
 
-        self.__lblPreview = QLabel(i18n("Preview"), self)
-        self.__lblPreview.setAlignment(Qt.AlignCenter)
-        self.__lblPreview.setMinimumSize(WEFileDialog.PREVIEW_WIDTH, 0)
+            self.__lblPreview = QLabel(i18n("Preview"), self)
+            self.__lblPreview.setAlignment(Qt.AlignCenter)
+            self.__lblPreview.setMinimumSize(WEFileDialog.PREVIEW_WIDTH, 0)
 
-        self.__box.addWidget(self.__lblPreview)
+            self.__box.addWidget(self.__lblPreview)
 
         offsetRow=0
         self.__teMessage=None
@@ -91,12 +93,13 @@ class WEFileDialog(QFileDialog):
                 for itemNfo in rows[row]:
                     self.layout().addItem(itemNfo[2], itemNfo[1][0]+1, itemNfo[1][1], itemNfo[1][2], itemNfo[1][3])
 
-        self.layout().addWidget(self.__lblPreview, 1+offsetRow, 3, Qt.AlignLeft)
-        self.layout().addWidget(self.__lblSize, 2+offsetRow, 3, Qt.AlignCenter)
+        if self.__withImagePreview:
+            self.layout().addWidget(self.__lblPreview, 1+offsetRow, 3, Qt.AlignLeft)
+            self.layout().addWidget(self.__lblSize, 2+offsetRow, 3, Qt.AlignCenter)
 
-        self.currentChanged.connect(self.__changed)
-        self.fileSelected.connect(self.__fileSelected)
-        self.filesSelected.connect(self.__filesSelected)
+            self.currentChanged.connect(self.__changed)
+            self.fileSelected.connect(self.__fileSelected)
+            self.filesSelected.connect(self.__filesSelected)
 
         self.__fileSelected = ''
         self.__filesSelected = []
