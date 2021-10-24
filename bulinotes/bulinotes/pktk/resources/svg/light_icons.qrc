@@ -114,6 +114,7 @@
     <file alias="bookmarks">light/32dp/bookmarks.svg</file>
     <file alias="move_up">light/32dp/move_up.svg</file>
     <file alias="bookmark_add">light/32dp/bookmark_add.svg</file>
+    <file alias="text_f_r90">light/32dp/text_f_r90.svg</file>
     <file alias="goback">light/32dp/goback.svg</file>
     <file alias="format_text_bgcolor">light/32dp/format_text_bgcolor.svg</file>
     <file alias="file_copy">light/32dp/file_copy.svg</file>
@@ -131,6 +132,7 @@
     <file alias="clipboard_refresh">light/32dp/clipboard_refresh.svg</file>
     <file alias="history_clear">light/32dp/history_clear.svg</file>
     <file alias="list_tree_expand">light/32dp/list_tree_expand.svg</file>
+    <file alias="text_f">light/32dp/text_f.svg</file>
     <file alias="color_ngray">light/32dp/color_ngray.svg</file>
     <file alias="close">light/32dp/close.svg</file>
     <file alias="file_new">light/32dp/file_new.svg</file>
@@ -262,6 +264,7 @@
     <file alias="bookmarks">light/32dp-disabled/bookmarks.svg</file>
     <file alias="move_up">light/32dp-disabled/move_up.svg</file>
     <file alias="bookmark_add">light/32dp-disabled/bookmark_add.svg</file>
+    <file alias="text_f_r90">light/32dp-disabled/text_f_r90.svg</file>
     <file alias="goback">light/32dp-disabled/goback.svg</file>
     <file alias="format_text_bgcolor">light/32dp-disabled/format_text_bgcolor.svg</file>
     <file alias="file_copy">light/32dp-disabled/file_copy.svg</file>
@@ -279,6 +282,7 @@
     <file alias="clipboard_refresh">light/32dp-disabled/clipboard_refresh.svg</file>
     <file alias="history_clear">light/32dp-disabled/history_clear.svg</file>
     <file alias="list_tree_expand">light/32dp-disabled/list_tree_expand.svg</file>
+    <file alias="text_f">light/32dp-disabled/text_f.svg</file>
     <file alias="color_ngray">light/32dp-disabled/color_ngray.svg</file>
     <file alias="close">light/32dp-disabled/close.svg</file>
     <file alias="file_new">light/32dp-disabled/file_new.svg</file>
