@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 from PyQt5.Qt import *
 
-
+from ..pktk import *
 
 class IconSizes(object):
     def __init__(self, values, currentIndex=0):

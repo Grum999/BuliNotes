@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import (
         QPushButton,
     )
 
-from pktk.modules.imgutils import checkerBoardBrush
+from ..modules.imgutils import checkerBoardBrush
 from .wmenuitem import WMenuColorPicker
 
 
@@ -62,13 +62,14 @@ class WColorButton(QToolButton):
             # don't let external code trying to set button text: there's no text :)
             pass
 
-        self.__color = Qt.white
+        self.__color = QEColor(Qt.white)
         self.__brush = QBrush(self.__color, Qt.SolidPattern)
         self.__cbBrush = checkerBoardBrush(16)
         self.__pen = QPen(QColor("#88888888"))
         self.__pen.setWidth(1)
 
         self.__noneColor = False
+        self.__havePopupMenu = True
 
         self.__actionNoColor=QAction(i18n('No color'), self)
         self.__actionNoColor.triggered.connect(self.__setColorNone)
@@ -80,6 +81,21 @@ class WColorButton(QToolButton):
 
         self.setText("")
         self.setText=newSetText
+        self.setNoneColor(False)
+        self.__setPopupMenu()
+
+    def __setPopupMenu(self):
+        """Define popup menu according to options"""
+        self.__actionNoColor.setVisible(self.__noneColor)
+
+        if self.__havePopupMenu:
+            self.setPopupMode(QToolButton.InstantPopup)
+            self.setArrowType(Qt.NoArrow)
+            self.setMenu(self.__menu)
+            self.setStyleSheet("""WColorButton::menu-indicator { width: 0; } """ )
+        else:
+            self.setPopupMode(QToolButton.DelayedPopup)
+            self.setMenu(None)
 
     def __setColorNone(self):
         """Set current color to None"""
@@ -109,10 +125,6 @@ class WColorButton(QToolButton):
             painter.setBrush(self.__brush)
         painter.drawRect(rect)
 
-    def mouseReleaseEvent(self, event):
-        self.__showColorPalette()
-        super(WColorButton, self).mouseReleaseEvent(event)
-
     def color(self):
         """Return current button color"""
         return self.__color
@@ -137,14 +149,21 @@ class WColorButton(QToolButton):
         """
         if isinstance(value, bool):
             self.__noneColor=value
-            if value:
-                self.setPopupMode(QToolButton.InstantPopup)
-                self.setArrowType(Qt.NoArrow)
-                self.setMenu(self.__menu)
-                self.setStyleSheet("""WColorButton::menu-indicator { width: 0; } """ )
-            else:
-                self.setPopupMode(QToolButton.DelayedPopup)
-                self.setMenu(None)
+            self.__setPopupMenu()
+
+    def popupMenu(self):
+        """Return if button have popup menu (ie: manage colors through menu)"""
+        return self.__havePopupMenu
+
+    def setPopupMenu(self, value):
+        """Set if button have popup menu
+
+        If true, button is delayed popup with a menu
+        Otherwise color selection method have to be implemented
+        """
+        if isinstance(value, bool):
+            self.__havePopupMenu=value
+            self.__setPopupMenu()
 
     def colorPicker(self):
         """Return color picker instance, allowing to define options for it"""

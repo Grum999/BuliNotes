@@ -42,7 +42,7 @@ from PyQt5.QtWidgets import (
     )
 
 from krita import PresetChooser
-from pktk.widgets.wcolorselector import WColorPicker
+from .wcolorselector import WColorPicker
 
 
 class WMenuSlider(QWidgetAction):
@@ -69,9 +69,10 @@ class WMenuTitle(QWidgetAction):
     """Encapsulate a QLabel as a menu item title"""
     def __init__(self, label, parent=None):
         super(WMenuTitle, self).__init__(parent)
-
         self.__widget = QWidget()
         self.__layout = QVBoxLayout()
+        self.__layout.setSpacing(0)
+        self.__layout.setContentsMargins(0,0,0,0)
         self.__label = QLabel(label)
         self.__label.setStyleSheet("background-color: palette(light);padding: 3; font: bold;")
         self.__layout.addWidget(self.__label)
@@ -92,14 +93,16 @@ class WMenuBrushesPresetSelector(QWidgetAction):
     def presetChooser(self):
         return self.__presetChooser
 
+
 class WMenuColorPicker(QWidgetAction):
     """Encapsulate a WColorPicker as a menu item"""
     def __init__(self, parent=None):
         super(WMenuColorPicker, self).__init__(parent)
 
         self.__colorPicker = WColorPicker()
-        self.__colorPicker.setCompactWidth(350)
-        self.__colorPicker.setNormalWidth(450)
+        self.__colorPicker.setCompactSize(350)
+        self.__colorPicker.setNormalSize(450)
+        self.__colorPicker.setConstraintSize(True)
         self.__colorPicker.setContentsMargins(6,6,6,6)
 
         self.__colorPicker.uiChanged.connect(self.__resizeMenu)

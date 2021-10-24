@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>926</width>
+    <height>364</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item row="0" column="2">
+    <widget class="QSlider" name="hsQuality">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;JPEG file format is a lossy format: compression size impact quality of saved image&lt;/p&gt;&lt;p&gt;Smallest value means high compression, smaller file size, lower quality&lt;/p&gt;&lt;p&gt;Highest calue means low compression, bigger file size, better quality&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="minimum">
+      <number>0</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="pageStep">
+      <number>10</number>
+     </property>
+     <property name="value">
+      <number>85</number>
+     </property>
+     <property name="sliderPosition">
+      <number>85</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="invertedControls">
+      <bool>false</bool>
+     </property>
+     <property name="tickPosition">
+      <enum>QSlider::NoTicks</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QSpinBox" name="sbQuality">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;JPEG file format is a lossy format: compression size impact quality of saved image&lt;/p&gt;&lt;p&gt;Smallest value means high compression, smaller file size, lower quality&lt;/p&gt;&lt;p&gt;Highest calue means low compression, bigger file size, better quality&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="minimum">
+      <number>0</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="value">
+      <number>85</number>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Quality</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="styleSheet">
+      <string notr="true">padding-left: 30px</string>
+     </property>
+     <property name="text">
+      <string>Smoothing</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="3">
+    <widget class="QSpinBox" name="sbSmoothing">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Setting the smoothing option to a non-zero value will smooth out the image slightly.&lt;/p&gt;&lt;p&gt;This reduces fuzzy artifacts from compression, and helps with the compression. &lt;/p&gt;&lt;p&gt;A setting of 10-15% removes a good portion of the artifacts without smearing edges. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+     <property name="suffix">
+      <string>%</string>
+     </property>
+     <property name="prefix">
+      <string/>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="value">
+      <number>15</number>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="3">
+    <widget class="QCheckBox" name="cbSaveICCProfile">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save current ICC profile in JPEG file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">padding-left: 30px</string>
+     </property>
+     <property name="text">
+      <string>Save ICC profile</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0">
+    <widget class="QCheckBox" name="cbOptimize">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optimizes the images table for a gain in compression. Unless speed is a concern, there's no reason to turn it off. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">padding-left: 30px</string>
+     </property>
+     <property name="text">
+      <string>Optimize</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1" colspan="2">
+    <widget class="QSlider" name="hsSmoothing">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Setting the smoothing option to a non-zero value will smooth out the image slightly.&lt;/p&gt;&lt;p&gt;This reduces fuzzy artifacts from compression, and helps with the compression. &lt;/p&gt;&lt;p&gt;A setting of 10-15% removes a good portion of the artifacts without smearing edges. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="value">
+      <number>15</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1" colspan="3">
+    <widget class="QComboBox" name="cbxSubsampling">
+     <item>
+      <property name="text">
+       <string>4:2:0 (Smallest file size)</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4:2:2</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4:4:0</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4:4:4 (Best quality)</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;As JPEG files can't manage alpha channel, defined color will be used as background color&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">padding-left: 30px</string>
+     </property>
+     <property name="text">
+      <string>Background color</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="4">
+    <widget class="QLabel" name="label_3">
+     <property name="font">
+      <font>
+       <italic>true</italic>
+      </font>
+     </property>
+     <property name="text">
+      <string>Advanced options</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="2">
+    <widget class="WColorButton" name="pbBgColor">
+     <property name="maximumSize">
+      <size>
+       <width>90</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="toolTip">
+      <string>When Store alpha channel option is unchecked, for files with alpha channel, defined transparent color will be used as background color</string>
+     </property>
+     <property name="text">
+      <string>.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="4">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="styleSheet">
+      <string notr="true">padding-left: 30px</string>
+     </property>
+     <property name="text">
+      <string>Subsampling</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="7" column="0">
+    <widget class="QCheckBox" name="cbProgressive">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use progressive when publishing on internet&lt;/p&gt;&lt;p&gt;For low bandwidth connection, this option allows browsers to load an early degraded version of the whole image as soon as possible and then progressively renders the image during loading&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">padding-left: 30px</string>
+     </property>
+     <property name="text">
+      <string>Progressive</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>WColorButton</class>
+   <extends>QToolButton</extends>
+   <header>pktk.widgets.wcolorbutton</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>hsQuality</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbQuality</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>696</x>
+     <y>14</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>876</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbQuality</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>hsQuality</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>878</x>
+     <y>21</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>806</x>
+     <y>19</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>hsSmoothing</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbSmoothing</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>721</x>
+     <y>163</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>879</x>
+     <y>162</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbSmoothing</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>hsSmoothing</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>897</x>
+     <y>164</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>702</x>
+     <y>162</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

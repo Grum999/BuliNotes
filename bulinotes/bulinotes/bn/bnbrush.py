@@ -21,10 +21,13 @@
 
 import struct
 
-from krita import View
+from krita import (
+        View,
+        Resource
+    )
 from hashlib import blake2b
 
-from pktk import *
+from bulinotes.pktk import *
 
 import PyQt5.uic
 from PyQt5.Qt import *
@@ -32,9 +35,102 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
-from pktk.modules.imgutils import qImageToPngQByteArray
-from pktk.modules.strutils import stripHtml
-from pktk.modules.bytesrw import BytesRW
+from bulinotes.pktk.modules.imgutils import qImageToPngQByteArray
+from bulinotes.pktk.modules.strutils import stripHtml
+from bulinotes.pktk.modules.bytesrw import BytesRW
+
+
+class BNBrushPreset:
+    """Allows 'secured' access to brushes preset
+
+    The main cases:
+    - Default brush preset used for notes is not availables
+    - Brush preset saved in a BuliNote is not available anymore
+
+    In both case, we need to be able to manage properly acces to resources
+
+    The BNBrushPreset class provides static methods to acces to brushes in 'secure' way
+
+    There's a third case we won't manage (not a normal case, hope this will be fixed)
+        https://krita-artists.org/t/second-beta-for-krita-5-0-help-in-testing-krita/30262/19?u=grum999
+    """
+
+    # define some brushes preset we can consider to be used as default
+    __DEFAUL_BRUSH_NAMES=['b) Basic-5 Size',
+                          'b) Basic-1',
+                          'c) Pencil-2',
+                          'd) Ink-2 Fineliner',
+                          'd) Ink-3 Gpen'
+                        ]
+
+    __brushes=None
+
+
+    @staticmethod
+    def initialise():
+        """Initialise brushes names"""
+        BNBrushPreset.__brushes=Krita.instance().resources("preset")
+
+    @staticmethod
+    def getName(name=None):
+        """Return brush preset from name
+
+        Given `name` can be a <str> or a <Resource> (preset)
+
+        If brush preset is found, return brush preset name
+        Otherwise if can't be found in presets, return the default brush name
+        """
+        if BNBrushPreset.__brushes is None:
+            BNBrushPreset.initialise()
+
+        if isinstance(name, Resource):
+            name=name.name()
+
+        if name in BNBrushPreset.__brushes:
+            # asked brush found, return it
+            return name
+        else:
+            # asked brush not found, search for a default brush
+            for brushName in BNBrushPreset.__DEFAUL_BRUSH_NAMES:
+                if brushName in BNBrushPreset.__brushes:
+                    # default brush found, return it
+                    return brushName
+
+            # default brush not found :-/
+            # return current brush from view
+            brushName=Krita.instance().activeWindow().activeView().currentBrushPreset().name()
+
+            if brushName in BNBrushPreset.__brushes:
+                # asked brush found, return it
+                return brushName
+
+            # weird..
+            # but can happen!
+            # https://krita-artists.org/t/second-beta-for-krita-5-0-help-in-testing-krita/30262/19?u=grum999
+
+            if len(BNBrushPreset.__brushes)>0:
+                # return the first one...
+                return BNBrushPreset.__brushes[list(BNBrushPreset.__brushes.keys())[0]]
+
+            # this case should never occurs I hope!!
+            raise EInvalidStatus('Something weird happened!\n- Given brush name "'+name+'" was not found\n- Current brush "'+brushName+'" returned bu Krita doesn\'t exist\n- Brush preset list returned by Krita is empty\n\nCan\'t do anything...')
+
+    @staticmethod
+    def getPreset(name=None):
+        """Return preset for given name
+
+        Given `name` can be a <str> or a <Resource> (preset)
+
+        If brush preset is found, return brush preset
+        Otherwise if can't be found in presets, return the default brush preset
+        """
+        return BNBrushPreset.__brushes[BNBrushPreset.getName(name)]
+
+    @staticmethod
+    def found(name):
+        """Return if brush preset (from name) exists and can be used"""
+        return BNBrushPreset.getName(name)==name
+
 
 
 class BNBrush(QObject):
@@ -118,8 +214,6 @@ class BNBrush(QObject):
         self.__image=brush.image()
 
         self.endUpdate()
-
-
         return True
 
     def toBrush(self, view=None):
@@ -134,17 +228,16 @@ class BNBrush(QObject):
         elif not isinstance(view, View):
             return False
 
-        allBrushesPreset = Krita.instance().resources("preset")
-        if not self.__name:
+        if not self.__name or not BNBrushPreset.found(self.__name):
             return False
 
-
-        view.setCurrentBrushPreset(allBrushesPreset[self.__name])
+        view.setCurrentBrushPreset(BNBrushPreset.getPreset(self.__name))
 
         view.setBrushSize(self.__size)
         view.setPaintingFlow(self.__flow)
         view.setPaintingOpacity(self.__opacity)
         view.setCurrentBlendingMode(self.__blendingMode)
+        return True
 
     def exportData(self):
         """Export brush definition as bytes()
@@ -335,6 +428,9 @@ class BNBrush(QObject):
 
         return "\n".join(returned)
 
+    def found(self):
+        """Return True if bursh preset exists in krita otherwise False"""
+        return BNBrushPreset.found(self.__name)
 
 
 class BNBrushes(QObject):

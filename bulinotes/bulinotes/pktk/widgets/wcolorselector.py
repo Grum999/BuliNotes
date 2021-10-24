@@ -47,7 +47,8 @@ from PyQt5.QtWidgets import (
         QHBoxLayout
     )
 
-from pktk.modules.imgutils import (checkerBoardImage, checkerBoardBrush)
+from ..modules.imgutils import (checkerBoardImage, checkerBoardBrush)
+from ..pktk import *
 
 # todo:
 #   * Fix management with CMYK colorspace
@@ -829,7 +830,7 @@ class WColorSlider(QWidget):
             self.__optionAntialiasing=True
             self.__optionRoundCorner=5
             self.__optionMarginV=8
-            self.__optionMarginH=-1
+            self.__optionMarginH=8
             self.__optionTickWidth=2
             self.__optionTickColor=QColor('#888888')
             self.__optionTickHideLimit=3
@@ -858,8 +859,8 @@ class WColorSlider(QWidget):
             self.__invalidatedBgTicks=True
 
             self.__cursorPosition=0
-            self.__cursorBSize=0
-            self.__cursorWSize=0
+            self.__cursorBSize=0            # black cursor size
+            self.__cursorWSize=0            # white cursor size
 
             self.__paintRect=QRect()
             self.__margins=QMargins()
@@ -920,6 +921,9 @@ class WColorSlider(QWidget):
             """Draw current slider"""
             painter = QPainter(self)
 
+            if self.__paintRect.width()<=self.__cursorBSize:
+                return
+
             if self.__optionAntialiasing:
                 painter.setRenderHint(QPainter.Antialiasing)
 
@@ -970,15 +974,8 @@ class WColorSlider(QWidget):
 
             self.__paintRect=self.rect()
             if self.__optionMarginV!=0 or self.__optionMarginH!=0:
-                self.__margins=QMargins(0, self.__optionMarginV, 0, self.__optionMarginV)
-                if self.__optionMarginH>0:
-                    self.__margins.setLeft(self.__optionMarginH)
-                    self.__margins.setRight(self.__optionMarginH)
-                elif self.__optionMarginH<0:
-                    self.__margins.setLeft(int(self.__hHeight))
-                    self.__margins.setRight(int(self.__hHeight))
+                self.__margins=QMargins(self.__optionMarginH, self.__optionMarginV, self.__optionMarginH, self.__optionMarginV)
                 self.__paintRect-=self.__margins
-
 
             if self.__optionCursorSize==-1:
                 size=self.__paintRect.height()/2
@@ -991,6 +988,10 @@ class WColorSlider(QWidget):
             self.__cursorBSize=size-self.__optionCursorBWidth/2
             self.__cursorWSize=size-self.__optionCursorBWidth
 
+            if self.__optionMarginV!=0 or self.__optionMarginH!=0:
+                # fix according to cursor size
+                self.__margins=QMargins(max(size, self.__optionMarginH), self.__optionMarginV, max(size, self.__optionMarginH), self.__optionMarginV)
+                self.__paintRect=self.rect()-self.__margins
 
             self.__calculateCursorPosition()
 
@@ -1280,6 +1281,19 @@ class WColorSlider(QWidget):
             self.__optionMarginV=value
             self.__calculateFromSize()
 
+
+        def optionMarginH(self):
+            """Return current horinzontal margin value"""
+            return self.__optionMarginH
+
+
+        def setOptionMarginH(self, value):
+            if not isinstance(value, int) or value==self.__optionMarginH:
+                return
+            self.__optionMarginH=value
+            self.__calculateFromSize()
+
+
     def __init__(self, model=None, fgGradient=None, bgColor=None, parent=None):
         super(WColorSlider, self).__init__(parent)
 
@@ -1340,12 +1354,14 @@ class WColorSlider(QWidget):
         else:
             self.__wValueSpin.setMinimum(self.__wColorSlider.valueMin())
 
+
     def __defineSpinValueMax(self):
         """Calculate spin max value according to slider values and PCT option"""
         if self.__optionAsPct:
             self.__wValueSpin.setMaximum(100)
         else:
             self.__wValueSpin.setMaximum(self.__wColorSlider.valueMax())
+
 
     def __defineSpinValue(self):
         """Calculate spin current value according to slider values and PCT option"""
@@ -1360,6 +1376,7 @@ class WColorSlider(QWidget):
                 self.__wValueSpin.setValue(0)
         else:
             self.__wValueSpin.setValue(self.__wColorSlider.value())
+
 
     def __defineSpinDecimals(self):
         """Calculate spin current value according to slider values and PCT option"""
@@ -1522,13 +1539,14 @@ class WColorSlider(QWidget):
             self.__wValueSpin.setMaximumHeight(22)
             self.__wColorSlider.setOptionMarginV(4)
         else:
-            self.__wValueSpin.setMaximumHeight(99999)
+            self.__wValueSpin.setMaximumHeight(16777215)
             self.__wColorSlider.setOptionMarginV(8)
 
 
     def optionAsPct(self):
         """Return if slider works in PCT mode"""
         return self.__optionAsPct
+
 
     def setOptionAsPct(self, value):
         """Set if slider works in PCT mode"""
@@ -1574,7 +1592,7 @@ class WColorComplementary(QWidget):
         super(WColorComplementary, self).__init__(parent)
 
         if isinstance(color, QColor):
-            self.__color=color
+            self.__color=QColor(color)
         else:
             self.__color=QColor(Qt.red)
 
@@ -2121,6 +2139,8 @@ QScrollArea > QWidget > QScrollBar { background: 0; }
         self.__pgPalette.colorOver.connect(self.__colorOver)
         self.__pgPalette.colorClicked.connect(self.__colorClicked)
 
+        self.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding))
+        self.setMaximumHeight(16777215)
         self.setPalettes()
 
     def __paletteChanged(self, palette):
@@ -2204,7 +2224,58 @@ QScrollArea > QWidget > QScrollBar { background: 0; }
 
 
 class WColorPicker(QWidget):
-    """A color picker"""
+    """A color picker
+
+    The color picker provides miscellaneous option about layout, color ui, context menu
+
+    -- Context menu
+        By default, context menu provide all possible options (OPTION_MENU_ALL)
+
+        To avoid undesired action that can broke a layout (such as orientation modification, or allow alpha channel modification)
+        it's highly recommended to configure available menu items to match real needs
+
+        To disable all menu, just set value 0 for menu configuration
+
+    -- Layout orientation
+        Layout can be horizontal or vertical (default)
+
+        It's recommended to set one orientation, and do not let user being able to change through menu
+
+
+    -- Size
+        There's 3 options for size
+        . Constraint size
+            A True/False option
+
+            When False, there's no constraint for MAXIMUM size (at least, some minimal size is fixed)
+            This option is recommended if color picker is placed in a layout with a size policy MinimumExpanding
+            (otherwise, applying a constraint size will generate unexpected results)
+            Note: when False, option Compact UI is disabled (and then entry is never available in context menu even if
+            menu option is set to True)
+
+            When True, there's a constraint defined for MAXIMUM size
+            This option is used for example, if color picker is included in a menu, and allows to limit
+            size of color picker
+
+            In this case, 2 possible sizes can be provided:
+            - normal size, applied by default
+            - compact size, applied if a compact interface is required
+
+    -- Color ui
+        There's 3 main panel
+        . Palette
+            > provide Krita's palette color selector
+        . Color wheel
+            > provide a color wheel
+            > allows an optional color complementary picker
+        . Sliders
+            > RGB
+            > CMYK
+            > HSL
+            > HSV
+            > Alpha
+            > Css color code
+    """
     colorUpdated = Signal(QColor)       # when color is changed from user interface
     colorChanged = Signal(QColor)       # when color is changed programmatically
     uiChanged = Signal()
@@ -2235,6 +2306,8 @@ class WColorPicker(QWidget):
     OPTION_MENU_CSSRGB=     0b0000000000100000
     OPTION_MENU_COLCOMP=    0b0000000001000000
 
+    OPTION_MENU_ORIENTATION=0b0000100000000000
+
     OPTION_MENU_COLWHEEL=   0b0001000000000000
     OPTION_MENU_PALETTE=    0b0010000000000000
     OPTION_MENU_UICOMPACT=  0b0100000000000000
@@ -2242,20 +2315,36 @@ class WColorPicker(QWidget):
 
     OPTION_MENU_ALL=        0b1111111111111111  # All
 
+    OPTION_ORIENTATION_VERTICAL =   1
+    OPTION_ORIENTATION_HORIZONTAL = 2
+
     def __init__(self, color=None, parent=None):
         super(WColorPicker, self).__init__(parent)
 
         self.__inUpdate=True
 
-        self.__compactWidth=350
-        self.__normalWidth=450
+        self.__alphaAsColor=True
+
+        # when compact/normal with are 0, consider there's no ize restriction
+        # (ie: use available size from parent layout)
+        # when width is restricted, consider that we're probably popup the color picker
+        # in a menu and then, this allow to provide a maximum width
+        self.__compactSize=350
+        self.__normalSize=450
+
+        self.__constraintSize=False
+
+
+        # orientation option allows to define if color picker element are
+        # displayed vertically or horizontally
+        self.__optionOrientation=WColorPicker.OPTION_ORIENTATION_VERTICAL
 
         # compact ui let interface be smaller
         self.__optionCompactUi=True     # fored to false at the end of init
         self.__optionShowPreviewColor=True
         self.__optionShowColorCssRGB=True
         self.__optionShowColorWheel=True
-        self.__optionShowColorPalette=False
+        self.__optionShowColorPalette=None
 
         # "Show" option define which sliders are visible or not
         # individual sliders can't be visible/hidden; only group of sliders (RGB, CMYK, ...)
@@ -2283,13 +2372,20 @@ class WColorPicker(QWidget):
         # --
         self.__color=QColor()
         self.__colorHue=QColor()
-        self.__layout = QVBoxLayout(self)
+
+        self.__wContainerColorPalette=QWidget(self)
+        self.__wContainerColorWheel=QWidget(self)
+        self.__wContainerColorSliders=QWidget(self)
+
+        self.__layoutMain = QBoxLayout(QBoxLayout.TopToBottom, self)
+        self.__layoutColorPalette = QVBoxLayout(self.__wContainerColorPalette)
+        self.__layoutColorWheel = QVBoxLayout(self.__wContainerColorWheel)
+        self.__layoutColorSliders = QVBoxLayout(self.__wContainerColorSliders)
 
         self.__contextMenu=QMenu('Options')
         self.__initMenu()
 
         self.__colorPalette=WColorPalette()
-        self.__colorPalette.setVisible(self.__optionShowColorPalette)
         self.__colorPalette.paletteChanged.connect(self.__colorPaletteChanged)
         self.__colorPalette.colorClicked.connect(self.__colorPaletteClicked)
 
@@ -2329,32 +2425,42 @@ class WColorPicker(QWidget):
         self.__colorSliderAlpha.valueUpdated.connect(self.__colorAChanged)
 
 
-        self.__layout.addWidget(self.__colorPalette)
-        self.__layout.addSpacing(4)
-        self.__layout.addWidget(self.__colorWheel)
-        self.__layout.addWidget(self.__colorComplementary)
-        self.__layout.addWidget(self.__colorCssEdit)
-        self.__layout.addWidget(self.__colorSliderRed)
-        self.__layout.addWidget(self.__colorSliderGreen)
-        self.__layout.addWidget(self.__colorSliderBlue)
-        self.__layout.addWidget(self.__colorSliderCyan)
-        self.__layout.addWidget(self.__colorSliderMagenta)
-        self.__layout.addWidget(self.__colorSliderYellow)
-        self.__layout.addWidget(self.__colorSliderBlack)
-        self.__layout.addWidget(self.__colorSliderHue)
-        self.__layout.addWidget(self.__colorSliderSaturation)
-        self.__layout.addWidget(self.__colorSliderValue)
-        self.__layout.addWidget(self.__colorSliderLightness)
-        self.__layout.addWidget(self.__colorSliderAlpha)
+        self.__layoutColorPalette.addWidget(self.__colorPalette)
+        self.__layoutColorWheel.addWidget(self.__colorWheel)
+        self.__layoutColorWheel.addWidget(self.__colorComplementary)
+        self.__layoutColorSliders.addWidget(self.__colorCssEdit)
+        self.__layoutColorSliders.addWidget(self.__colorSliderRed)
+        self.__layoutColorSliders.addWidget(self.__colorSliderGreen)
+        self.__layoutColorSliders.addWidget(self.__colorSliderBlue)
+        self.__layoutColorSliders.addWidget(self.__colorSliderCyan)
+        self.__layoutColorSliders.addWidget(self.__colorSliderMagenta)
+        self.__layoutColorSliders.addWidget(self.__colorSliderYellow)
+        self.__layoutColorSliders.addWidget(self.__colorSliderBlack)
+        self.__layoutColorSliders.addWidget(self.__colorSliderHue)
+        self.__layoutColorSliders.addWidget(self.__colorSliderSaturation)
+        self.__layoutColorSliders.addWidget(self.__colorSliderValue)
+        self.__layoutColorSliders.addWidget(self.__colorSliderLightness)
+        self.__layoutColorSliders.addWidget(self.__colorSliderAlpha)
 
-        self.__layout.setContentsMargins(0, 0, 0, 0)
+        self.__layoutMain.setContentsMargins(0, 0, 0, 0)
+        self.__layoutColorPalette.setContentsMargins(0, 0, 0, 0)
+        self.__layoutColorWheel.setContentsMargins(0, 0, 0, 0)
+        self.__layoutColorSliders.setContentsMargins(0, 0, 0, 0)
 
-        self.setLayout(self.__layout)
+        self.__wContainerColorPalette.setLayout(self.__layoutColorPalette)
+        self.__wContainerColorWheel.setLayout(self.__layoutColorWheel)
+        self.__wContainerColorSliders.setLayout(self.__layoutColorSliders)
 
-        self.__colorWheel.setMinimumSize(350,350)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum))
+        self.__layoutMain.addWidget(self.__wContainerColorPalette)
+        self.__layoutMain.addSpacing(4)
+        self.__layoutMain.addWidget(self.__wContainerColorWheel)
+        self.__layoutMain.addWidget(self.__wContainerColorSliders)
+
+        self.setLayout(self.__layoutMain)
 
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
+        self.setOptionShowColorPalette(False)
+        self.setOptionOrientation(WColorPicker.OPTION_ORIENTATION_VERTICAL)
         self.setOptionCompactUi(False)
         self.setColor(color)
 
@@ -2367,6 +2473,19 @@ class WColorPicker(QWidget):
         self.__actionShowCompactUi.toggled.connect(self.setOptionCompactUi)
         self.__actionShowCompactUi.setCheckable(True)
 
+        self.__subMenuOrientation = self.__contextMenu.addMenu(i18n('Orientation'))
+        self.__actionOrientationVertical = QAction(i18n('Vertical'), self)
+        self.__actionOrientationVertical.toggled.connect(lambda x: self.setOptionOrientation(WColorPicker.OPTION_ORIENTATION_VERTICAL))
+        self.__actionOrientationVertical.setCheckable(True)
+        self.__subMenuOrientation.addAction(self.__actionOrientationVertical)
+        self.__actionOrientationHorizontal = QAction(i18n('Horizontal'), self)
+        self.__actionOrientationHorizontal.toggled.connect(lambda x: self.setOptionOrientation(WColorPicker.OPTION_ORIENTATION_HORIZONTAL))
+        self.__actionOrientationHorizontal.setCheckable(True)
+        self.__subMenuOrientation.addAction(self.__actionOrientationHorizontal)
+        orientationActionGroup=QActionGroup(self)
+        orientationActionGroup.addAction(self.__actionOrientationHorizontal)
+        orientationActionGroup.addAction(self.__actionOrientationVertical)
+
         self.__actionShowCssRGB = QAction(i18n('CSS Color code'), self)
         self.__actionShowCssRGB.toggled.connect(self.setOptionShowCssRgb)
         self.__actionShowCssRGB.setCheckable(True)
@@ -2375,7 +2494,7 @@ class WColorPicker(QWidget):
         self.__actionShowColorPalette.toggled.connect(self.setOptionShowColorPalette)
         self.__actionShowColorPalette.setCheckable(True)
 
-        self.__subMenuColorWheel = self.__contextMenu.addMenu('Color wheel')
+        self.__subMenuColorWheel = self.__contextMenu.addMenu(i18n('Color wheel'))
         self.__actionShowColorWheel = QAction(i18n('Show'), self)
         self.__actionShowColorWheel.toggled.connect(self.setOptionShowColorWheel)
         self.__actionShowColorWheel.setCheckable(True)
@@ -2385,7 +2504,7 @@ class WColorPicker(QWidget):
         self.__actionShowPreviewColor.setCheckable(True)
         self.__subMenuColorWheel.addAction(self.__actionShowPreviewColor)
 
-        self.__subMenuColorCombination = self.__contextMenu.addMenu('Color combination')
+        self.__subMenuColorCombination = self.__contextMenu.addMenu(i18n('Color combination'))
         self.__actionShowColorCombinationNone = QAction(i18n('None'), self)
         self.__actionShowColorCombinationNone.toggled.connect(self.setOptionShowColorCombination)
         self.__actionShowColorCombinationNone.setCheckable(True)
@@ -2482,6 +2601,7 @@ class WColorPicker(QWidget):
         self.__subMenuAlpha.addAction(self.__actionDisplayAsPctColorAlpha)
 
         self.__contextMenu.addAction(self.__actionShowCompactUi)
+        self.__contextMenu.addMenu(self.__subMenuOrientation)
         self.__contextMenu.addSeparator()
         self.__contextMenu.addMenu(self.__subMenuColorWheel)
         self.__contextMenu.addAction(self.__actionShowColorPalette)
@@ -2499,7 +2619,10 @@ class WColorPicker(QWidget):
         """Update size according to current widget visible"""
         if self.__inUpdate:
             return
-        self.adjustSize()
+
+        if self.__constraintSize:
+            # adjust size only if currently restricted
+            self.adjustSize()
         self.uiChanged.emit()
 
     def contextMenuEvent(self, event):
@@ -2512,6 +2635,9 @@ class WColorPicker(QWidget):
         self.__actionShowColorPalette.setChecked(self.__optionShowColorPalette)
         self.__actionShowColorWheel.setChecked(self.__optionShowColorWheel)
         self.__actionShowCssRGB.setChecked(self.__optionShowColorCssRGB)
+
+        self.__actionOrientationVertical.setChecked(self.__optionOrientation==WColorPicker.OPTION_ORIENTATION_VERTICAL)
+        self.__actionOrientationHorizontal.setChecked(self.__optionOrientation==WColorPicker.OPTION_ORIENTATION_HORIZONTAL)
 
         self.__actionShowColorCombinationNone.setChecked(self.__optionShowColorCombination==WColorComplementary.COLOR_COMBINATION_NONE)
         self.__actionShowColorCombinationMono.setChecked(self.__optionShowColorCombination==WColorComplementary.COLOR_COMBINATION_MONOCHROMATIC)
@@ -2531,10 +2657,11 @@ class WColorPicker(QWidget):
         self.__actionDisplayAsPctColorHSL.setChecked(self.__optionDisplayAsPctHSL)
         self.__actionDisplayAsPctColorAlpha.setChecked(self.__optionDisplayAsPctAlpha)
 
-        self.__actionShowCompactUi.setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_UICOMPACT) == WColorPicker.OPTION_MENU_UICOMPACT)
+        self.__actionShowCompactUi.setVisible(self.__constraintSize and (self.__optionMenu & WColorPicker.OPTION_MENU_UICOMPACT) == WColorPicker.OPTION_MENU_UICOMPACT)
         self.__actionShowPreviewColor.setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_COLPREVIEW) == WColorPicker.OPTION_MENU_COLPREVIEW)
         self.__actionShowCssRGB.setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_CSSRGB) == WColorPicker.OPTION_MENU_CSSRGB)
 
+        self.__subMenuOrientation.menuAction().setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_ORIENTATION) == WColorPicker.OPTION_MENU_ORIENTATION)
         self.__subMenuRGB.menuAction().setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_RGB) == WColorPicker.OPTION_MENU_RGB)
         self.__subMenuCMYK.menuAction().setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_CMYK) == WColorPicker.OPTION_MENU_CMYK)
         self.__subMenuHSV.menuAction().setVisible( (self.__optionMenu & WColorPicker.OPTION_MENU_HSV) == WColorPicker.OPTION_MENU_HSV)
@@ -2674,7 +2801,7 @@ class WColorPicker(QWidget):
         if updating!=WColorPicker.__COLOR_CSSRGB:
             self.__colorCssEdit.setColor(self.__color)
 
-        if updating!=WColorPicker.__COLOR_ALPHA:
+        if self.__alphaAsColor or updating!=WColorPicker.__COLOR_ALPHA:
             # when only alpha is modified, do not consider color is changed
             if updating==WColorPicker.__COLOR_NONE:
                 # is none, consider it's a programmatically change
@@ -2690,16 +2817,78 @@ class WColorPicker(QWidget):
         """Emit signal when color has been changed (programmatically)"""
         self.colorChanged.emit(self.__color)
 
+    def __checkColorSliders(self):
+        """determinate if at least, one color slider is visible"""
+        nbVisible=0
+
+        if self.__optionShowColorRGB:
+            nbVisible+=1
+        if self.__optionShowColorCMYK:
+            nbVisible+=1
+        if self.__optionShowColorHSV:
+            nbVisible+=1
+        if self.__optionShowColorHSL:
+            nbVisible+=1
+        if self.__optionShowColorAlpha:
+            nbVisible+=1
+        if self.__optionShowColorCssRGB:
+            nbVisible+=1
+
+        self.__wContainerColorSliders.setVisible(nbVisible>0)
+
     def optionMenu(self):
         """Return current menu options"""
         return self.__optionMenu
 
     def setOptionMenu(self, value):
-        """Return current menu options"""
+        """Set current menu options
+
+        Given `value` for option is an integer for which, each bit represent a menu entry:
+
+            OPTION_MENU_RGB=        0b0000000000000001
+            OPTION_MENU_CMYK=       0b0000000000000010
+            OPTION_MENU_HSV=        0b0000000000000100
+            OPTION_MENU_HSL=        0b0000000000001000
+            OPTION_MENU_ALPHA=      0b0000000000010000
+            OPTION_MENU_CSSRGB=     0b0000000000100000
+            OPTION_MENU_COLCOMP=    0b0000000001000000
+
+            OPTION_MENU_ORIENTATION=0b0000100000000000
+
+            OPTION_MENU_COLWHEEL=   0b0001000000000000
+            OPTION_MENU_PALETTE=    0b0010000000000000
+            OPTION_MENU_UICOMPACT=  0b0100000000000000
+            OPTION_MENU_COLPREVIEW= 0b1000000000000000
+
+            OPTION_MENU_ALL=        0b1111111111111111  # All
+
+            Example:
+                WColor.Picker.OPTION_MENU_RGB|WColor.Picker.OPTION_MENU_ALPHA|WColor.Picker.OPTION_MENU_COLWHEEL|WColor.Picker.OPTION_MENU_COLPREVIEW|WColor.Picker.OPTION_MENU_COLCOMP
+
+                Will allows following menu entries:
+                - Color Wheel >
+                        [ ] Show
+                        [ ] Preview color
+                - Color combination >
+                        ( ) None
+                        ( ) Monochromatic
+                        ( ) Complementary
+                        ( ) Analogous
+                        ( ) Triadic
+                        ( ) Tetradic
+                - RGB >
+                        [ ] Show RGB
+                        [ ] Display as percentage
+                - Alpha >
+                        [ ] Show RGB
+                        [ ] Display as percentage
+
+            Set value to 0 to disable all menu
+        """
         if isinstance(value, int):
             self.__optionMenu=value
 
-    def color(self, value):
+    def color(self):
         """Get current color"""
         return self.__color
 
@@ -2707,7 +2896,6 @@ class WColorPicker(QWidget):
         """Set current color"""
         if value==self.__color or not isinstance(value, QColor):
             return
-
 
         self.__color=value
         self.__updateColor()
@@ -2780,12 +2968,17 @@ class WColorPicker(QWidget):
         """Return True if right click on palette allows to select a color"""
         return self.__optionAllowRightClick
 
+    def optionOrientation(self):
+        """return layout orientation"""
+        return self.__optionOrientation
+
     def setOptionShowColorRGB(self, value):
         """Set option 'show color RGB sliders' is active or not"""
         if not isinstance(value, bool) or self.__optionShowColorRGB==value:
             return
 
         self.__optionShowColorRGB=value
+        self.__checkColorSliders()
 
         self.__colorSliderRed.setVisible(self.__optionShowColorRGB)
         self.__colorSliderGreen.setVisible(self.__optionShowColorRGB)
@@ -2798,6 +2991,7 @@ class WColorPicker(QWidget):
             return
 
         self.__optionShowColorCMYK=value
+        self.__checkColorSliders()
 
         self.__colorSliderCyan.setVisible(self.__optionShowColorCMYK)
         self.__colorSliderMagenta.setVisible(self.__optionShowColorCMYK)
@@ -2811,6 +3005,7 @@ class WColorPicker(QWidget):
             return
 
         self.__optionShowColorHSV=value
+        self.__checkColorSliders()
 
         self.__colorSliderHue.setVisible(self.__optionShowColorHSV or self.__optionShowColorHSL)
         self.__colorSliderSaturation.setVisible(self.__optionShowColorHSV or self.__optionShowColorHSL)
@@ -2824,6 +3019,7 @@ class WColorPicker(QWidget):
             return
 
         self.__optionShowColorHSL=value
+        self.__checkColorSliders()
 
         self.__colorSliderHue.setVisible(self.__optionShowColorHSV or self.__optionShowColorHSL)
         self.__colorSliderSaturation.setVisible(self.__optionShowColorHSV or self.__optionShowColorHSL)
@@ -2837,6 +3033,7 @@ class WColorPicker(QWidget):
             return
 
         self.__optionShowColorAlpha=value
+        self.__checkColorSliders()
 
         self.__colorSliderAlpha.setVisible(self.__optionShowColorAlpha)
         self.__updateSize()
@@ -2847,6 +3044,7 @@ class WColorPicker(QWidget):
             return
 
         self.__optionShowColorCssRGB=value
+        self.__checkColorSliders()
 
         self.__colorCssEdit.setVisible(self.__optionShowColorCssRGB)
         self.__updateSize()
@@ -2894,7 +3092,8 @@ class WColorPicker(QWidget):
 
         self.__optionShowColorPalette=value
 
-        self.__colorPalette.setVisible(self.__optionShowColorPalette)
+        self.__wContainerColorPalette.setVisible(self.__optionShowColorPalette)
+        #self.__colorPalette.setVisible(self.__optionShowColorPalette)
         self.__colorPalette.updateHeight()
         self.__updateSize()
 
@@ -2905,43 +3104,102 @@ class WColorPicker(QWidget):
 
         self.__optionShowColorWheel=value
 
-        self.__colorWheel.setVisible(self.__optionShowColorWheel)
+        self.__wContainerColorWheel.setVisible(self.__optionShowColorWheel)
+        #self.__colorWheel.setVisible(self.__optionShowColorWheel)
         self.__updateSize()
 
     def setOptionCompactUi(self, value):
-        """Set if option 'small size' is active or not"""
-        if not isinstance(value, bool) or self.__optionCompactUi==value:
+        """Set if option 'small size' is active or not
+
+        When value is None, just reapply size
+        """
+        # note: use of None value....
+        #       I really should define a dedicated method for None case, and really use this only with True/False value but ok it currently work
+
+        if not value is None:
+            if not self.__constraintSize:
+                # if size is not constrained, deactivate compact size
+                # currently generate too much problem in interface
+                value=False
+
+        if not (value is None or isinstance(value, bool)) or self.__optionCompactUi==value:
             return
 
-        self.__optionCompactUi=value
+        if not value is None:
+            self.__optionCompactUi=value
+
+        if self.__constraintSize:
+            if self.__optionCompactUi:
+                maxSize=self.__compactSize
+            else:
+                maxSize=self.__normalSize
+        else:
+            maxSize=16777215
+
+
+
+        # adapt size policies to current orientation
+        if self.__optionOrientation==WColorPicker.OPTION_ORIENTATION_VERTICAL:
+            self.__wContainerColorPalette.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred))
+            self.__wContainerColorWheel.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+            self.__wContainerColorSliders.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.MinimumExpanding))
+            #self.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.MinimumExpanding))
+
+            self.__wContainerColorPalette.setMinimumHeight(0)
+            self.__wContainerColorWheel.setMinimumHeight(0)
+            self.__wContainerColorSliders.setMinimumHeight(0)
+
+            self.__wContainerColorPalette.setMaximumHeight(maxSize)
+            self.__wContainerColorWheel.setMaximumHeight(maxSize)
+            self.__wContainerColorSliders.setMaximumHeight(maxSize)
+        else:
+            self.__wContainerColorPalette.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding))
+            self.__wContainerColorWheel.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+            self.__wContainerColorSliders.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum))
+            #self.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum))
+
+            self.__wContainerColorPalette.setMinimumWidth(0)
+            self.__wContainerColorWheel.setMinimumWidth(0)
+            self.__wContainerColorSliders.setMinimumWidth(0)
+
+            self.__wContainerColorPalette.setMaximumWidth(maxSize)
+            self.__wContainerColorWheel.setMaximumWidth(maxSize)
+            self.__wContainerColorSliders.setMaximumWidth(maxSize)
+
 
         if self.__optionCompactUi:
             fnt=self.font()
             fnt.setPointSize(int(fnt.pointSize() * 0.75))
 
-            minSize=int(0.85 * self.__compactWidth)
-            self.setMinimumWidth(minSize)
-            self.setMaximumWidth(self.__compactWidth)
-            self.__layout.setSpacing(1)
+            minSize=int(0.85 * self.__compactSize)
+
+            self.__layoutMain.setSpacing(1)
+            self.__layoutColorWheel.setSpacing(1)
+            self.__layoutColorPalette.setSpacing(1)
+            self.__layoutColorSliders.setSpacing(1)
             self.__colorComplementary.setMinimumHeight(40)
             self.__colorComplementary.setMaximumHeight(60)
             self.__colorCssEdit.setMaximumHeight(22)
-            self.__colorWheel.setMinimumSize(minSize,minSize)
-            self.__colorPalette.setMinimumSize(minSize,0)
-
         else:
             fnt=QApplication.font()
 
-            minSize=int(0.85 * self.__normalWidth)
+            minSize=int(0.85 * self.__normalSize)
 
-            self.setMinimumWidth(minSize)
-            self.setMaximumWidth(self.__normalWidth)
-            self.__layout.setSpacing(4)
+            self.__layoutMain.setSpacing(4)
+            self.__layoutColorWheel.setSpacing(4)
+            self.__layoutColorPalette.setSpacing(4)
+            self.__layoutColorSliders.setSpacing(4)
             self.__colorComplementary.setMinimumHeight(60)
             self.__colorComplementary.setMaximumHeight(80)
-            self.__colorCssEdit.setMaximumHeight(99999)
-            self.__colorWheel.setMinimumSize(minSize, minSize)
-            self.__colorPalette.setMinimumSize(minSize, 0)
+            self.__colorCssEdit.setMaximumHeight(16777215)
+
+        self.__wContainerColorWheel.setMinimumSize(minSize, minSize)
+        self.__wContainerColorPalette.setMinimumSize(minSize, minSize)
+        self.__wContainerColorSliders.setMinimumSize(minSize,minSize)
+
+        self.__wContainerColorWheel.setMinimumSize(maxSize, maxSize)
+        self.__wContainerColorPalette.setMinimumSize(maxSize, maxSize)
+        self.__wContainerColorSliders.setMinimumSize(maxSize,maxSize)
 
         self.setFont(fnt)
 
@@ -3037,28 +3295,42 @@ class WColorPicker(QWidget):
         if isinstance(value, bool):
             self.__optionAllowRightClick=value
 
-    def compactWidth(self):
-        """Return compact width"""
-        return self.__compactWidth
+    def setOptionOrientation(self, value):
+        """Define layout orientation"""
+        if not value in (WColorPicker.OPTION_ORIENTATION_VERTICAL, WColorPicker.OPTION_ORIENTATION_HORIZONTAL) or value==self.__optionOrientation:
+            return
 
-    def setCompactWidth(self, value):
-        """Define compact width"""
-        self.__compactWidth=value
-        if self.__normalWidth<=self.__compactWidth:
-            self.__normalWidth=int(self.__compactWidth * 0.3)
+        self.__optionOrientation=value
+
+        if self.__optionOrientation==WColorPicker.OPTION_ORIENTATION_VERTICAL:
+            self.__layoutMain.setDirection(QBoxLayout.TopToBottom)
+        else:
+            self.__layoutMain.setDirection(QBoxLayout.LeftToRight)
+
+        self.setOptionCompactUi(None)
+
+    def compactSize(self):
+        """Return compact size (width/height)"""
+        return self.__compactSize
+
+    def setCompactSize(self, value):
+        """Define compact size (width/height)"""
+        self.__compactSize=value
+        if self.__normalSize<=self.__compactSize:
+            self.__normalSize=int(self.__compactSize * 0.3)
         # force compact ui refresh...
         self.__optionCompactUi=not self.__optionCompactUi
         self.setOptionCompactUi(not self.__optionCompactUi)
 
-    def normalWidth(self):
-        """Return normal width"""
-        return self.__normalWidth
+    def normalSize(self):
+        """Return normal size (width/height)"""
+        return self.__normalSize
 
-    def setNormalWidth(self, value):
-        """Define compact width"""
-        self.__normalWidth=value
-        if self.__compactWidth<=self.__normalWidth:
-            self.__compactWidth=int(self.__compactWidth * 0.7)
+    def setNormalSize(self, value):
+        """Define normal size (width/height)"""
+        self.__normalSize=value
+        if self.__compactSize<=self.__normalSize:
+            self.__compactSize=int(self.__compactSize * 0.7)
         # force compact ui refresh...
         self.__optionCompactUi=not self.__optionCompactUi
         self.setOptionCompactUi(not self.__optionCompactUi)
@@ -3101,11 +3373,41 @@ class WColorPicker(QWidget):
 
         returned.append(f"colorCombination:{self.__optionShowColorCombination}")
         returned.append(f"colorPalette:{self.__colorPalette.palette()}")
+        returned.append(f"layoutOrientation:{self.__optionOrientation}")
 
         return returned
 
     def setOptionLayout(self, layout):
-        """Set layout from given options"""
+        """Set layout from given options
+
+        Given `layout` is provided as a list of string: this allows quick definition
+        of an interface with on function call
+
+        Each item in list provide one option layout:
+            'colorRGB'              Display RGB sliders in UI
+            'colorCMYK'             Display CMYK sliders in UI
+            'colorHSV'              Display HSV sliders in UI
+            'colorHSL'              Display HSL sliders in UI
+            'colorAlpha'            Display Alpha slider in UI
+            'colorCssRGB'           Display color css input field in UI
+            'colorPalette'          Display color palette in UI
+            'colorWheel'            Display color wheel in UI
+            'colorPreview'          Display color preview on color wheel
+
+            'colorRGB%'             Set RGB sliders value in percentage
+            'colorCMYK%'            Set CMYK sliders value in percentage
+            'colorHSV%'             Set HSV sliders value in percentage
+            'colorHSL%'             Set HSL sliders value in percentage
+            'colorAlpha%'           Set Alpha slider value in percentage
+
+            'compactUi'             Set compact UI
+
+            'colorPalette:XXX'      Define palette 'XXX' as active palette
+            'colorCombination:N'    Display complementary color combination (number: see WColorComplementary COLOR_COMBINATION_xxx values)
+            'layoutOrientation:N'   Define orientation horizontal/vertical (number: see WColorPicker OPTION_ORIENTATION_xxx values)
+
+
+        """
         if not (isinstance(layout, list) or isinstance(layout, tuple)):
             raise EInvalidType('Given `layout` must be a <list> or <tuple>')
 
@@ -3130,10 +3432,87 @@ class WColorPicker(QWidget):
         self.setOptionCompactUi('compactUi' in layout)
 
         for item in layout:
-            if r:=re.match('colorPalette:(.*)', item):
+            if r:=re.match('colorPalette:(.*)', item, re.IGNORECASE):
                 self.setOptionColorPalette(r.groups()[0])
-            elif r:=re.match('colorCombination:(\d)', item):
+            elif r:=re.match('colorCombination:(\d)', item, re.IGNORECASE):
                 self.setOptionShowColorCombination(int(r.groups()[0]))
+            elif r:=re.match('layoutOrientation:(\d)', item, re.IGNORECASE):
+                self.setOptionOrientation(int(r.groups()[0]))
 
         self.__inUpdate=False
         self.__updateSize()
+
+    def setStandardLayout(self, layout, limited=False):
+        """Provided as convenience method to simplify standard usage configuration
+
+        Given `layout` can be:
+        - "palette"
+            Display palette only, no alpha color available
+        - "hsv"
+            Display color wheel+HSV only
+        - "hsva"
+            Display color wheel+HSV&Alpha only
+        - "hsl"
+            Display color wheel+HSL only
+        - "hsla"
+            Display color wheel+HSL&Alpha only
+        - "rgb"
+            Display color wheel+RGB only
+        - "rgba"
+            Display color wheel+RGB&Alpha only
+        - "cmyk"
+            Display color wheel+CMYK only
+        - "cmyka"
+            Display color wheel+CMYK&Alpha only
+
+        If `limited` is True, all context menu are disabled
+        """
+        if layout=='palette':
+            self.setOptionLayout(['colorPalette'])
+        elif layout=='hsv':
+            self.setOptionLayout(['colorHSV', 'colorWheel', 'colorPreview'])
+        elif layout=='hsl':
+            self.setOptionLayout(['colorHSL', 'colorWheel', 'colorPreview'])
+        elif layout=='rgb':
+            self.setOptionLayout(['colorRGB', 'colorWheel', 'colorPreview'])
+        elif layout=='cmyk':
+            self.setOptionLayout(['colorCMYK', 'colorWheel', 'colorPreview'])
+        elif layout=='hsva':
+            self.setOptionLayout(['colorHSV', 'colorAlpha', 'colorWheel', 'colorPreview'])
+        elif layout=='hsla':
+            self.setOptionLayout(['colorHSL', 'colorAlpha', 'colorWheel', 'colorPreview'])
+        elif layout=='rgba':
+            self.setOptionLayout(['colorRGB', 'colorAlpha', 'colorWheel', 'colorPreview'])
+        elif layout=='cmyka':
+            self.setOptionLayout(['colorCMYK', 'colorAlpha', 'colorWheel', 'colorPreview'])
+
+        if limited:
+            self.setOptionMenu(0)
+
+    def alphaAsColor(self):
+        """Return True is alpha is considered as color"""
+        return self.__alphaAsColor
+
+    def setAlphaAsColor(self, value):
+        """Set if alpha is considered as color
+
+        When considered as a color (default), modifying alpha channel emit a
+        colorUpdated signal, otherwise not
+        """
+        if isinstance(value, bool):
+            self.__alphaAsColor=value
+
+    def constraintSize(self):
+        """Return is constraint size is active or not"""
+        return self.__constraintSize
+
+    def setConstraintSize(self, value):
+        """Set if constraint size is active or not
+
+        When not active, the compact size is not available
+        """
+        if not isinstance(value, bool) or value==self.__constraintSize:
+            return
+        self.__constraintSize=value
+        self.__actionShowCompactUi.setVisible(self.__constraintSize)
+        self.setOptionCompactUi(None)

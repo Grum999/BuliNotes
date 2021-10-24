@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019 - Grum999
+# Copyright (C) 2019-2021 - Grum999
 #
 # A toolkit to make pykrita plugin coding easier :-)
 # -----------------------------------------------------------------------------
@@ -31,7 +31,7 @@ from PyQt5.QtWidgets import (
         QDialog
     )
 
-from pktk import *
+from ..pktk import *
 
 # -----------------------------------------------------------------------------
 

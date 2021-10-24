@@ -47,8 +47,8 @@ if __name__ != '__main__':
             EInvalidValue,
             PkTk
         )
-    from pktk.modules.utils import checkKritaVersion
-    from .bn.bnuidocker import BNUiDocker
+    from bulinotes.pktk.modules.utils import checkKritaVersion
+    from bulinotes.bn.bnuidocker import BNUiDocker
 else:
     # Execution from 'Scripter' plugin?
     __PLUGIN_EXEC_FROM__ = 'SCRIPTER_PLUGIN'
@@ -69,14 +69,14 @@ else:
             EInvalidValue,
             PkTk
         )
-    from pktk.modules.utils import checkKritaVersion
-    from .bn.bnuidocker import BNUiDocker
+    from bulinotes.pktk.modules.utils import checkKritaVersion
+    from bulinotes.bn.bnuidocker import BNUiDocker
 
     print("======================================")
 
 
 EXTENSION_ID = 'pykrita_bulinotes'
-PLUGIN_VERSION = '0.3.0a'
+PLUGIN_VERSION = '0.4.0b'
 PLUGIN_MENU_ENTRY = 'Buli Notes'
 
 REQUIRED_KRITA_VERSION = (5, 0, 0)

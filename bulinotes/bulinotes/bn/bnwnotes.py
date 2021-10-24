@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------------
 import time
 
-from pktk import *
+from bulinotes.pktk import *
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
@@ -33,8 +33,8 @@ from .bnnotes import (
                 BNNotes
             )
 
-from pktk.modules.timeutils import tsToStr
-from pktk.widgets.wstandardcolorselector import (
+from bulinotes.pktk.modules.timeutils import tsToStr
+from bulinotes.pktk.widgets.wstandardcolorselector import (
         WStandardColorSelector,
         WMenuStandardColorSelector
     )
@@ -45,10 +45,11 @@ class BNNotesModel(QAbstractTableModel):
     """A model provided by BNNotes"""
     COLNUM_COLOR = 0
     COLNUM_TITLE = 1
-    COLNUM_LOCKED = 2
-    COLNUM_VIEW = 3
-    COLNUM_PINNED = 4
-    COLNUM_LAST = 4
+    COLNUM_FONTS = 2
+    COLNUM_LOCKED = 3
+    COLNUM_VIEW = 4
+    COLNUM_PINNED = 5
+    COLNUM_LAST = 5
 
     ROLE_ID = Qt.UserRole + 1
     ROLE_NOTE = Qt.UserRole + 2
@@ -56,7 +57,7 @@ class BNNotesModel(QAbstractTableModel):
     ICON_WIDTH = 24
     ICON_SIZE = QSize(24, 24)
 
-    HEADERS = ['', 'Title', '', '', '']
+    HEADERS = ['', 'Title', '', '', '', '']
 
     def __init__(self, notes, parent=None):
         """Initialise list"""
@@ -147,6 +148,8 @@ class BNNotesModel(QAbstractTableModel):
             index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_LOCKED)
         elif property=='title':
             index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_TITLE)
+        elif property=='fonts':
+            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_FONTS)
 
         if not index is None:
             self.dataChanged.emit(index, index, [Qt.DecorationRole])
@@ -199,6 +202,12 @@ class BNNotesModel(QAbstractTableModel):
                         return QIcon(':/pktk/images/normal/lock_locked')
                     else:
                         return QIcon(':/pktk/images/disabled/lock_unlocked')
+                elif column==BNNotesModel.COLNUM_FONTS:
+                    id=self.__items[row]
+                    item = self.__notes.get(id)
+
+                    if item.hasEmbeddedFonts():
+                        return QIcon(':/pktk/images/normal/text_f')
         elif role == Qt.DisplayRole:
             id=self.__items[row]
             item = self.__notes.get(id)
@@ -209,17 +218,26 @@ class BNNotesModel(QAbstractTableModel):
             id=self.__items[row]
             item = self.__notes.get(id)
             if item:
-                tooltip=''
-                description=f"<p>{item.description()}</p>"
+                toolTip=[]
 
-                if description!='':
-                    tooltip=description+"<hr/>"
+                itemDescription=item.description()
+                if itemDescription!='':
+                    toolTip.append(f"<p>{itemDescription}</p>")
 
-                tooltip+=f"<p>Created: {tsToStr(item.timestampCreated())}"
+                if item.hasEmbeddedFonts():
+                    text=i18n(f"Embedded fonts: {item.embeddedFonts().length()}")
+                    toolTip.append(f"<p>{text}</p>")
+
+                if len(toolTip)>0:
+                    toolTip.append('<hr>')
+
+                toolTip.append("<p>")
+                toolTip.append(i18n(f"Created: {tsToStr(item.timestampCreated())}"))
                 if item.timestampCreated()!=item.timestampUpdated():
-                    tooltip+=f"<br>Updated: {tsToStr(item.timestampUpdated())}"
-                tooltip+="</p>"
-                return tooltip
+                    toolTip.append("<br>")
+                    toolTip.append(i18n(f"Updated: {tsToStr(item.timestampUpdated())}"))
+                toolTip.append("</p>")
+                return "".join(toolTip)
         elif role == BNNotesModel.ROLE_ID:
             return self.__items[row]
         elif role == BNNotesModel.ROLE_NOTE:
@@ -425,6 +443,7 @@ class BNWNotes(QTreeView):
         header.setSectionResizeMode(BNNotesModel.COLNUM_VIEW, QHeaderView.Fixed)
         header.setSectionResizeMode(BNNotesModel.COLNUM_PINNED, QHeaderView.Fixed)
 
+        header.resizeSection(BNNotesModel.COLNUM_FONTS, BNNotesModel.ICON_WIDTH+2)
         header.resizeSection(BNNotesModel.COLNUM_COLOR, BNNotesModel.ICON_WIDTH+2)
         header.resizeSection(BNNotesModel.COLNUM_LOCKED, BNNotesModel.ICON_WIDTH+2)
         header.resizeSection(BNNotesModel.COLNUM_VIEW, BNNotesModel.ICON_WIDTH+2)

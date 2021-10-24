@@ -20,13 +20,13 @@
 # -----------------------------------------------------------------------------
 
 
-from pktk.modules.settings import (
+from bulinotes.pktk.modules.settings import (
                         Settings,
                         SettingsFmt,
                         SettingsKey,
                         SettingsRule
                     )
-from pktk.widgets.wcolorselector import WColorPicker
+from bulinotes.pktk.widgets.wcolorselector import WColorPicker
 
 class BNSettingsKey(SettingsKey):
     """Configuration keys"""
@@ -70,9 +70,7 @@ class BNSettings(Settings):
     """BuliNote settings manager"""
 
     def __init__(self):
-        super(BNSettings, self).__init__('bulinotes')
-
-        self.setRules([
+        rules=[
             SettingsRule(BNSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT,                      True,       SettingsFmt(bool)),
             SettingsRule(BNSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE,              True,       SettingsFmt(bool)),
             SettingsRule(BNSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT,              "Default",  SettingsFmt(str)),
@@ -108,7 +106,9 @@ class BNSettings(Settings):
             SettingsRule(BNSettingsKey.CONFIG_EDITOR_TYPE_BRUSHES_ZOOMLEVEL,                        3,          SettingsFmt(int, [0,1,2,3,4])),
             SettingsRule(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_LIST_ZOOMLEVEL,              4,          SettingsFmt(int, [0,1,2,3,4,5])),
             SettingsRule(BNSettingsKey.CONFIG_EDITOR_TYPE_LINKEDLAYERS_ADDLAYERTREE_ZOOMLEVEL,      2,          SettingsFmt(int, [0,1,2,3,4,5]))
-        ])
+        ]
+        
+        super(BNSettings, self).__init__('bulinotes', rules)
 
     @staticmethod
     def getTxtColorPickerLayout():

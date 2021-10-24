@@ -46,7 +46,8 @@ from .wcolorbutton import (
                         QEColor
                     )
 
-from pktk.modules.imgutils import buildIcon
+from ..modules.imgutils import buildIcon
+from ..pktk import *
 
 class WTextEditDialog(QDialog):
     """A simple dialog box to edit formatted text"""
@@ -832,12 +833,12 @@ class WTextEdit(QWidget):
             return []
 
 
-class BCWSmallTextEdit(QFrame):
+class WSmallTextEdit(QFrame):
     """A small widget that allows to open a WTextEditDialog"""
     textChanged = Signal()
 
     def __init__(self, parent):
-        super(BCWSmallTextEdit, self).__init__(parent)
+        super(WSmallTextEdit, self).__init__(parent)
 
         self.__title = ""
 

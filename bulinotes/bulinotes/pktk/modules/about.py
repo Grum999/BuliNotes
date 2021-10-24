@@ -32,8 +32,8 @@ from PyQt5.QtWidgets import (
         QDialog
     )
 
-from pktk import *
-from pktk.modules.edialog import EDialog
+from ..pktk import *
+from .edialog import EDialog
 
 # -----------------------------------------------------------------------------
 class AboutWindow(EDialog):

@@ -27,10 +27,9 @@ import os
 import re
 
 from .strutils import strToMaxLength
-from pktk.pktk import (
-        EInvalidType,
-        EInvalidValue
-    )
+from ..pktk import *
+
+
 
 class TextTableSettingsText(object):
     """Define settings to render a table"""
@@ -178,6 +177,53 @@ class TextTableSettingsTextMarkdown(object):
         self.__columnsFormatting = formatting
 
 
+class TextTableSettingsTextHtml(object):
+    """Define settings to render a table as HTML"""
+
+    def __init__(self):
+        self.__style = ''
+
+    def style(self):
+        return self.__style
+
+    def setStyle(self, style):
+        if isinstance(style, str):
+            self.__style = style
+
+
+# NOTE: **started** to implement cell properties
+#       all properties are not functional/not available on all export method...
+#       need to finish it
+
+class TextTableCell(object):
+    """A really basic HTML cell definition"""
+    def __init__(self, content, colspan=None, rowspan=None, bgColor=None, alignH=None, alignV=None):
+        self.__content=content
+        self.__colspan=colspan
+        self.__rowspan=rowspan
+        self.__bgColor=bgColor
+        self.__alignH=alignH
+        self.__alignV=alignV
+
+    def content(self):
+        return self.__content
+
+    def colspan(self):
+        return self.__colspan
+
+    def rowspan(self):
+        return self.__rowspan
+
+    def bgColor(self):
+        return self.__bgColor
+
+    def alignH(self):
+        return self.__alignH
+
+    def alignV(self):
+        return self.__alignV
+
+
 
 class TextTable(object):
     """An object to store data in a table that can easily be exported as text"""
@@ -222,7 +268,7 @@ class TextTable(object):
             0: [
                     '', '', '', '', '', '',             # tl, tm, tca, tcb, tc, tr
                     '', '', '', '', '', '',             # bl, bm, bca, bcb, bc, br
-                    '', '', '', '', ' ', '',             # rl, rm, rca, rcb, rc, rr
+                    '', '', '', '', ' ', '',            # rl, rm, rca, rcb, rc, rr
                     '', '', '', '', '', '',             # sl, sm, sca, scb, sc, sr
                     '', '', '', '', '', ''              # hl, hm, hca, hcb, hc, hr
                 ],
@@ -279,9 +325,9 @@ class TextTable(object):
           extent colum size
         """
         if isinstance(rowContent, str):
-            self.__rows.append([rowContent])
+            self.__rows.append([TextTableCell(rowContent)])
         elif isinstance(rowContent, list):
-            self.__rows.append(rowContent)
+            self.__rows.append([TextTableCell(cellContent) if isinstance(cellContent, str) else cellContent for cellContent in rowContent])
 
     def addSeparator(self):
         """Add a separator in table"""
@@ -296,9 +342,9 @@ class TextTable(object):
           count number, then this will define new columns count
         """
         if isinstance(headerContent, str):
-            self.__header = [headerContent]
+            self.__header = [TextTableCell(headerContent)]
         elif isinstance(headerContent, list):
-            self.__header = headerContent
+            self.__header = [TextTableCell(cellContent) if isinstance(cellContent, str) else cellContent for cellContent in headerContent]
 
     def setTitle(self, title=None):
         """Set current table title"""
@@ -317,7 +363,7 @@ class TextTable(object):
                     returned[index] = 0
                 else:
                     # ensure that column content is text
-                    asText=str(column)
+                    asText=str(column.content())
                     if os.linesep in asText:
                         sizeText=0
                         for line in asText.split(os.linesep):
@@ -389,7 +435,7 @@ class TextTable(object):
             colsContent=[]
 
             for index, column in enumerate(columnsContent):
-                fmtRow=strToMaxLength(column, columnsSize[index], True, settings.columnAlignment(index)==0).split(os.linesep)
+                fmtRow=strToMaxLength(column.content(), columnsSize[index], True, settings.columnAlignment(index)==0).split(os.linesep)
                 colsContent.append(fmtRow)
 
                 nbFmtRows=len(fmtRow)
@@ -542,9 +588,9 @@ class TextTable(object):
         def buildRow(columnsContent):
             if enclosed:
                 sep = f'"{separator}"'
-                returned = f'"{sep.join(columnsContent)}"'
+                returned = f'"{sep.join([columnContent.content() for columnContent in columnsContent])}"'
             else:
-                returned = separator.join(columnsContent)
+                returned = separator.join([columnContent.content() for columnContent in columnsContent])
 
             return [returned]
 
@@ -619,9 +665,9 @@ class TextTable(object):
                 return returned
 
             if format:
-                return [' | '.join([formatItem(column, settings.columnFormatting(index)) for index, column in enumerate(columnsContent)])]
+                return [' | '.join([formatItem(column.content(), settings.columnFormatting(index)) for index, column in enumerate(columnsContent)])]
             else:
-                return [' | '.join([escape(column) for column in columnsContent])]
+                return [' | '.join([escape(column.content()) for column in columnsContent])]
 
         def buildHeader():
             returned=[]
@@ -629,6 +675,9 @@ class TextTable(object):
             header = []
             maxColNumber = 0
             for row in self.__rows:
+                if row==0x01:
+                    # ignore separator
+                    continue
                 rowLen = len(row)
                 if rowLen > maxColNumber:
                     maxColNumber = rowLen
@@ -685,3 +734,70 @@ class TextTable(object):
                 buffer+=buildRow(row, True)
 
         return os.linesep.join(buffer)
+
+    def asHtml(self, settings):
+        """Return current table as an HTML string, ussing given settings (TextTableSettingsTextHtml)"""
+
+        def buildRow(columnsContent, cellType='td'):
+            returned=[]
+            for column in columnsContent:
+                fmt=''
+                if column.colspan():
+                    fmt+=f' colspan={column.colspan()}'
+
+                if column.bgColor():
+                    fmt+=f' bgcolor={column.bgColor()}'
+
+
+                returned.append(f"<{cellType}{fmt}>{column.content()}</{cellType}>")
+
+            returned="\n".join(returned)
+
+            return [f"<tr>{returned}</tr>"]
+
+        def buildSep():
+            return [f"<tr><td colspan={self.__nbCols}>&nbsp;</td></tr>"]
+
+        def buildHeader():
+            returned=[]
+
+            header = []
+            maxColNumber = 0
+            for row in self.__rows:
+                if row==0x01:
+                    # ignore separator
+                    continue
+                rowLen = len(row)
+                if rowLen > maxColNumber:
+                    maxColNumber = rowLen
+
+            if len(self.__header) > 0:
+                header = self.__header
+
+                if len(header) < maxColNumber:
+                    # not enough cell in header... add missing cells
+                    header += ['?'] * (maxColNumber - len(header))
+            else:
+                # no header, return nothing
+                return returned
+
+            return buildRow(header, 'th')
+
+        if not isinstance(settings, TextTableSettingsTextHtml):
+            raise EInvalidType("Given `settings` must be <TextTableSettingsTextHtml>")
+
+        # one text row = one buffer row
+        buffer=[]
+
+        buffer+=buildHeader()
+
+        for row in self.__rows:
+            if row == 0x01:
+                buffer+=buildSep()
+            else:
+                buffer+=buildRow(row)
+
+        if len(buffer)>0:
+            return f"<table width=100%>{os.linesep.join(buffer)}</table>"
+        else:
+            return ''

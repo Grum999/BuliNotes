@@ -42,6 +42,10 @@ As notes are embedded into *.kra* file, you're sure to never loose them :-)
 
 ![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-2-0a_edit_note-linked_layers.jpg)
 
+*Editor - Embedded fonts*
+
+![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-4-0b_edit_note-embeddedfonts.jpg)
+
 
 
 ## Functionalities
@@ -132,18 +136,33 @@ When a note is displayed as a post-it, clicking on a brush will change current b
 
 ### Linked layers
 
-Layers can be linked to notes with some rich text anotations.
+Layers can be linked to notes with some rich text annotations.
 This can be useful in a note to refer to specifics layers, or just to "group" some related layers.
 
 When a note is displayed as a post-it, clicking on a linked layer will activate it as current layer.
 
 
+### Embedded fonts
+
+Fonts can be embedded in notes, if font's embeddability status allows it.
+This can be useful to store font in a document for the following reasons:
+- When sharing a document across different computers, ensure to always have used fonts available
+- When reopening a document many years later, to be sure font is still available
+
+> **Notes:**
+> - Embeddability is defined within OpenType fonts, and sometimes Adobe Type1 fonts
+> - When no embeddability information is available, plugin consider the font can't be embedded
+> - According to OpenType specifications, there's 4 possible value for embeddability:
+>   - **Installable**: font can be embedded and then loaded and/or extracted from note for installation
+>   - **Editable**: font can be embedded and then loaded from note
+>   - **Preview & Print**: font can't be embedded (as it's not possible to open a Krita document as "read-only")
+>   - **Restricted**: font can't be embedded (as it's not allowed)
 
 
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.3.0a](https://github.com/Grum999/BuliNotes/releases/download/0.3.0a/bulinotes.zip)**
++ **[ZIP ARCHIVE - v0.4.0b](https://github.com/Grum999/BuliNotes/releases/download/0.4.0b/bulinotes.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 
@@ -165,15 +184,20 @@ Plugin installation in [Krita](https://krita.org) is not intuitive and needs som
 ### Tested platforms
 > **Notes:**
 > - Plugin is not compatible with Krita 4.x.x; you must have at least Krita 5.x.x
-> - As currently Krita 5 is still in pre-alpha version, plugin is in alpha version and as long as Krita 5 won't be available as a stable version, plugin will be provided as alpha version
+> - As currently Krita 5 is still in beta version, plugin is in beta version and as long as Krita 5 won't be available as a stable version, plugin will be provided as beta version
 
-Plugin has been tested with Krita 5.0.0-prealpha (appimage) on Linux Debian 10.
-Plugin hasn't been tested on Windows and MacOs
+Plugin has been tested with Krita 5.0.0-beta2 (appimage) on Linux Debian 10 & Windows 10
+Plugin hasn't been tested on MacOs
 
 
 ## Plugin's life
 
 ### What's new?
+
+_[2021-10-24] Version 0.4.0b_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.4.0b.md)
+- *Embedded fonts* - allows to embed used fonts in notes
+- *Miscellaneous* - improve UI, fix bugs
+
 
 _[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.3.0a.md)
 - *Post-it mode* - allows to change linked layers properties
@@ -200,10 +224,10 @@ _[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://gith
 
 ### Bugs
 
-There's some bugs, and many functionalities are not yet implemented (even if buttons are already here :-))
+There's probably some bugs...
 
+Please note that according to this [Krita bug](https://bugs.kde.org/show_bug.cgi?id=441704) (not yet fixed with Krita 5.0.0-beta2) you may loose some notes modifications if document is not in *modified* state.
 
-> **Using plugin is currently not recommended except for testing & feedback purpose**
 
 
 ### What’s next?
@@ -211,6 +235,8 @@ There's some bugs, and many functionalities are not yet implemented (even if but
 Some ideas currently in mind:
 - Tasks
   - Implement tasks list note
+- Embbeded fonts
+  - Automatically load embedded fonts when document is opened
 
 
 ## License
