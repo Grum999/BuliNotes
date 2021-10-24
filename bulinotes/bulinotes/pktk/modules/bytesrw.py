@@ -154,8 +154,7 @@ class BytesRW(io.BytesIO):
             return struct.unpack(f'{self.__byteOrder}d', b)[0]
         return None
 
-
-    def readStr(self, size=None, encoding='utf-8'):
+    def readStr(self, size=None, encoding='utf-8', errors='strict'):
         """Read a UTF8 string
 
         Given `encoding` value can be provided to read other type
@@ -168,10 +167,10 @@ class BytesRW(io.BytesIO):
             b=self.read(size)
         else:
             b=self.read()
-        return b.decode(encoding)
+        return b.decode(encoding, errors)
 
 
-    def readPStr(self, encoding='utf-8'):
+    def readPStr(self, encoding='utf-8', errors='strict'):
         """Read a UTF8 pascal string (1 byte size)
 
         Given `encoding` value can be provided to read other type
@@ -181,11 +180,11 @@ class BytesRW(io.BytesIO):
         size=self.readUShort()
         if size>0:
             b=self.read(size)
-            return b.decode(encoding)
+            return b.decode(encoding, errors)
         return ''
 
 
-    def readPStr2(self, encoding='utf-8'):
+    def readPStr2(self, encoding='utf-8', errors='strict'):
         """Read a UTF8 pascal string (2 byte size)
 
         Given `encoding` value can be provided to read other type
@@ -195,11 +194,11 @@ class BytesRW(io.BytesIO):
         size=self.readUInt2()
         if size>0:
             b=self.read(size)
-            return b.decode(encoding)
+            return b.decode(encoding, errors)
         return ''
 
 
-    def readPStr4(self, encoding='utf-8'):
+    def readPStr4(self, encoding='utf-8', errors='strict'):
         """Read a UTF8 pascal string (4 byte size)
 
         Given `encoding` value can be provided to read other type
@@ -209,7 +208,7 @@ class BytesRW(io.BytesIO):
         size=self.readUInt4()
         if size>0:
             b=self.read(size)
-            return b.decode(encoding)
+            return b.decode(encoding, errors)
         return ''
 
 
