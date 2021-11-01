@@ -35,7 +35,7 @@ from PyQt5.QtCore import (
         QRect
     )
 
-
+from .imgutils import buildIcon
 from ..pktk import *
 
 # -----------------------------------------------------------------------------
@@ -193,7 +193,7 @@ def loadXmlUi(fileName, parent):
         return None
 
     # load UI
-    PyQt5.uic.loadUi(fileName, parent)
+    PyQt5.uic.loadUi(fileName, parent, PkTk.packageName())
 
     # Parse XML file and retrieve all object for which an icon is set
     tree = ET.parse(fileName)
@@ -395,7 +395,9 @@ def colorSpaceNfo(colorSpace):
             'text': text
         }
 
-
+def replaceLineEditClearButton(lineEdit):
+    """Replace default 'clear' button with a better one"""
+    lineEdit.findChild(QToolButton).setIcon(buildIcon("pktk:edit_text_clear"))
 
 
 

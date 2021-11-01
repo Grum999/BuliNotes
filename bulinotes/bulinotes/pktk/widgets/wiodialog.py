@@ -42,6 +42,7 @@ from .wcolorselector import (
         WColorComplementary
     )
 
+from ..modules.utils import replaceLineEditClearButton
 from ..modules.imgutils import buildIcon
 from ..pktk import *
 
@@ -227,7 +228,7 @@ class WDialogStrInput(WDialogMessage):
         self._leInput.setText(defaultValue)
         self._leInput.setFocus()
         self._leInput.setClearButtonEnabled(True)
-        self._leInput.findChild(QToolButton).setIcon(QIcon(":/pktk/images/normal/edit_text_clear"))
+        replaceLineEditClearButton(self._leInput)
         self._layout.insertWidget(self._layout.count()-1, self._leInput)
 
         self.__regEx=regEx
@@ -893,7 +894,7 @@ class WDialogFontInput(WDialogMessage):
             if optionFilter:
                 self._leFilterName=QLineEdit(wContainer)
                 self._leFilterName.setClearButtonEnabled(True)
-                self._leFilterName.findChild(QToolButton).setIcon(QIcon(":/pktk/images/normal/edit_text_clear"))
+                replaceLineEditClearButton(self._leFilterName)
                 self._leFilterName.setToolTip(i18n('Filter fonts\nStart filter with "re:" for regular expression filter or "re!:" for inverted regular expression filter'))
                 self._leFilterName.textEdited.connect(self.__updateFilter)
                 fLayout.addRow(i18n("Filter name"), self._leFilterName)

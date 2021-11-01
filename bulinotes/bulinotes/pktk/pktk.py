@@ -37,6 +37,7 @@ class EInvalidStatus(Exception):
 
 class PkTk:
     __libraries = {}
+    __packageName=''
 
     PATH = os.path.dirname(__file__)
     PATH_RESOURCES = os.path.join(os.path.dirname(__file__), 'resources')
@@ -51,3 +52,16 @@ class PkTk:
             return os.path.join(os.path.realpath(os.path.dirname(__file__)), *name)
         else:
             return os.path.realpath(os.path.dirname(__file__))
+
+    @staticmethod
+    def setPackageName(package=None):
+        """Define current package name for PkTk"""
+        if not isinstance(package, str):
+            PkTk.__packageName=''
+        else:
+            PkTk.__packageName=package
+
+    @staticmethod
+    def packageName():
+        """Return current package name for PkTk"""
+        return PkTk.__packageName

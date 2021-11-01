@@ -34,6 +34,7 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
+from ..modules.utils import replaceLineEditClearButton
 from ..modules.imgutils import (buildIcon, checkerBoardBrush)
 from ..modules.ekrita import EKritaNode
 from ..modules.iconsizes import IconSizes
@@ -543,8 +544,8 @@ class WDocNodesViewTBar(QWidget):
         self.__leFilter.setToolTip(i18n('Filter by layer name\nStart filter with "re:"" or "re/i:"" for regular expression filter'))
 
         self.__layout.setContentsMargins(0,0,0,0)
+        replaceLineEditClearButton(self.__leFilter)
 
-        self.__leFilter.findChild(QToolButton).setIcon(QIcon(":/pktk/images/normal/edit_text_clear"))
         self.setLayout(self.__layout)
 
     def __setFilter(self, filter=''):
