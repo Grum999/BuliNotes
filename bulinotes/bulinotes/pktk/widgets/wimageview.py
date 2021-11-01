@@ -361,6 +361,10 @@ class WImageView(QGraphicsView):
 
         Given image is a QImage or a QPixmap
         """
+        if image is None:
+            self.clearImage()
+            return
+
         if not (isinstance(image, QImage) or isinstance(image, QPixmap)):
             raise EInvalidType("Given `image` must be a <QImage> or a <QPixmap>")
 
