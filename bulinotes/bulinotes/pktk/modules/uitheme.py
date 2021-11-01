@@ -95,7 +95,7 @@ class UITheme(object):
         if clearPixmapCache is None:
             clearPixmapCache=True
         for theme in UITheme.__themes:
-            if UITheme.__themes[theme].autoReload():
+            if UITheme.__themes[theme].getAutoReload():
                 # reload
                 UITheme.__themes[theme].loadResources(clearPixmapCache)
                 if clearPixmapCache:
