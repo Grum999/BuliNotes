@@ -73,7 +73,7 @@ class BNBrushPreset:
 
     @staticmethod
     def getName(name=None):
-        """Return brush preset from name
+        """Return preset name from name
 
         Given `name` can be a <str> or a <Resource> (preset)
 
@@ -110,7 +110,7 @@ class BNBrushPreset:
 
             if len(BNBrushPreset.__brushes)>0:
                 # return the first one...
-                return BNBrushPreset.__brushes[list(BNBrushPreset.__brushes.keys())[0]]
+                return BNBrushPreset.__brushes[list(BNBrushPreset.__brushes.keys())[0]].name()
 
             # this case should never occurs I hope!!
             raise EInvalidStatus('Something weird happened!\n- Given brush name "'+name+'" was not found\n- Current brush "'+brushName+'" returned bu Krita doesn\'t exist\n- Brush preset list returned by Krita is empty\n\nCan\'t do anything...')
