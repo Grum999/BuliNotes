@@ -1,22 +1,22 @@
-#-----------------------------------------------------------------------------
-# Buli Notes
-# Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Buli Notes
+# Copyright (C) 2021-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
 # -----------------------------------------------------------------------------
 # A Krita plugin designed to manage notes
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# The bnuidocker module provides classes used to manage plugin docker interface
+#
+# Main classes from this module
+#
+# - BNUiDocker:
+#       Main plugin docker user interface
+#
 # -----------------------------------------------------------------------------
 
 import os.path
@@ -34,27 +34,28 @@ from .bnsettings import BNSettings
 from .bnnotes import (BNNote,
                       BNNotes,
                       BNNoteEditor
-                    )
+                      )
 from .bnwnotes import BNNotesModel
 from .bnnote_postit import BNNotePostIt
+
 
 class BNUiDocker(QWidget):
     """Current selection interface"""
 
     def __init__(self, docker, bnName="Buli Notes", bnId='', bnVersion="testing", parent=None):
         super(BNUiDocker, self).__init__(parent)
-        self.__bnName=bnName
-        self.__bnId=bnId
-        self.__bnVersion=bnVersion
-        self.__docker=docker
+        self.__bnName = bnName
+        self.__bnId = bnId
+        self.__bnVersion = bnVersion
+        self.__docker = docker
         BNSettings.load()
         UITheme.load()
         UITheme.load(os.path.join(os.path.dirname(__file__), 'resources'))
-        self.__notes=BNNotes()
-        self.__docker=docker
+        self.__notes = BNNotes()
+        self.__docker = docker
 
         # on which plugin is currently working on
-        self.__kraActiveDocument=None
+        self.__kraActiveDocument = None
 
         self.__notes.updateAdded.connect(self.__updateUi)
         self.__notes.updateRemoved.connect(self.__updateUi)
@@ -63,7 +64,6 @@ class BNUiDocker(QWidget):
         loadXmlUi(uiFileName, self)
 
         self.__initialize()
-
 
     def __initialize(self):
         """Initialise interface"""
@@ -86,7 +86,7 @@ class BNUiDocker(QWidget):
 
     def __addNote(self):
         """Add a new note in notes"""
-        note=BNNoteEditor.edit(BNNote())
+        note = BNNoteEditor.edit(BNNote())
         if note:
             note.setPosition(self.__notes.length())
             self.__notes.add(note)
@@ -101,7 +101,7 @@ class BNUiDocker(QWidget):
             # a double-click not made in valid columns does nothing
             return
 
-        selectedItem=self.tvNotes.selectedItems()
+        selectedItem = self.tvNotes.selectedItems()
         if not selectedItem[0].locked():
             BNNoteEditor.edit(selectedItem[0])
         else:
@@ -116,14 +116,14 @@ class BNUiDocker(QWidget):
 
     def __updateUi(self):
         """Update current ui according to current selection and document"""
-        selectedItems=self.tvNotes.selectedItems()
-        nbSelectedItems=len(selectedItems)
+        selectedItems = self.tvNotes.selectedItems()
+        nbSelectedItems = len(selectedItems)
 
         self.btAddNote.setEnabled(not(self.__kraActiveDocument is None))
-        self.btEditNote.setEnabled(nbSelectedItems==1 and not selectedItems[0] is None and not selectedItems[0].locked())
-        self.btRemoveNote.setEnabled(nbSelectedItems>1 or nbSelectedItems==1 and not selectedItems[0] is None and not selectedItems[0].locked())
-        self.btMoveNoteUp.setEnabled(nbSelectedItems>0 and not selectedItems[0] is None and selectedItems[0].position()>0)
-        self.btMoveNoteDown.setEnabled(nbSelectedItems>0 and not selectedItems[-1] is None and (selectedItems[-1].position()<self.__notes.length()-1))
+        self.btEditNote.setEnabled(nbSelectedItems == 1 and not selectedItems[0] is None and not selectedItems[0].locked())
+        self.btRemoveNote.setEnabled(nbSelectedItems > 1 or nbSelectedItems == 1 and not selectedItems[0] is None and not selectedItems[0].locked())
+        self.btMoveNoteUp.setEnabled(nbSelectedItems > 0 and not selectedItems[0] is None and selectedItems[0].position() > 0)
+        self.btMoveNoteDown.setEnabled(nbSelectedItems > 0 and not selectedItems[-1] is None and (selectedItems[-1].position() < self.__notes.length()-1))
 
         if self.__notes.length() > 0:
             self.__docker.setWindowTitle(f'{self.__bnName} ({self.__notes.length()})')
@@ -138,13 +138,12 @@ class BNUiDocker(QWidget):
         """Move all selected notes down"""
         self.__notes.movePositionDown(self.tvNotes.selectedItems())
 
-
     def canvasChanged(self, canvas):
         if canvas and Krita.instance().activeDocument():
             # memorize current document
-            self.__kraActiveDocument=canvas.view().document()
+            self.__kraActiveDocument = canvas.view().document()
         else:
             # no canvas means no document opened
-            self.__kraActiveDocument=None
+            self.__kraActiveDocument = None
         self.__notes.setDocument(self.__kraActiveDocument)
         self.__updateUi()

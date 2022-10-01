@@ -1,23 +1,32 @@
-#-----------------------------------------------------------------------------
-# Buli Notes
-# Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Buli Notes
+# Copyright (C) 2021-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
 # -----------------------------------------------------------------------------
 # A Krita plugin designed to manage notes
 # -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# The bnwfonts module provides widget used to manage font list
+#
+# Main classes from this module
+#
+# - BNFontsModel:
+#       Model to manage fonts
+#
+# - BNWFonts
+#       View to manage fonts
+#
+# - BNFont
+#       Font item in view
+#
+# - BNBrushesEditor
+#       Editor for brushes properties
+# -----------------------------------------------------------------------------
+
 import re
 
 from bulinotes.pktk import *
@@ -38,38 +47,37 @@ from .bnembeddedfont import BNEmbeddedFont
 from .bnsettings import (BNSettings, BNSettingsKey)
 
 
-
 class BNFont:
     """A font definition for tree view"""
     def __init__(self, name, used, fonts):
-        self.__name=name
-        self.__fonts=FontDatabase.font(self.__name)
-        self.__used=used
-        self.__embedded=(len(fonts)>0)
-        self.__totalSize=0
-        self.__totalSizeStr=''
+        self.__name = name
+        self.__fonts = FontDatabase.font(self.__name)
+        self.__used = used
+        self.__embedded = (len(fonts) > 0)
+        self.__totalSize = 0
+        self.__totalSizeStr = ''
 
-        if len(self.__fonts)==0:
-            self.__fonts=fonts
-        self.__nbFonts=len(self.__fonts)
+        if len(self.__fonts) == 0:
+            self.__fonts = fonts
+        self.__nbFonts = len(self.__fonts)
 
         for font in self.__fonts:
             self.__nbFonts
-            if r:=font.property(Font.PROPERTY_FILE_SIZE):
-                self.__totalSize+=r
-            elif font.type()==Font.TYPE_OPENTYPE_TTC:
-                self.__nbFonts+=font.property(Font.PROPERTY_COLLECTION_COUNT)-1
+            if r := font.property(Font.PROPERTY_FILE_SIZE):
+                self.__totalSize += r
+            elif font.type() == Font.TYPE_OPENTYPE_TTC:
+                self.__nbFonts += font.property(Font.PROPERTY_COLLECTION_COUNT)-1
                 for fnt in font.property(Font.PROPERTY_COLLECTION_FONTS):
-                    if r:=fnt.property(Font.PROPERTY_FILE_SIZE):
-                        self.__totalSize+=r
+                    if r := fnt.property(Font.PROPERTY_FILE_SIZE):
+                        self.__totalSize += r
 
-        self.__totalSizeStr=bytesSizeToStr(self.__totalSize)
+        self.__totalSizeStr = bytesSizeToStr(self.__totalSize)
 
     def __eq__(self, value):
         if isinstance(value, BNFont):
-            return self.__name==value.__name
+            return self.__name == value.__name
         else:
-            return self.__name==value
+            return self.__name == value
 
     def name(self):
         """Return font name"""
@@ -92,7 +100,7 @@ class BNFont:
 
     def setEmbedded(self, value):
         """set if font is embedded in document or not"""
-        self.__embedded=value
+        self.__embedded = value
 
     def embeddable(self, asBoolean=True):
         """Return if font can be embedded
@@ -111,21 +119,21 @@ class BNFont:
                 return False
             else:
                 return -2
-        embeddingState=0
+        embeddingState = 0
         for fontNfo in self.__fonts:
-            propEmbeddingState=fontNfo.embeddingState()[0]
+            propEmbeddingState = fontNfo.embeddingState()[0]
             # for embedding state, as each font in list can have her own embeddable definition
             # need to return the most restrictive from list
-            if propEmbeddingState==2:
+            if propEmbeddingState == 2:
                 # at least one font is in restrictive state, no need to continue
                 if asBoolean:
                     return False
                 return propEmbeddingState
-            elif propEmbeddingState==4 and embeddingState in (0, 8):
-                embeddingState=4
-            elif propEmbeddingState==8 and embeddingState in (0, 8):
-                embeddingState=8
-            elif propEmbeddingState!=0:
+            elif propEmbeddingState == 4 and embeddingState in (0, 8):
+                embeddingState = 4
+            elif propEmbeddingState == 8 and embeddingState in (0, 8):
+                embeddingState = 8
+            elif propEmbeddingState != 0:
                 # at least one font is an unknown state, no need to continue
                 if asBoolean:
                     return False
@@ -142,17 +150,16 @@ class BNFont:
 
     def available(self):
         """Return if font is available in QFontDatabase"""
-        noFoundryName=None
-        if r:=re.search(r"(.*)\s\[[^\]]+\]$", self.__name):
+        noFoundryName = None
+        if r := re.search(r"(.*)\s\[[^\]]+\]$", self.__name):
             # a foundry name is present in given font name?
             # get name without foundt name
-            noFoundryName=r.groups()[0]
+            noFoundryName = r.groups()[0]
 
-        families=FontDatabase.qFontDatabase().families()
+        families = FontDatabase.qFontDatabase().families()
         if self.__name in families or noFoundryName in families:
             return True
         return False
-
 
 
 class BNFontsModel(QAbstractTableModel):
@@ -164,7 +171,7 @@ class BNFontsModel(QAbstractTableModel):
     def __init__(self, fonts, parent=None):
         """Initialise list"""
         super(BNFontsModel, self).__init__(parent)
-        self.__items=fonts
+        self.__items = fonts
 
     def __repr__(self):
         return f'<BNFontsModel()>'
@@ -177,7 +184,7 @@ class BNFontsModel(QAbstractTableModel):
             return -1
 
     def dataUpdated(self, fontName):
-        index=self.createIndex(self.__idRow(fontName), BNFontsModel.COLNUM_NFO)
+        index = self.createIndex(self.__idRow(fontName), BNFontsModel.COLNUM_NFO)
         self.dataChanged.emit(index, index, [Qt.DisplayRole])
 
     def columnCount(self, parent=QModelIndex()):
@@ -191,9 +198,9 @@ class BNFontsModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         """Return data for index+role"""
         column = index.column()
-        row=index.row()
+        row = index.row()
 
-        fontNfo=self.__items[row]
+        fontNfo = self.__items[row]
         if role == Qt.ToolTipRole:
             pass
         elif role == Qt.DisplayRole:
@@ -211,22 +218,22 @@ class BNFontsModel(QAbstractTableModel):
 
     def embeddable(self):
         """Return number of embeddable fonts"""
-        returnedNb=0
-        returnedSize=0
+        returnedNb = 0
+        returnedSize = 0
         for item in self.__items:
             if item.embeddable():
-                returnedNb+=1
-                returnedSize+=item.fileSize()
+                returnedNb += 1
+                returnedSize += item.fileSize()
         return (returnedNb, returnedSize)
 
     def embedded(self):
         """Return number of embedded fonts"""
-        returnedNb=0
-        returnedSize=0
+        returnedNb = 0
+        returnedSize = 0
         for item in self.__items:
             if item.embedded():
-                returnedNb+=1
-                returnedSize+=item.fileSize()
+                returnedNb += 1
+                returnedSize += item.fileSize()
         return (returnedNb, returnedSize)
 
 
@@ -237,16 +244,16 @@ class BNWFonts(QTreeView):
     def __init__(self, parent=None):
         super(BNWFonts, self).__init__(parent)
         self.setAutoScroll(False)
-        #self.setAlternatingRowColors(True)
+        # self.setAlternatingRowColors(True)
 
-        self.__parent=parent
+        self.__parent = parent
         self.__model = None
         self.__proxyModel = None
-        self.__fontSize=self.font().pointSizeF()
-        if self.__fontSize==-1:
-            self.__fontSize=-self.font().pixelSize()
+        self.__fontSize = self.font().pointSizeF()
+        if self.__fontSize == -1:
+            self.__fontSize = -self.font().pixelSize()
 
-        self.__delegate=BNFontsModelDelegate(self)
+        self.__delegate = BNFontsModelDelegate(self)
         self.setItemDelegate(self.__delegate)
         self.setUniformRowHeights(True)
         self.setRootIsDecorated(False)
@@ -264,12 +271,12 @@ class BNWFonts(QTreeView):
 
     def selectedItems(self):
         """Return a list of selected fonts items"""
-        returned=[]
+        returned = []
         if self.selectionModel():
             for item in self.selectionModel().selectedRows(BNFontsModel.COLNUM_NFO):
                 # normaly one item can be selected..
-                font=item.data(BNFontsModel.ROLE_FONT)
-                if not font is None:
+                font = item.data(BNFontsModel.ROLE_FONT)
+                if font is not None:
                     returned.append(font)
         return returned
 
@@ -288,9 +295,9 @@ class BNWFonts(QTreeView):
         """
         if self.selectionModel():
             for item in self.selectionModel().selectedRows(BNFontsModel.COLNUM_NFO):
-                font=item.data(BNFontsModel.ROLE_FONT)
+                font = item.data(BNFontsModel.ROLE_FONT)
 
-                if not font is None:
+                if font is not None:
 
                     if not font.embeddable():
                         if font.embedded():
@@ -298,8 +305,11 @@ class BNWFonts(QTreeView):
                             # system (not embeddable but embbeded)
                             # in this case, allows to unembed font
                             if userWarning:
-                                if WDialogBooleanInput.display(i18n("Unembed font"), i18n("<h1>Warning</h1><p>You're about to unembed a font that is not available on your system.</p><p>Once font is unembedded, it won't be possible anymore to embed it again.</p><p><b><i>Do you confirm action?<i></b></p>")):
-                                    newStatus=False
+                                if WDialogBooleanInput.display(i18n("Unembed font"),
+                                                               i18n("<h1>Warning</h1><p>You're about to unembed a font that is not available on your system.</p>"
+                                                                    "<p>Once font is unembedded, it won't be possible anymore to embed it again.</p>"
+                                                                    "<p><b><i>Do you confirm action?<i></b></p>")):
+                                    newStatus = False
                                 else:
                                     continue
                         else:
@@ -310,15 +320,14 @@ class BNWFonts(QTreeView):
                     else:
                         # font is embeddable
                         if value is None:
-                            newStatus=not font.embedded()
+                            newStatus = not font.embedded()
                         else:
-                            newStatus=(value==True)
+                            newStatus = (value is True)
 
-                    if newStatus!=font.embedded():
+                    if newStatus != font.embedded():
                         font.setEmbedded(newStatus)
                         self.model().dataUpdated(font.name())
                         self.embbedFontStateChanged.emit(font, newStatus)
-
 
 
 class BNFontsModelDelegate(QStyledItemDelegate):
@@ -333,8 +342,8 @@ class BNFontsModelDelegate(QStyledItemDelegate):
             # render brush information
             self.initStyleOption(option, index)
 
-            font=index.data(BNFontsModel.ROLE_FONT)
-            height=round((option.rect.height()-4)/5)
+            font = index.data(BNFontsModel.ROLE_FONT)
+            height = round((option.rect.height()-4)/5)
 
             painter.save()
 
@@ -342,95 +351,91 @@ class BNFontsModelDelegate(QStyledItemDelegate):
                 # not available or not embeddable
                 painter.fillRect(option.rect, warningAreaBrush())
 
-
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
                 painter.setPen(QPen(option.palette.color(QPalette.HighlightedText)))
             else:
                 painter.setPen(QPen(option.palette.color(QPalette.Text)))
 
-            defaultFnt=painter.font()
-
+            defaultFnt = painter.font()
 
             top = option.rect.top() + 2
             left = option.rect.left() + 2
 
-            # draw formatted font name
-            textRect=QRect(left, top, option.rect.width(), 2*height)
-            fnt=QFont(font.name())
+            # draw formatted font name
+            textRect = QRect(left, top, option.rect.width(), 2*height)
+            fnt = QFont(font.name())
             fnt.setPixelSize(height*2)
 
-            fntLoaded=True
+            fntLoaded = True
             if not fnt.exactMatch():
                 # font not available for Krita (not installed or not loaded)
                 painter.setOpacity(0.55)
-                fntLoaded=False
+                fntLoaded = False
             painter.setFont(fnt)
-            painter.drawText(textRect, Qt.AlignLeft|Qt.AlignVCenter, font.name())
+            painter.drawText(textRect, Qt.AlignLeft | Qt.AlignVCenter, font.name())
 
             if not FontDatabase.installed(font.name()):
                 # font not available for Krita (not installed)
-                topTmp=top+2*height
-                textRect=QRect(left, topTmp, option.rect.width() - 6, option.rect.bottom() - topTmp)
-                fnt=QFont(defaultFnt)
-                if ps:=fnt.pixelSize()!=-1:
+                topTmp = top+2*height
+                textRect = QRect(left, topTmp, option.rect.width() - 6, option.rect.bottom() - topTmp)
+                fnt = QFont(defaultFnt)
+                if ps := fnt.pixelSize() != -1:
                     fnt.setPixelSize(round(ps*0.84))
                 else:
                     fnt.setPointSizeF(fnt.pointSizeF()*0.9)
                 fnt.setItalic(True)
                 painter.setFont(fnt)
                 if fntLoaded:
-                    # font has been loaded
-                    painter.drawText(textRect, Qt.AlignRight|Qt.AlignTop, "Loaded")
+                    # font has been loaded
+                    painter.drawText(textRect, Qt.AlignRight | Qt.AlignTop, "Loaded")
                 elif font.embedded():
-                    painter.drawText(textRect, Qt.AlignRight|Qt.AlignTop, "Not yet loaded")
+                    painter.drawText(textRect, Qt.AlignRight | Qt.AlignTop, "Not yet loaded")
 
             painter.setOpacity(1.0)
 
-
-            # draw font name (normal font, bold)
-            top+=2*height
-            textRect=QRect(left, top, option.rect.width(), option.rect.bottom() - top)
-            fnt=QFont(defaultFnt)
+            # draw font name (normal font, bold)
+            top += 2*height
+            textRect = QRect(left, top, option.rect.width(), option.rect.bottom() - top)
+            fnt = QFont(defaultFnt)
             fnt.setBold(True)
             painter.setFont(fnt)
-            painter.drawText(textRect, Qt.AlignLeft|Qt.AlignTop, font.name())
+            painter.drawText(textRect, Qt.AlignLeft | Qt.AlignTop, font.name())
 
-            # draw embedded status
-            drawSize=True
+            # draw embedded status
+            drawSize = True
             if font.embedded():
-                text=i18n('Embedded')
+                text = i18n('Embedded')
             elif font.available():
                 if font.embeddable():
-                    text=i18n('Embeddable')
+                    text = i18n('Embeddable')
                 else:
-                    text=i18n('Not embeddable')
-                    drawSize=False
+                    text = i18n('Not embeddable')
+                    drawSize = False
             else:
-                text=i18n('Not available')
-                drawSize=False
-            top+=height
-            textRect=QRect(left + height, top, option.rect.width(), option.rect.bottom() - top)
+                text = i18n('Not available')
+                drawSize = False
+            top += height
+            textRect = QRect(left + height, top, option.rect.width(), option.rect.bottom() - top)
 
-            fnt=QFont(defaultFnt)
+            fnt = QFont(defaultFnt)
             fnt.setItalic(True)
             painter.setFont(fnt)
-            painter.drawText(textRect, Qt.AlignLeft|Qt.AlignTop, text)
+            painter.drawText(textRect, Qt.AlignLeft | Qt.AlignTop, text)
 
             if drawSize:
-                textRect=QRect(left, top, option.rect.width() - 6, option.rect.bottom() - top)
-                painter.drawText(textRect, Qt.AlignRight|Qt.AlignTop, font.fileSize(True))
+                textRect = QRect(left, top, option.rect.width() - 6, option.rect.bottom() - top)
+                painter.drawText(textRect, Qt.AlignRight | Qt.AlignTop, font.fileSize(True))
 
-
-            # draw used status
+            # draw used status
             if font.embedded() and not font.used():
-                text=i18n('Not used (anymore) in document')
-                top+=height
-                textRect=QRect(left + height, top, option.rect.width(), option.rect.bottom() - top)
-                fnt=QFont(defaultFnt)
+                text = i18n('Not used (anymore) in document')
+                top += height
+                textRect = QRect(left + height, top, option.rect.width(), option.rect.bottom() - top)
+                fnt = QFont(defaultFnt)
                 fnt.setItalic(True)
                 painter.setFont(fnt)
-                painter.drawText(textRect, Qt.AlignLeft|Qt.AlignTop, text)
+                painter.drawText(textRect, Qt.AlignLeft | Qt.AlignTop, text)
 
             painter.restore()
             return

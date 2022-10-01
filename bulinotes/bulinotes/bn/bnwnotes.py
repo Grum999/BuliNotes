@@ -1,23 +1,27 @@
-#-----------------------------------------------------------------------------
-# Buli Notes
-# Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Buli Notes
+# Copyright (C) 2021-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
 # -----------------------------------------------------------------------------
 # A Krita plugin designed to manage notes
 # -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# The bnwnotes module provides widget used to manage notes list
+#
+# Main classes from this module
+#
+# - BNNotesModel:
+#       Model to manage notes
+#
+# - BNWNotes
+#       View to manage notes
+#
+# -----------------------------------------------------------------------------
+
 import time
 
 from bulinotes.pktk import *
@@ -38,7 +42,6 @@ from bulinotes.pktk.widgets.wstandardcolorselector import (
         WStandardColorSelector,
         WMenuStandardColorSelector
     )
-
 
 
 class BNNotesModel(QAbstractTableModel):
@@ -64,34 +67,33 @@ class BNNotesModel(QAbstractTableModel):
         super(BNNotesModel, self).__init__(parent)
         if not isinstance(notes, BNNotes):
             raise EInvalidType('Given `notes` must be a <BNNotes>')
-        self.__notes=notes
+        self.__notes = notes
         self.__notes.updated.connect(self.__dataUpdated)
         self.__notes.updateReset.connect(self.__dataUpdateReset)
         self.__notes.updateAdded.connect(self.__dataUpdatedAdd)
         self.__notes.updateRemoved.connect(self.__dataUpdateRemove)
         self.__notes.updateMoved.connect(self.__dataUpdateMove)
-        self.__items=self.__notes.idList(True)
-        self.__iconSize=BNNotesModel.ICON_SIZE
-        self.__icons=[self.__buildColorIcon(colorIndex) for colorIndex in range(WStandardColorSelector.NB_COLORS)]
-        self.__isFreezed=False
-
+        self.__items = self.__notes.idList(True)
+        self.__iconSize = BNNotesModel.ICON_SIZE
+        self.__icons = [self.__buildColorIcon(colorIndex) for colorIndex in range(WStandardColorSelector.NB_COLORS)]
+        self.__isFreezed = False
 
     def __unfreeze(self):
-        self.__isFreezed=False
+        self.__isFreezed = False
 
     def __repr__(self):
         return f'<BNNotesModel()>'
 
     def __buildColorIcon(self, colorIndex):
-        if colorIndex==WStandardColorSelector.COLOR_NONE:
+        if colorIndex == WStandardColorSelector.COLOR_NONE:
             return None
-        pixmap=QPixmap(BNNotesModel.ICON_SIZE)
+        pixmap = QPixmap(BNNotesModel.ICON_SIZE)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(Qt.transparent)
         painter.setBrush(QBrush(WStandardColorSelector.getColor(colorIndex).darker(125)))
-        painter.drawEllipse(QRect(QPoint(2,2), BNNotesModel.ICON_SIZE - QSize(3,3)))
+        painter.drawEllipse(QRect(QPoint(2, 2), BNNotesModel.ICON_SIZE - QSize(3, 3)))
         painter.end()
         return QIcon(pixmap)
 
@@ -105,33 +107,33 @@ class BNNotesModel(QAbstractTableModel):
     def __dataUpdateReset(self):
         """Data has entirely been changed (reset/reload)"""
         self.modelAboutToBeReset.emit()
-        self.__items=self.__notes.idList(True)
+        self.__items = self.__notes.idList(True)
         self.modelReset.emit()
 
     def __dataUpdateMove(self):
         """Item order has been modified"""
         self.modelAboutToBeReset.emit()
-        self.__items=self.__notes.idList(True)
+        self.__items = self.__notes.idList(True)
         self.modelReset.emit()
 
     def __dataUpdatedAdd(self, items):
         self.modelAboutToBeReset.emit()
-        self.__items=self.__notes.idList(True)
+        self.__items = self.__notes.idList(True)
         self.modelReset.emit()
 
     def __dataUpdateRemove(self, items):
         self.modelAboutToBeReset.emit()
-        self.__items=self.__notes.idList(True)
+        self.__items = self.__notes.idList(True)
         self.modelReset.emit()
 
     def __dataUpdated(self, item, property):
-        index=None
-        if property=='colorIndex':
-            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_COLOR)
-        elif property=='opened':
-            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_VIEW)
-        elif property=='closed':
-            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_VIEW)
+        index = None
+        if property == 'colorIndex':
+            index = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_COLOR)
+        elif property == 'opened':
+            index = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_VIEW)
+        elif property == 'closed':
+            index = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_VIEW)
             # --- this is tricky thing...
             # when a postit lost focuse, it's closed automatically
             # but if in QTreeView user click on VIEW icon to hide postit:
@@ -140,22 +142,22 @@ class BNNotesModel(QAbstractTableModel):
             #     it's considered that post-it have to be opened...
             # Timer will set a "freeze" status
             # And in QTreeView, if trying to process VIEW icon, if model is currently in "freeze" then do nothing
-            self.__isFreezed=True
+            self.__isFreezed = True
             QTimer.singleShot(125, self.__unfreeze)
-        elif property=='pinned':
-            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_PINNED)
-        elif property=='locked':
-            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_LOCKED)
-        elif property=='title':
-            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_TITLE)
-        elif property=='fonts':
-            index=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_FONTS)
+        elif property == 'pinned':
+            index = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_PINNED)
+        elif property == 'locked':
+            index = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_LOCKED)
+        elif property == 'title':
+            index = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_TITLE)
+        elif property == 'fonts':
+            index = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_FONTS)
 
-        if not index is None:
+        if index is not None:
             self.dataChanged.emit(index, index, [Qt.DecorationRole])
-        elif property=='*':
-            indexS=self.createIndex(self.__idRow(item.id()), 0)
-            indexE=self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_LAST)
+        elif property == '*':
+            indexS = self.createIndex(self.__idRow(item.id()), 0)
+            indexE = self.createIndex(self.__idRow(item.id()), BNNotesModel.COLNUM_LAST)
             self.dataChanged.emit(indexS, indexE, [Qt.DecorationRole])
 
     def columnCount(self, parent=QModelIndex()):
@@ -169,71 +171,71 @@ class BNNotesModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         """Return data for index+role"""
         column = index.column()
-        row=index.row()
+        row = index.row()
 
         if role == Qt.DecorationRole:
-            id=self.__items[row]
+            id = self.__items[row]
             item = self.__notes.get(id)
 
             if item:
-                if column==BNNotesModel.COLNUM_COLOR:
-                    id=self.__items[row]
+                if column == BNNotesModel.COLNUM_COLOR:
+                    id = self.__items[row]
                     item = self.__notes.get(id)
                     return self.__icons[item.colorIndex()]
-                elif column==BNNotesModel.COLNUM_VIEW:
-                    id=self.__items[row]
+                elif column == BNNotesModel.COLNUM_VIEW:
+                    id = self.__items[row]
                     item = self.__notes.get(id)
                     if item.windowPostIt():
                         return QIcon(':/pktk/images/normal/note_view')
                     else:
                         return QIcon(':/pktk/images/disabled/note_view')
-                elif column==BNNotesModel.COLNUM_PINNED:
-                    id=self.__items[row]
+                elif column == BNNotesModel.COLNUM_PINNED:
+                    id = self.__items[row]
                     item = self.__notes.get(id)
                     if item.pinned():
                         return QIcon(':/pktk/images/normal/pinned')
                     else:
                         return QIcon(':/pktk/images/disabled/pinned')
-                elif column==BNNotesModel.COLNUM_LOCKED:
-                    id=self.__items[row]
+                elif column == BNNotesModel.COLNUM_LOCKED:
+                    id = self.__items[row]
                     item = self.__notes.get(id)
 
                     if item.locked():
                         return QIcon(':/pktk/images/normal/lock_locked')
                     else:
                         return QIcon(':/pktk/images/disabled/lock_unlocked')
-                elif column==BNNotesModel.COLNUM_FONTS:
-                    id=self.__items[row]
+                elif column == BNNotesModel.COLNUM_FONTS:
+                    id = self.__items[row]
                     item = self.__notes.get(id)
 
                     if item.hasEmbeddedFonts():
                         return QIcon(':/pktk/images/normal/text_f')
         elif role == Qt.DisplayRole:
-            id=self.__items[row]
+            id = self.__items[row]
             item = self.__notes.get(id)
             if item:
-                if column==BNNotesModel.COLNUM_TITLE:
+                if column == BNNotesModel.COLNUM_TITLE:
                     return item.title()
         elif role == Qt.ToolTipRole:
-            id=self.__items[row]
+            id = self.__items[row]
             item = self.__notes.get(id)
             if item:
-                toolTip=[]
+                toolTip = []
 
-                itemDescription=item.description()
-                if itemDescription!='':
+                itemDescription = item.description()
+                if itemDescription != '':
                     toolTip.append(f"<p>{itemDescription}</p>")
 
                 if item.hasEmbeddedFonts():
-                    text=i18n(f"Embedded fonts: {item.embeddedFonts().length()}")
+                    text = i18n(f"Embedded fonts: {item.embeddedFonts().length()}")
                     toolTip.append(f"<p>{text}</p>")
 
-                if len(toolTip)>0:
+                if len(toolTip) > 0:
                     toolTip.append('<hr>')
 
                 toolTip.append("<p>")
                 toolTip.append(i18n(f"Created: {tsToStr(item.timestampCreated())}"))
-                if item.timestampCreated()!=item.timestampUpdated():
+                if item.timestampCreated() != item.timestampUpdated():
                     toolTip.append("<br>")
                     toolTip.append(i18n(f"Updated: {tsToStr(item.timestampUpdated())}"))
                 toolTip.append("</p>")
@@ -241,7 +243,7 @@ class BNNotesModel(QAbstractTableModel):
         elif role == BNNotesModel.ROLE_ID:
             return self.__items[row]
         elif role == BNNotesModel.ROLE_NOTE:
-            id=self.__items[row]
+            id = self.__items[row]
             return self.__notes.get(id)
         return None
 
@@ -256,7 +258,7 @@ class BNNotesModel(QAbstractTableModel):
         return None
 
     def setIconSize(self, value):
-        self.__iconSize=QSize(value, value)
+        self.__iconSize = QSize(value, value)
 
     def notes(self):
         """Expose BNNotes object"""
@@ -276,7 +278,7 @@ class BNNotesModelDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         """Paint list item"""
         if index.column() == BNNotesModel.COLNUM_COLOR:
-            icon=index.data(Qt.DecorationRole)
+            icon = index.data(Qt.DecorationRole)
 
             if icon:
                 painter.save()
@@ -294,37 +296,37 @@ class BNWNotes(QTreeView):
 
     def __init__(self, parent=None):
         super(BNWNotes, self).__init__(parent)
-        self.__parent=parent
+        self.__parent = parent
         self.__model = None
         self.__proxyModel = None
         self.clicked.connect(self.__itemClicked)
         self.setAutoScroll(False)
 
-        self.__contextMenu=QMenu()
+        self.__contextMenu = QMenu()
         self.__initMenu()
 
-        delegate=BNNotesModelDelegate(self)
+        delegate = BNNotesModelDelegate(self)
         self.setItemDelegateForColumn(BNNotesModel.COLNUM_COLOR, delegate)
 
-        self.__selectedItems=[]
+        self.__selectedItems = []
 
     def __itemClicked(self, index):
         """A cell has been clicked, check if it's a persistent column"""
-        if index.column()==BNNotesModel.COLNUM_VIEW:
-            item=index.data(BNNotesModel.ROLE_NOTE)
+        if index.column() == BNNotesModel.COLNUM_VIEW:
+            item = index.data(BNNotesModel.ROLE_NOTE)
             if item:
                 if item.windowPostIt():
                     item.closeWindowPostIt()
                 elif not self.__model.isFreezed():
                     item.openWindowPostIt(True)
-        elif index.column()==BNNotesModel.COLNUM_PINNED:
-            item=index.data(BNNotesModel.ROLE_NOTE)
+        elif index.column() == BNNotesModel.COLNUM_PINNED:
+            item = index.data(BNNotesModel.ROLE_NOTE)
             if item:
                 item.setPinned(not item.pinned())
                 if item.pinned():
                     item.openWindowPostIt()
-        elif index.column()==BNNotesModel.COLNUM_LOCKED:
-            item=index.data(BNNotesModel.ROLE_NOTE)
+        elif index.column() == BNNotesModel.COLNUM_LOCKED:
+            item = index.data(BNNotesModel.ROLE_NOTE)
             if item:
                 item.setLocked(not item.locked())
 
@@ -339,7 +341,6 @@ class BNWNotes(QTreeView):
         self.__actionCut.triggered.connect(self.__actionCutNote)
         self.__actionPaste = QAction(QIcon(':/images/paste'), i18n('Paste'), self)
         self.__actionPaste.triggered.connect(self.__actionPasteNote)
-
 
         self.__actionView = QAction(QIcon(':/images/noteView'), i18n('View note'), self)
         self.__actionView.triggered.connect(self.__viewNotes)
@@ -369,9 +370,9 @@ class BNWNotes(QTreeView):
 
     def __viewNotes(self):
         """View all selected notes"""
-        notes=self.selectedItems()
+        notes = self.selectedItems()
         for note in notes:
-            note.openWindowPostIt(len(notes)==1)
+            note.openWindowPostIt(len(notes) == 1)
 
     def __actionCopyNote(self):
         """Copy selected notes to clipboardCut
@@ -393,33 +394,33 @@ class BNWNotes(QTreeView):
 
     def __beforeReset(self):
         """Model is about to be reseted, keep selection"""
-        self.__selectedItems=[item.id() for item in self.selectedItems()]
+        self.__selectedItems = [item.id() for item in self.selectedItems()]
 
     def __afterReset(self):
         """Model has been reseted, restore selection"""
-        if len(self.__selectedItems)==0:
+        if len(self.__selectedItems) == 0:
             return
 
-        index=self.rootIndex()
-        nbChild=self.__model.rowCount(index)
+        index = self.rootIndex()
+        nbChild = self.__model.rowCount(index)
 
-        if nbChild>0:
-            model=self.model()
+        if nbChild > 0:
+            model = self.model()
             if isinstance(model, QSortFilterProxyModel):
                 # Need to use 'mapFromSource()' due to model() is using a proxy
-                index=self.model().mapFromSource(index)
+                index = self.model().mapFromSource(index)
             else:
-                index=index
+                index = index
 
-            newSelection=QItemSelection()
+            newSelection = QItemSelection()
             for row in range(nbChild):
-                item=self.__model.index(row, 0, index)
-                id=item.data(BNNotesModel.ROLE_ID)
+                item = self.__model.index(row, 0, index)
+                id = item.data(BNNotesModel.ROLE_ID)
                 if id in self.__selectedItems:
-                    newSelection.merge(QItemSelection(item, item), QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
-            self.selectionModel().select(newSelection, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
+                    newSelection.merge(QItemSelection(item, item), QItemSelectionModel.SelectCurrent | QItemSelectionModel.Rows)
+            self.selectionModel().select(newSelection, QItemSelectionModel.SelectCurrent | QItemSelectionModel.Rows)
 
-        self.__selectedItems=[]
+        self.__selectedItems = []
 
     def setNotes(self, notes):
         """Initialise treeview header & model"""
@@ -451,21 +452,21 @@ class BNWNotes(QTreeView):
 
     def contextMenuEvent(self, event):
         """Display context menu, updated according to current options"""
-        selectedItems=self.selectedItems()
-        nbSelectedItems=len(selectedItems)
+        selectedItems = self.selectedItems()
+        nbSelectedItems = len(selectedItems)
 
-        if nbSelectedItems>0:
+        if nbSelectedItems > 0:
             self.__actionColorIndex.setVisible(True)
-            if nbSelectedItems==1:
+            if nbSelectedItems == 1:
                 self.__actionColorIndex.colorSelector().setColorIndex(selectedItems[0].colorIndex())
             else:
                 self.__actionColorIndex.colorSelector().setColorIndex(None)
 
-        self.__actionCopy.setEnabled(nbSelectedItems>0)
-        self.__actionCut.setEnabled(nbSelectedItems>0)
+        self.__actionCopy.setEnabled(nbSelectedItems > 0)
+        self.__actionCut.setEnabled(nbSelectedItems > 0)
         self.__actionPaste.setEnabled(self.__model.notes().clipboardPastable())
 
-        self.__actionView.setEnabled(nbSelectedItems>0)
+        self.__actionView.setEnabled(nbSelectedItems > 0)
         self.__actionAdd.setEnabled(self.__parent.btAddNote.isEnabled())
         self.__actionEdit.setEnabled(self.__parent.btEditNote.isEnabled())
         self.__actionDelete.setEnabled(self.__parent.btRemoveNote.isEnabled())
@@ -474,11 +475,11 @@ class BNWNotes(QTreeView):
 
     def selectedItems(self):
         """Return a list of selected notes items"""
-        returned=[]
+        returned = []
         if self.selectionModel():
             for item in self.selectionModel().selectedRows(BNNotesModel.COLNUM_TITLE):
-                note=item.data(BNNotesModel.ROLE_NOTE)
-                if not note is None:
+                note = item.data(BNNotesModel.ROLE_NOTE)
+                if note is not None:
                     returned.append(note)
             returned.sort(key=lambda note: note.position())
 
