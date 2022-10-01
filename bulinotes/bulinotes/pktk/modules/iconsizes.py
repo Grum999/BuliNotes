@@ -1,35 +1,34 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
-
 # -----------------------------------------------------------------------------
+# The iconsize module provides classes used to manage icons size in QListView
+#
+# Main class from this module
+#
+# - IconSizes:
+#       Provides basics methods to manage sizes in a given set of possible sizes
+#
+# -----------------------------------------------------------------------------
+
 from PyQt5.Qt import *
 
 from ..pktk import *
+
 
 class IconSizes(object):
     def __init__(self, values, currentIndex=0):
         if not (isinstance(values, list) or isinstance(values, tuple)):
             raise EInvalidType('Given `values` must be a <list>')
-        self.__values=[value for value in values if isinstance(value, int)]
+        self.__values = [value for value in values if isinstance(value, int)]
 
         if len(self.__values) == 0:
             raise EInvalidValue('Given `values` must be a non empty list of <int>')
@@ -47,7 +46,7 @@ class IconSizes(object):
         return True if current index has been modified, otherwise false
         """
         if self.__index < len(self.__values) - 1:
-            self.__index+=1
+            self.__index += 1
             return True
         return False
 
@@ -57,7 +56,7 @@ class IconSizes(object):
         return True if current index has been modified, otherwise false
         """
         if self.__index > 0:
-            self.__index-=1
+            self.__index -= 1
             return True
         return False
 
@@ -87,7 +86,7 @@ class IconSizes(object):
     def value(self, asQSize=False):
         """Return current value"""
         if asQSize:
-            v=self.__values[self.__index]
+            v = self.__values[self.__index]
             return QSize(v, v)
         return self.__values[self.__index]
 
@@ -102,10 +101,10 @@ class IconSizes(object):
         if value in self.__values:
             self.__index = self.__values.index(value)
         else:
-            self.__index=0
+            self.__index = 0
             for v in self.__values:
                 if v < value:
-                    self.__index+=1
+                    self.__index += 1
                 else:
                     break
         if currentIndex == self.__index:

@@ -1,26 +1,17 @@
-#-----------------------------------------------------------------------------
-# PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# PyKritaToolKit
+# Copyright (C) 2019-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-# Menu&Actions utilities
+# The imgutils module provides miscellaneous menu & actions functions
+#
 # -----------------------------------------------------------------------------
 
 import re
@@ -50,23 +41,23 @@ def buildQAction(icons, title, parent, action=None, parameters=[]):
         if callable(action):
             action(*parameters)
 
-    if isinstance(icons, list) and len(icons)>0:
-        propertyList=[]
+    if isinstance(icons, list) and len(icons) > 0:
+        propertyList = []
         actionIcon = QIcon()
 
         for icon in icons:
-            addPixmap=2
+            addPixmap = 2
             if isinstance(icon[0], QPixmap):
-                addPixmap=1
-                iconListItem=[icon[0]]
-                propertyListPath=''
+                addPixmap = 1
+                iconListItem = [icon[0]]
+                propertyListPath = ''
             elif isinstance(icon[0], str):
-                iconListItem=[icon[0], QSize()]
-                propertyListPath=icon[0]
+                iconListItem = [icon[0], QSize()]
+                propertyListPath = icon[0]
             else:
                 continue
 
-            for index in range(1,3):
+            for index in range(1, 3):
                 if index == 1:
                     if len(icon) >= 2:
                         iconListItem.append(icon[index])
@@ -78,29 +69,28 @@ def buildQAction(icons, title, parent, action=None, parameters=[]):
                     else:
                         iconListItem.append(QIcon.Off)
 
-            if addPixmap==1:
+            if addPixmap == 1:
                 actionIcon.addPixmap(*tuple(iconListItem))
             else:
                 actionIcon.addFile(*tuple(iconListItem))
 
-
             key = '__bcIcon_'
-            if iconListItem[addPixmap]==QIcon.Normal:
-                key+='normal'
-            elif iconListItem[addPixmap]==QIcon.Active:
-                key+='active'
-            elif iconListItem[addPixmap]==QIcon.Disabled:
-                key+='disabled'
-            elif iconListItem[addPixmap]==QIcon.Selected:
-                key+='selected'
-            if iconListItem[addPixmap+1]==QIcon.Off:
-                key+='off'
+            if iconListItem[addPixmap] == QIcon.Normal:
+                key += 'normal'
+            elif iconListItem[addPixmap] == QIcon.Active:
+                key += 'active'
+            elif iconListItem[addPixmap] == QIcon.Disabled:
+                key += 'disabled'
+            elif iconListItem[addPixmap] == QIcon.Selected:
+                key += 'selected'
+            if iconListItem[addPixmap+1] == QIcon.Off:
+                key += 'off'
             else:
-                key+='on'
+                key += 'on'
 
-            propertyList.append( (key, propertyListPath) )
+            propertyList.append((key, propertyListPath))
 
-        returnedAction=QAction(actionIcon, title, parent)
+        returnedAction = QAction(actionIcon, title, parent)
 
         for property in propertyList:
             returnedAction.setProperty(*property)
@@ -109,9 +99,9 @@ def buildQAction(icons, title, parent, action=None, parameters=[]):
             returnedAction.triggered.connect(execute)
 
         return returnedAction
-    elif isinstance(icons, str) and (rfind:=re.match("pktk:(.*)", icons)):
+    elif isinstance(icons, str) and (rfind := re.match("pktk:(.*)", icons)):
         return buildQAction([(f':/pktk/images/normal/{rfind.groups()[0]}', QIcon.Normal),
-                          (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)], title, parent, action, parameters)
+                             (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)], title, parent, action, parameters)
     else:
         raise EInvalidType("Given `icons` must be a <str> or a <list> of <tuples>")
 
@@ -121,23 +111,23 @@ def buildQMenu(icons, title, parent):
 
     Tricky method to be able to reload icons on the fly when theme is modified
     """
-    if isinstance(icons, list) and len(icons)>0:
-        propertyList=[]
+    if isinstance(icons, list) and len(icons) > 0:
+        propertyList = []
         menuIcon = QIcon()
 
         for icon in icons:
-            addPixmap=2
+            addPixmap = 2
             if isinstance(icon[0], QPixmap):
-                addPixmap=1
-                iconListItem=[icon[0]]
-                propertyListPath=''
+                addPixmap = 1
+                iconListItem = [icon[0]]
+                propertyListPath = ''
             elif isinstance(icon[0], str):
-                iconListItem=[icon[0], QSize()]
-                propertyListPath=icon[0]
+                iconListItem = [icon[0], QSize()]
+                propertyListPath = icon[0]
             else:
                 continue
 
-            for index in range(1,3):
+            for index in range(1, 3):
                 if index == 1:
                     if len(icon) >= 2:
                         iconListItem.append(icon[index])
@@ -149,29 +139,28 @@ def buildQMenu(icons, title, parent):
                     else:
                         iconListItem.append(QIcon.Off)
 
-            if addPixmap==1:
+            if addPixmap == 1:
                 menuIcon.addPixmap(*tuple(iconListItem))
             else:
                 menuIcon.addFile(*tuple(iconListItem))
 
-
             key = '__bcIcon_'
-            if iconListItem[addPixmap]==QIcon.Normal:
-                key+='normal'
-            elif iconListItem[addPixmap]==QIcon.Active:
-                key+='active'
-            elif iconListItem[addPixmap]==QIcon.Disabled:
-                key+='disabled'
-            elif iconListItem[addPixmap]==QIcon.Selected:
-                key+='selected'
-            if iconListItem[addPixmap+1]==QIcon.Off:
-                key+='off'
+            if iconListItem[addPixmap] == QIcon.Normal:
+                key += 'normal'
+            elif iconListItem[addPixmap] == QIcon.Active:
+                key += 'active'
+            elif iconListItem[addPixmap] == QIcon.Disabled:
+                key += 'disabled'
+            elif iconListItem[addPixmap] == QIcon.Selected:
+                key += 'selected'
+            if iconListItem[addPixmap+1] == QIcon.Off:
+                key += 'off'
             else:
-                key+='on'
+                key += 'on'
 
-            propertyList.append( (key, propertyListPath) )
+            propertyList.append((key, propertyListPath))
 
-        returnedMenu=QMenu(title, parent)
+        returnedMenu = QMenu(title, parent)
         returnedMenu.setIcon(menuIcon)
 
         for property in propertyList:
@@ -179,7 +168,7 @@ def buildQMenu(icons, title, parent):
 
         return returnedMenu
 
-    elif isinstance(icons, str) and (rfind:=re.match("pktk:(.*)", icons)):
+    elif isinstance(icons, str) and (rfind := re.match("pktk:(.*)", icons)):
         return buildQMenu([(f':/pktk/images/normal/{rfind.groups()[0]}', QIcon.Normal),
                            (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)], title, parent)
     else:
@@ -218,45 +207,44 @@ def buildQMenuTree(menuTree, icons, parent):
     elif not (isinstance(menuTree, str) or isinstance(menuTree, list)):
         raise EInvalidType('Given `menuTree` must be a <str> or <list>')
 
-    returned=[]
+    returned = []
     if isinstance(menuTree, str):
-        menuTreeList=menuTree.split('/')
+        menuTreeList = menuTree.split('/')
     else:
-        menuTreeList=menuTree
+        menuTreeList = menuTree
 
-    if len(menuTreeList)==0:
+    if len(menuTreeList) == 0:
         return returned
 
     if icons is None:
-        icons=[]
+        icons = []
     elif isinstance(icons, str):
-        icons=[icons]*len(menuTreeList)
+        icons = [icons]*len(menuTreeList)
     elif not isinstance(icons, list):
         raise EInvalidType('Given `icons` can be <None>, <str> or <list>')
 
-
     # start by checking if first menuTreeList item exists as a child from parent
-    foundMenu=None
+    foundMenu = None
     for item in parent.children():
-        if isinstance(item, QMenu) and item.title()==menuTreeList[0]:
-            foundMenu=item
+        if isinstance(item, QMenu) and item.title() == menuTreeList[0]:
+            foundMenu = item
             break
 
     if foundMenu is None:
         # doesn't exist as submenu of parent menu:
         # create a new one
-        if len(icons)==0:
-            foundMenu=QMenu(menuTreeList[0], parent)
+        if len(icons) == 0:
+            foundMenu = QMenu(menuTreeList[0], parent)
         else:
-            foundMenu=buildQMenu(icons[0], menuTreeList[0], parent)
+            foundMenu = buildQMenu(icons[0], menuTreeList[0], parent)
 
         parent.addMenu(foundMenu)
 
     returned.append(foundMenu)
-    if len(menuTreeList)>1:
-        menu=buildQMenuTree(menuTreeList[1:], icons[1:], foundMenu)
+    if len(menuTreeList) > 1:
+        menu = buildQMenuTree(menuTreeList[1:], icons[1:], foundMenu)
 
-        if len(menu)>0:
-            returned+=menu
+        if len(menu) > 0:
+            returned += menu
 
     return returned

@@ -1,23 +1,25 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
 # -----------------------------------------------------------------------------
+# A Krita plugin framework
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# The elist module provides access to a list with some extended options like
+# index, next, previous, loop when EOL or BOL, ...
+#
+# Main class from this module
+#
+# - EList:
+#       A class with high level methods for list management
+#
+# -----------------------------------------------------------------------------
+
 
 class EList(object):
     """A EList is a list on which we can use next() and prev() method to get values
@@ -34,12 +36,12 @@ class EList(object):
         self.__stack = []
 
     def __repr__(self):
-        returned=[f"<EList({len(self.__list)}, {self.__index})>"]
+        returned = [f"<EList({len(self.__list)}, {self.__index})>"]
         for index, item in enumerate(self.__list):
-            if index==self.__index:
-                prefix='*'
+            if index == self.__index:
+                prefix = '*'
             else:
-                prefix=' '
+                prefix = ' '
             returned.append(f"{prefix}[{index:05}] {self.__list[index]}")
         return "\n".join(returned)
 
@@ -49,7 +51,7 @@ class EList(object):
         If `index` is provided, return value for given index.
         If given index is outside bounds, return 'None'
         """
-        if not index is None:
+        if index is not None:
             if index >= 0 and index < len(self.__list):
                 return self.__list[index]
             return None
@@ -77,7 +79,7 @@ class EList(object):
         """
         if move:
             if self.__index < len(self.__list):
-                self.__index+=1
+                self.__index += 1
                 return self.value()
 
             return None
@@ -93,7 +95,7 @@ class EList(object):
         """
         if move:
             if self.__index > 0:
-                self.__index-=1
+                self.__index -= 1
                 return self.value()
 
             return None
@@ -165,7 +167,7 @@ class EList(object):
 
     def resetIndex(self):
         """Reset index to none"""
-        self.__index=-1
+        self.__index = -1
 
     def pushIndex(self):
         """Push current index in stack"""
@@ -176,10 +178,10 @@ class EList(object):
 
         If stack is empty, does nothing
         """
-        if len(self.__stack)==0:
+        if len(self.__stack) == 0:
             return None
-        self.__index=self.__stack.pop()
+        self.__index = self.__stack.pop()
 
     def resetStack(self):
         """Reset current stack content (action doesn't modify current index)"""
-        self.__stack=[]
+        self.__stack = []

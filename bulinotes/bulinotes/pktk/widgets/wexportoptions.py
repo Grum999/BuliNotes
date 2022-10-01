@@ -1,28 +1,32 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
-
-
-
 # -----------------------------------------------------------------------------
+# The wexportoptions module provides widgets with basic interface that can be
+# used to manage PNG & JPEG export options
+# Both widghet returns InfoObject() instance that can be passed to krita's
+# 'Save as' method
+#
+# Main class from this module
+#
+# - WExportOptionsPng:
+#       Widget
+#       Manage the export options for PNG file
+#
+# - WExportOptionsJpeg:
+#       Widget
+#       Manage the export options for JPEG file
+#
+# -----------------------------------------------------------------------------
+
 import PyQt5.uic
 
 import os
@@ -42,6 +46,7 @@ from ..modules.utils import loadXmlUi
 from .wcolorselector import WColorPicker
 from .wcolorbutton import WColorButton
 from ..pktk import *
+
 
 class WExportOptionsPng(QWidget):
     """A wdiget to manage PNG export options"""
@@ -64,7 +69,7 @@ class WExportOptionsPng(QWidget):
 
         self.rbStoreAlpha.toggled.connect(self.__transparentColorState)
         self.pbBgColor.colorPicker().setStandardLayout('hsv')
-        self.pbBgColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.pbBgColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL & ~WColorPicker.OPTION_MENU_ALPHA)
         self.__transparentColorState(self.rbStoreAlpha.isChecked())
 
         self.hsCompressionLevel.valueChanged.connect(self.__propUpdated)
@@ -90,9 +95,9 @@ class WExportOptionsPng(QWidget):
         If `asInfoObject` is True, return a InfoObject otherwise a dictionary
         """
         if asInfoObject:
-            color=self.pbBgColor.color()
+            color = self.pbBgColor.color()
 
-            returned=InfoObject()
+            returned = InfoObject()
             returned.setProperty('compression', self.hsCompressionLevel.value())
             returned.setProperty('indexed', self.cbIndexed.isChecked())
             returned.setProperty('interlaced', self.cbInterlacing.isChecked())
@@ -101,7 +106,7 @@ class WExportOptionsPng(QWidget):
             returned.setProperty('alpha', self.rbStoreAlpha.isChecked())
             returned.setProperty('transparencyFillcolor', QColor(color))
         else:
-            returned={
+            returned = {
                 'compression': self.hsCompressionLevel.value(),
                 'indexed': self.cbIndexed.isChecked(),
                 'interlaced': self.cbInterlacing.isChecked(),
@@ -120,9 +125,9 @@ class WExportOptionsPng(QWidget):
         If None is provided, default options are set
         """
         def ioProp(property, default):
-            returned=options.property(property)
+            returned = options.property(property)
             if returned is None:
-                returned=default
+                returned = default
             return returned
 
         if options is None:
@@ -151,6 +156,7 @@ class WExportOptionsPng(QWidget):
 
         self.optionChanged.emit()
 
+
 class WExportOptionsJpeg(QWidget):
     """A wdiget to manage JPEG export options"""
     optionUpdated = Signal()          # when an option is changed from user interface
@@ -171,7 +177,7 @@ class WExportOptionsJpeg(QWidget):
         sys.path.pop()
 
         self.pbBgColor.colorPicker().setStandardLayout('hsv')
-        self.pbBgColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.pbBgColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL & ~WColorPicker.OPTION_MENU_ALPHA)
 
         self.hsQuality.valueChanged.connect(self.__propUpdated)
         self.hsSmoothing.valueChanged.connect(self.__propUpdated)
@@ -191,9 +197,9 @@ class WExportOptionsJpeg(QWidget):
         If `asInfoObject` is True, return a InfoObject otherwise a dictionary
         """
         if asInfoObject:
-            color=self.pbBgColor.color()
+            color = self.pbBgColor.color()
 
-            returned=InfoObject()
+            returned = InfoObject()
             returned.setProperty('quality', self.hsQuality.value())
             returned.setProperty('smoothing', self.hsSmoothing.value())
             returned.setProperty('subsampling', self.cbxSubsampling.currentIndex())
@@ -202,7 +208,7 @@ class WExportOptionsJpeg(QWidget):
             returned.setProperty('saveProfile', self.cbSaveICCProfile.isChecked())
             returned.setProperty('transparencyFillcolor', QColor(color))
         else:
-            returned={
+            returned = {
                 'quality': self.hsQuality.value(),
                 'smoothing': self.hsSmoothing.value(),
                 'subsampling': self.cbxSubsampling.currentIndex(),
@@ -221,9 +227,9 @@ class WExportOptionsJpeg(QWidget):
         If None is provided, default options are set
         """
         def ioProp(property, default):
-            returned=options.property(property)
+            returned = options.property(property)
             if returned is None:
-                returned=default
+                returned = default
             return returned
 
         if options is None:
