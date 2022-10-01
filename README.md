@@ -162,7 +162,7 @@ This can be useful to store font in a document for the following reasons:
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.4.0b](https://github.com/Grum999/BuliNotes/releases/download/0.4.0b/bulinotes.zip)**
++ **[ZIP ARCHIVE - v1.0.0](https://github.com/Grum999/BuliNotes/releases/download/1.0.0/bulinotes.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 
@@ -184,15 +184,20 @@ Plugin installation in [Krita](https://krita.org) is not intuitive and needs som
 ### Tested platforms
 > **Notes:**
 > - Plugin is not compatible with Krita 4.x.x; you must have at least Krita 5.x.x
-> - As currently Krita 5 is still in beta version, plugin is in beta version and as long as Krita 5 won't be available as a stable version, plugin will be provided as beta version
 
-Plugin has been tested with Krita 5.0.0-beta2 (appimage) on Linux Debian 10 & Windows 10
-Plugin hasn't been tested on MacOs
+Plugin has been tested with Krita 5.1.0 (appimage) on Linux
 
 
 ## Plugin's life
 
 ### What's new?
+
+_[2022-10-01] Version 1.0.0_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-1.0.0.md)
+- Bug fix - *Crash when multiples windows are opened*
+- Bug fix - *Exception on startup*
+- Bug fix - *Unhashable type: 'Resource'*
+- Code review - *PEP8 recommendation*
+- Code review - *SPDX license headers*
 
 _[2021-10-24] Version 0.4.0b_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.4.0b.md)
 - *Embedded fonts* - allows to embed used fonts in notes
