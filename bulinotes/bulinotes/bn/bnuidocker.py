@@ -139,7 +139,7 @@ class BNUiDocker(QWidget):
         self.__notes.movePositionDown(self.tvNotes.selectedItems())
 
     def canvasChanged(self, canvas):
-        if canvas and Krita.instance().activeDocument():
+        if canvas and Krita.instance().activeDocument() and canvas.view():
             # memorize current document
             self.__kraActiveDocument = canvas.view().document()
         else:
