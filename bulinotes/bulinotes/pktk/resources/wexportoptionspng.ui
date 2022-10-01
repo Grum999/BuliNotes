@@ -218,7 +218,7 @@
   <customwidget>
    <class>WColorButton</class>
    <extends>QToolButton</extends>
-   <header>pktk.widgets.wcolorbutton</header>
+   <header>.pktk.widgets.wcolorbutton</header>
   </customwidget>
  </customwidgets>
  <resources/>

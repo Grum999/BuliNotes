@@ -1,23 +1,30 @@
-#-----------------------------------------------------------------------------
-# Buli Notes
-# Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Buli Notes
+# Copyright (C) 2021-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
 # -----------------------------------------------------------------------------
 # A Krita plugin designed to manage notes
 # -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# The bnnotes module provides classes used to manage notes
+#
+# Main classes from this module
+#
+# - BNNote:
+#       A note definition
+#
+# - BNNotes:
+#       A collection of notes
+#
+# - BNNoteEditor:
+#       User interface to edit a note
+#
+# -----------------------------------------------------------------------------
+
 import time
 import struct
 import re
@@ -81,73 +88,73 @@ from .bnsettings import (BNSettings, BNSettingsKey)
 
 class BNNote(QObject):
     """A note"""
-    updated=Signal(QObject, str)
+    updated = Signal(QObject, str)
 
-    CONTENT_TEXT=0x01
-    CONTENT_SCRATCHPAD=0x02
-    CONTENT_BRUSHES=0x03
-    CONTENT_LINKEDLAYERS=0x04
-    CONTENT_FONTS=0x05
-    __CONTENT_LAST=0x05
+    CONTENT_TEXT = 0x01
+    CONTENT_SCRATCHPAD = 0x02
+    CONTENT_BRUSHES = 0x03
+    CONTENT_LINKEDLAYERS = 0x04
+    CONTENT_FONTS = 0x05
+    __CONTENT_LAST = 0x05
 
     @staticmethod
     def clone(note):
         """Create a new note from given note"""
         if not isinstance(note, BNNote):
             raise EInvalidType('Given `note` must be <BNNote> type')
-        returned=BNNote()
+        returned = BNNote()
         returned.importData(note.exportData(), False)
         return returned
 
     def __init__(self, id=None, title=None, description=None):
         super(BNNote, self).__init__(None)
-        self.__id=None
-        self.__title=None
-        self.__description=None
-        self.__colorIndex=WStandardColorSelector.COLOR_NONE
-        self.__pinned=False
-        self.__locked=False
-        self.__text=''
-        self.__timestampCreated=time.time()
-        self.__timestampUpdated=time.time()
-        self.__position=0
+        self.__id = None
+        self.__title = None
+        self.__description = None
+        self.__colorIndex = WStandardColorSelector.COLOR_NONE
+        self.__pinned = False
+        self.__locked = False
+        self.__text = ''
+        self.__timestampCreated = time.time()
+        self.__timestampUpdated = time.time()
+        self.__position = 0
 
-        self.__windowPostItGeometry=None
-        self.__windowPostItCompact=False
-        self.__windowPostItBrushIconSizeIndex=1
-        self.__windowPostItLinkedLayersIconSizeIndex=1
+        self.__windowPostItGeometry = None
+        self.__windowPostItCompact = False
+        self.__windowPostItBrushIconSizeIndex = 1
+        self.__windowPostItLinkedLayersIconSizeIndex = 1
 
-        self.__scratchpadBrushName=BNBrushPreset.getName()
-        self.__scratchpadBrushSize=5
-        self.__scratchpadBrushOpacity=100
-        self.__scratchpadBrushColor=QColor(Qt.black)
-        self.__scratchpadImage=None
+        self.__scratchpadBrushName = BNBrushPreset.getName()
+        self.__scratchpadBrushSize = 5
+        self.__scratchpadBrushOpacity = 100
+        self.__scratchpadBrushColor = QColor(Qt.black)
+        self.__scratchpadImage = None
 
-        self.__brushes=BNBrushes()
+        self.__brushes = BNBrushes()
         self.__brushes.updated.connect(self.__updatedBrushes)
         self.__brushes.updateReset.connect(self.__updatedBrushes)
         self.__brushes.updateAdded.connect(self.__updatedBrushes)
         self.__brushes.updateRemoved.connect(self.__updatedBrushes)
 
-        self.__linkedLayers=BNLinkedLayers()
+        self.__linkedLayers = BNLinkedLayers()
         self.__linkedLayers.updated.connect(self.__updatedLinkedLayers)
         self.__linkedLayers.updateReset.connect(self.__updatedLinkedLayers)
         self.__linkedLayers.updateAdded.connect(self.__updatedLinkedLayers)
         self.__linkedLayers.updateRemoved.connect(self.__updatedLinkedLayers)
 
-        self.__embeddedFonts=BNEmbeddedFonts()
+        self.__embeddedFonts = BNEmbeddedFonts()
         self.__embeddedFonts.updated.connect(self.__updatedEmbeddedFonts)
         self.__embeddedFonts.updateReset.connect(self.__updatedEmbeddedFonts)
         self.__embeddedFonts.updateAdded.connect(self.__updatedEmbeddedFonts)
         self.__embeddedFonts.updateRemoved.connect(self.__updatedEmbeddedFonts)
 
-        self.__selectedType=BNNote.CONTENT_TEXT
+        self.__selectedType = BNNote.CONTENT_TEXT
 
-        self.__emitUpdated=0
+        self.__emitUpdated = 0
         self.beginUpdate()
 
         # if a BNNotePostIt is opened, keep window reference
-        self.__windowPostIt=None
+        self.__windowPostIt = None
 
         self.__setId(id)
         self.setTitle(title)
@@ -172,15 +179,15 @@ class BNNote(QObject):
 
     def __updated(self, property):
         """Emit updated signal when a property has been changed"""
-        if self.__emitUpdated==0:
+        if self.__emitUpdated == 0:
             self.updated.emit(self, property)
 
     def __setId(self, id):
         """Set id for note"""
         if id is None:
-            self.__id=QUuid.createUuid().toString()
+            self.__id = QUuid.createUuid().toString()
         else:
-            self.__id=id
+            self.__id = id
 
     def id(self):
         """Return note id"""
@@ -192,9 +199,9 @@ class BNNote(QObject):
 
     def setTitle(self, title):
         """Set note title"""
-        if title is None or isinstance(title, str) and self.__title!=title:
-            self.__title=title
-            self.__timestampUpdated=time.time()
+        if title is None or isinstance(title, str) and self.__title != title:
+            self.__title = title
+            self.__timestampUpdated = time.time()
             self.__updated('title')
 
     def description(self):
@@ -203,9 +210,9 @@ class BNNote(QObject):
 
     def setDescription(self, description):
         """Set note description"""
-        if not self.__locked and (description is None or isinstance(description, str)) and self.__description!=description:
-            self.__description=description
-            self.__timestampUpdated=time.time()
+        if not self.__locked and (description is None or isinstance(description, str)) and self.__description != description:
+            self.__description = description
+            self.__timestampUpdated = time.time()
             self.__updated('description')
 
     def colorIndex(self):
@@ -214,8 +221,8 @@ class BNNote(QObject):
 
     def setColorIndex(self, colorIndex):
         """Set note title"""
-        if isinstance(colorIndex, int) and self.__colorIndex!=colorIndex and colorIndex >= WStandardColorSelector.COLOR_NONE and colorIndex <= WStandardColorSelector.COLOR_GRAY:
-            self.__colorIndex=colorIndex
+        if isinstance(colorIndex, int) and self.__colorIndex != colorIndex and colorIndex >= WStandardColorSelector.COLOR_NONE and colorIndex <= WStandardColorSelector.COLOR_GRAY:
+            self.__colorIndex = colorIndex
             self.__updated('colorIndex')
 
     def pinned(self):
@@ -224,8 +231,8 @@ class BNNote(QObject):
 
     def setPinned(self, pinned):
         """Set note pin status (boolean value)"""
-        if isinstance(pinned, bool) and self.__pinned!=pinned:
-            self.__pinned=pinned
+        if isinstance(pinned, bool) and self.__pinned != pinned:
+            self.__pinned = pinned
             self.__updated('pinned')
 
     def locked(self):
@@ -234,8 +241,8 @@ class BNNote(QObject):
 
     def setLocked(self, locked):
         """Set note lock status (boolean value)"""
-        if isinstance(locked, bool) and self.__locked!=locked:
-            self.__locked=locked
+        if isinstance(locked, bool) and self.__locked != locked:
+            self.__locked = locked
             self.__updated('locked')
 
     def text(self):
@@ -244,9 +251,9 @@ class BNNote(QObject):
 
     def setText(self, text):
         """Set note text"""
-        if not self.__locked and isinstance(text, str) and self.__text!=text:
-            self.__text=text
-            self.__timestampUpdated=time.time()
+        if not self.__locked and isinstance(text, str) and self.__text != text:
+            self.__text = text
+            self.__timestampUpdated = time.time()
             self.__updated('text')
 
     def timestampUpdated(self):
@@ -255,8 +262,8 @@ class BNNote(QObject):
 
     def setTimestampUpdated(self, timestamp):
         """Set note timestamp"""
-        if not self.__locked and isinstance(timestamp, float) and self.__timestampUpdated!=timestamp:
-            self.__timestampUpdated=timestamp
+        if not self.__locked and isinstance(timestamp, float) and self.__timestampUpdated != timestamp:
+            self.__timestampUpdated = timestamp
             self.__updated('timestamp')
 
     def timestampCreated(self):
@@ -265,8 +272,8 @@ class BNNote(QObject):
 
     def setTimestampCreated(self, timestamp):
         """Set note timestamp"""
-        if not self.__locked and isinstance(timestamp, float) and self.__timestampCreated!=timestamp:
-            self.__timestampCreated=timestamp
+        if not self.__locked and isinstance(timestamp, float) and self.__timestampCreated != timestamp:
+            self.__timestampCreated = timestamp
             self.__updated('timestamp')
 
     def position(self):
@@ -275,8 +282,8 @@ class BNNote(QObject):
 
     def setPosition(self, position):
         """Set note position"""
-        if not self.__locked and isinstance(position, int) and self.__position!=position and position>=0:
-            self.__position=position
+        if not self.__locked and isinstance(position, int) and self.__position != position and position >= 0:
+            self.__position = position
             self.__updated('position')
 
     def windowPostItGeometry(self):
@@ -285,8 +292,8 @@ class BNNote(QObject):
 
     def setWindowPostItGeometry(self, geometry):
         """Set window note geometry"""
-        if isinstance(geometry, QRect) and self.__windowPostItGeometry!=geometry:
-            self.__windowPostItGeometry=geometry
+        if isinstance(geometry, QRect) and self.__windowPostItGeometry != geometry:
+            self.__windowPostItGeometry = geometry
             self.__updated('geometry')
 
     def windowPostItCompact(self):
@@ -295,8 +302,8 @@ class BNNote(QObject):
 
     def setWindowPostItCompact(self, compact):
         """Set window note compact"""
-        if isinstance(compact, bool) and self.__windowPostItCompact!=compact:
-            self.__windowPostItCompact=compact
+        if isinstance(compact, bool) and self.__windowPostItCompact != compact:
+            self.__windowPostItCompact = compact
             self.__updated('compact')
 
     def windowPostItBrushIconSizeIndex(self):
@@ -305,8 +312,8 @@ class BNNote(QObject):
 
     def setWindowPostItBrushIconSizeIndex(self, index):
         """Set window note compact"""
-        if isinstance(index, int) and index>=0 and index<=4 and self.__windowPostItBrushIconSizeIndex!=index:
-            self.__windowPostItBrushIconSizeIndex=index
+        if isinstance(index, int) and index >= 0 and index <= 4 and self.__windowPostItBrushIconSizeIndex != index:
+            self.__windowPostItBrushIconSizeIndex = index
             self.__updated('brushIconSizeIndex')
 
     def windowPostItLinkedLayersIconSizeIndex(self):
@@ -315,8 +322,8 @@ class BNNote(QObject):
 
     def setWindowPostItLinkedLayersIconSizeIndex(self, index):
         """Set window note compact"""
-        if isinstance(index, int) and index>=0 and index<=4 and self.__windowPostItLinkedLayersIconSizeIndex!=index:
-            self.__windowPostItLinkedLayersIconSizeIndex=index
+        if isinstance(index, int) and index >= 0 and index <= 4 and self.__windowPostItLinkedLayersIconSizeIndex != index:
+            self.__windowPostItLinkedLayersIconSizeIndex = index
             self.__updated('linkedLayersIconSizeIndex')
 
     def windowPostIt(self):
@@ -326,17 +333,17 @@ class BNNote(QObject):
     def setWindowPostIt(self, window):
         """Set window note compact"""
         if window is None or isinstance(window, BNNotePostIt):
-            self.__windowPostIt=window
+            self.__windowPostIt = window
 
     def openWindowPostIt(self, activateWindow=False):
         if self.__windowPostIt is None:
-            self.__windowPostIt=BNNotePostIt(self)
+            self.__windowPostIt = BNNotePostIt(self)
             self.__updated('opened')
         if activateWindow:
             self.__windowPostIt.activateWindow()
 
     def closeWindowPostIt(self):
-        if not self.__windowPostIt is None:
+        if self.__windowPostIt is not None:
             self.__windowPostIt.close()
             self.__updated('closed')
         if self.__pinned:
@@ -348,8 +355,8 @@ class BNNote(QObject):
 
     def setScratchpadBrushName(self, value):
         """Set last brush name used on scratchpad"""
-        if isinstance(value, str) and self.__scratchpadBrushName!=value:
-            self.__scratchpadBrushName=value
+        if isinstance(value, str) and self.__scratchpadBrushName != value:
+            self.__scratchpadBrushName = value
             self.__updated('scratchpadBrushName')
 
     def scratchpadBrushSize(self):
@@ -359,9 +366,9 @@ class BNNote(QObject):
     def setScratchpadBrushSize(self, value):
         """Set last brush size used on scratchpad"""
         if isinstance(value, int):
-            v=max(1, min(value, 200))
-            if self.__scratchpadBrushSize!=v:
-                self.__scratchpadBrushSize=v
+            v = max(1, min(value, 200))
+            if self.__scratchpadBrushSize != v:
+                self.__scratchpadBrushSize = v
                 self.__updated('scratchpadBrushSize')
 
     def scratchpadBrushOpacity(self):
@@ -371,9 +378,9 @@ class BNNote(QObject):
     def setScratchpadBrushOpacity(self, value):
         """Set last brush opacity used on scratchpad (0-100)"""
         if isinstance(value, int):
-            v=max(0, min(value, 100))
-            if self.__scratchpadBrushOpacity!=v:
-                self.__scratchpadBrushOpacity=v
+            v = max(0, min(value, 100))
+            if self.__scratchpadBrushOpacity != v:
+                self.__scratchpadBrushOpacity = v
                 self.__updated('scratchpadBrushOpacity')
 
     def scratchpadBrushColor(self):
@@ -382,11 +389,11 @@ class BNNote(QObject):
 
     def setScratchpadBrushColor(self, value):
         """Set last brush color used on scratchpad"""
-        if isinstance(value, QColor) and self.__scratchpadBrushColor!=value:
-            self.__scratchpadBrushColor=value
+        if isinstance(value, QColor) and self.__scratchpadBrushColor != value:
+            self.__scratchpadBrushColor = value
             self.__updated('scratchpadBrushColor')
-        elif isinstance(value, int) and self.__scratchpadBrushColor!=QColor(value):
-            self.__scratchpadBrushColor=QColor(value)
+        elif isinstance(value, int) and self.__scratchpadBrushColor != QColor(value):
+            self.__scratchpadBrushColor = QColor(value)
             self.__updated('scratchpadBrushColor')
 
     def scratchpadImage(self):
@@ -395,40 +402,40 @@ class BNNote(QObject):
 
     def setScratchpadImage(self, value):
         """Set last brush color used on scratchpad"""
-        if value is None and not self.__scratchpadImage is None:
-            self.__scratchpadImage=None
+        if value is None and self.__scratchpadImage is not None:
+            self.__scratchpadImage = None
             self.__updated('scratchpadImage')
         elif isinstance(value, QImage):
             ptr = value.bits()
             ptr.setsize(value.byteCount())
-            ptrBytes=bytes(ptr)
-            if len(ptrBytes.lstrip(b'\xFF'))==0:
+            ptrBytes = bytes(ptr)
+            if len(ptrBytes.lstrip(b'\xFF')) == 0:
                 # empty scratchpad (all content is white)
                 # rstrip (or lstrip) the bytes object is the fastest way
                 # I found to check if there's a non-white pixel in image
-                self.__scratchpadImage=None
+                self.__scratchpadImage = None
             else:
-                self.__scratchpadImage=value
+                self.__scratchpadImage = value
 
     def hasText(self):
         """Return True if note has text content"""
-        return (stripHtml(self.__text)!='')
+        return (stripHtml(self.__text) != '')
 
     def hasScratchpad(self):
         """Return True if note has scratchpad content"""
-        return (not self.__scratchpadImage is None)
+        return (self.__scratchpadImage is not None)
 
     def hasBrushes(self):
         """Return True if note has brushes content"""
-        return self.__brushes.length()>0
+        return self.__brushes.length() > 0
 
     def hasLinkedLayers(self):
         """Return True if note has linked layers content"""
-        return self.__linkedLayers.length()>0
+        return self.__linkedLayers.length() > 0
 
     def hasEmbeddedFonts(self):
         """Return True if note has embedded font content"""
-        return self.__embeddedFonts.length()>0
+        return self.__embeddedFonts.length() > 0
 
     def selectedType(self):
         """Return current selected type"""
@@ -436,8 +443,8 @@ class BNNote(QObject):
 
     def setSelectedType(self, value):
         """Set current selected types"""
-        if isinstance(value, int) and self.__selectedType!=value and value>=1 and value<=BNNote.__CONTENT_LAST:
-            self.__selectedType=value
+        if isinstance(value, int) and self.__selectedType != value and value >= 1 and value <= BNNote.__CONTENT_LAST:
+            self.__selectedType = value
             self.__updated('selectedType')
 
     def brushes(self):
@@ -738,34 +745,34 @@ class BNNote(QObject):
 
         """
         # format version
-        dataWrite=BytesRW()
+        dataWrite = BytesRW()
         dataWrite.writeUShort(0x01)
 
         def writeBlock(blockType, fct, data):
             if data is None:
                 return
 
-            buffer=BytesRW()
+            buffer = BytesRW()
             buffer.writeUInt2(blockType)
 
-            if fct=='str':
+            if fct == 'str':
                 buffer.writeStr(data)
-            elif fct=='ushort':
+            elif fct == 'ushort':
                 buffer.writeUShort(data)
-            elif fct=='bool':
+            elif fct == 'bool':
                 buffer.writeBool(data)
-            elif fct=='float8':
+            elif fct == 'float8':
                 buffer.writeFloat8(data)
-            elif fct=='uint4':
+            elif fct == 'uint4':
                 buffer.writeUInt4(data)
-            elif fct=='qrect':
+            elif fct == 'qrect':
                 buffer.writeInt4(data.x())
                 buffer.writeInt4(data.y())
                 buffer.writeUInt4(data.width())
                 buffer.writeUInt4(data.height())
-            elif fct=='bytes':
+            elif fct == 'bytes':
                 buffer.write(data)
-            elif fct=='ushort-list':
+            elif fct == 'ushort-list':
                 for value in data:
                     buffer.writeUShort(value)
 
@@ -796,7 +803,7 @@ class BNNote(QObject):
         writeBlock(0x0200, 'str', self.__scratchpadBrushName)
         writeBlock(0x0201, 'ushort', self.__scratchpadBrushSize)
         writeBlock(0x0202, 'uint4', self.__scratchpadBrushColor.rgba())
-        if not self.__scratchpadImage is None:
+        if self.__scratchpadImage is not None:
             writeBlock(0x0203, 'bytes', bytes(qImageToPngQByteArray(self.__scratchpadImage)))
         writeBlock(0x0204, 'ushort', self.__scratchpadBrushOpacity)
 
@@ -820,99 +827,99 @@ class BNNote(QObject):
         if not isinstance(data, (bytes, QByteArray)):
             return False
 
-        dataRead=BytesRW(data)
+        dataRead = BytesRW(data)
         # skip version..
         dataRead.seek(1)
 
         self.beginUpdate()
-        locked=False
+        locked = False
         self.setLocked(False)
-        timestampUpdated=None
+        timestampUpdated = None
 
-        #self.__brushes.beginUpdate()
+        # self.__brushes.beginUpdate()
         self.__brushes.clear()
 
-        nextBlock=1
+        nextBlock = 1
 
-        while dataRead.tell()==nextBlock and (blockContentSize:=dataRead.readUInt4()):
-            blockContentSize-=6
+        while dataRead.tell() == nextBlock and (blockContentSize := dataRead.readUInt4()):
+            blockContentSize -= 6
             # current position should be equal to nextblockPosition, otherwise quit
-            nextBlock=dataRead.tell()+blockContentSize+2
+            nextBlock = dataRead.tell()+blockContentSize+2
 
-            blockType=dataRead.readUInt2()
+            blockType = dataRead.readUInt2()
             if blockType is None:
                 break
 
-            if blockType==0x0001:
-                newId=dataRead.readStr(blockContentSize)
+            if blockType == 0x0001:
+                newId = dataRead.readStr(blockContentSize)
                 if importId:
                     self.__setId(newId)
-            elif blockType==0x0002:
+            elif blockType == 0x0002:
                 self.setTimestampCreated(dataRead.readFloat8())
-            elif blockType==0x0003:
-                #self.setTimestampUpdated(dataRead.readFloat8())
+            elif blockType == 0x0003:
+                # self.setTimestampUpdated(dataRead.readFloat8())
                 # ==> keep value in memory and set it at the end, otherwise will
                 #     be changed when other properties are loaded
-                timestampUpdated=dataRead.readFloat8()
-            elif blockType==0x0010:
+                timestampUpdated = dataRead.readFloat8()
+            elif blockType == 0x0010:
                 self.setTitle(dataRead.readStr(blockContentSize))
-            elif blockType==0x0011:
+            elif blockType == 0x0011:
                 self.setDescription(dataRead.readStr(blockContentSize))
-            elif blockType==0x0012:
+            elif blockType == 0x0012:
                 self.setColorIndex(dataRead.readUShort())
-            elif blockType==0x0020:
+            elif blockType == 0x0020:
                 self.setPinned(dataRead.readBool())
-            elif blockType==0x0021:
-                #self.setLocked(dataRead.readBool())
+            elif blockType == 0x0021:
+                # self.setLocked(dataRead.readBool())
                 # ==> keep value in memory and set it at the end, otherwise it
                 #     will be impossible to update other values :-)
-                locked=dataRead.readBool()
-            elif blockType==0x0022:
+                locked = dataRead.readBool()
+            elif blockType == 0x0022:
                 self.setPosition(dataRead.readUInt4())
-            elif blockType==0x0030:
+            elif blockType == 0x0030:
                 self.setWindowPostItGeometry(QRect(dataRead.readInt4(),
                                              dataRead.readInt4(),
                                              dataRead.readUInt4(),
                                              dataRead.readUInt4()))
-            elif blockType==0x0031:
+            elif blockType == 0x0031:
                 self.setWindowPostItCompact(dataRead.readBool())
-            elif blockType==0x0032:
+            elif blockType == 0x0032:
                 self.setSelectedType(dataRead.readUShort())
-            elif blockType==0x0033:
+            elif blockType == 0x0033:
                 self.setWindowPostItBrushIconSizeIndex(dataRead.readUShort())
-            elif blockType==0x0034:
+            elif blockType == 0x0034:
                 self.setWindowPostItLinkedLayersIconSizeIndex(dataRead.readUShort())
-            elif blockType==0x0100:
+            elif blockType == 0x0100:
                 self.setText(dataRead.readStr(blockContentSize))
-            elif blockType==0x0200:
+            elif blockType == 0x0200:
                 self.setScratchpadBrushName(dataRead.readStr(blockContentSize))
-            elif blockType==0x0201:
+            elif blockType == 0x0201:
                 self.setScratchpadBrushSize(dataRead.readUShort())
-            elif blockType==0x0202:
+            elif blockType == 0x0202:
                 self.setScratchpadBrushColor(dataRead.readUInt4())
-            elif blockType==0x0203:
+            elif blockType == 0x0203:
                 self.setScratchpadImage(QImage.fromData(QByteArray(dataRead.read(blockContentSize))))
-            elif blockType==0x0204:
+            elif blockType == 0x0204:
                 self.setScratchpadBrushOpacity(dataRead.readUShort())
-            elif blockType==0x0300:
-                brush=BNBrush()
+            elif blockType == 0x0300:
+                brush = BNBrush()
                 brush.importData(dataRead.read(blockContentSize))
                 self.__brushes.add(brush)
-            elif blockType==0x0400:
-                linkedLayer=BNLinkedLayer()
+            elif blockType == 0x0400:
+                linkedLayer = BNLinkedLayer()
                 linkedLayer.importData(dataRead.read(blockContentSize))
                 self.__linkedLayers.add(linkedLayer)
-            elif blockType==0x0500:
-                embeddedFont=BNEmbeddedFont()
+            elif blockType == 0x0500:
+                embeddedFont = BNEmbeddedFont()
                 embeddedFont.importData(dataRead.read(blockContentSize))
                 self.__embeddedFonts.add(embeddedFont)
 
         dataRead.close()
-        #self.__brushes.endUpdate()
+        # self.__brushes.endUpdate()
 
         # must be done at the end..
         # - get real timestamp update saved in data
-        if not timestampUpdated is None:
+        if timestampUpdated is not None:
             self.setTimestampUpdated(timestampUpdated)
         # - lock at the end (otherwise risk to not update values)
         self.setLocked(locked)
@@ -924,36 +931,33 @@ class BNNote(QObject):
 
     def beginUpdate(self):
         """Start updating note massivelly and then do note emit update"""
-        self.__emitUpdated+=1
+        self.__emitUpdated += 1
 
     def endUpdate(self):
         """Start updating note massivelly and then do note emit update"""
-        self.__emitUpdated-=1
-        if self.__emitUpdated<0:
-            self.__emitUpdated=0
-        elif self.__emitUpdated==0:
+        self.__emitUpdated -= 1
+        if self.__emitUpdated < 0:
+            self.__emitUpdated = 0
+        elif self.__emitUpdated == 0:
             self.__updated('*')
 
     def exportAsText(self):
         """Export note as raw text"""
-        returned=TextTable()
+        returned = TextTable()
 
         returned.addRow(["Title", self.__title])
         returned.addRow(["Description", self.__description])
         returned.addRow(["Color", WStandardColorSelector.getColorName(self.__colorIndex)])
 
-
         returned.addSeparator()
         returned.addRow(["Created", tsToStr(self.__timestampCreated)])
         returned.addRow(["Modified", tsToStr(self.__timestampUpdated)])
 
-
         returned.addSeparator()
-        if stripHtml(self.__text).strip()!='':
+        if stripHtml(self.__text).strip() != '':
             returned.addRow(["Text notes", stripHtml(self.__text)])
         else:
             returned.addRow(["Text notes", "-"])
-
 
         returned.addSeparator()
         if self.__scratchpadImage is None:
@@ -961,36 +965,34 @@ class BNNote(QObject):
         else:
             returned.addRow(["Hand written notes", f"{self.__scratchpadImage.width()}x{self.__scratchpadImage.height()}"])
 
-
         returned.addSeparator()
-        if len(self.__brushes.idList())==0:
+        if len(self.__brushes.idList()) == 0:
             returned.addRow(["Brushes notes", "-"])
         else:
-            tmpText=[]
+            tmpText = []
             for brush in self.__brushes.idList():
                 tmpText.append(indent(self.__brushes.get(brush).exportAsText(), "* ", "     ", True))
             returned.addRow(["Brushes notes", "\n\n".join(tmpText)])
 
-
         returned.addSeparator()
-        if len(self.__linkedLayers.idList())==0:
+        if len(self.__linkedLayers.idList()) == 0:
             returned.addRow(["Linked layers notes", "-"])
         else:
-            tmpText=[]
+            tmpText = []
             for layer in self.__linkedLayers.idList():
                 tmpText.append(indent(self.__linkedLayers.get(layer).exportAsText(), "* ", "     ", True))
             returned.addRow(["Linked layers notes", "\n\n".join(tmpText)])
 
         returned.addSeparator()
-        if len(self.__embeddedFonts.idList())==0:
+        if len(self.__embeddedFonts.idList()) == 0:
             returned.addRow(["Embedded fonts", "-"])
         else:
-            tmpText=[]
+            tmpText = []
             for fontName in self.__embeddedFonts.idList():
                 tmpText.append(indent(self.__embeddedFonts.get(fontName).exportAsText(), "* ", "     ", True))
             returned.addRow(["Embedded fonts", "\n\n".join(tmpText)])
 
-        tableSettings=TextTableSettingsText()
+        tableSettings = TextTableSettingsText()
 
         return returned.asText(tableSettings)
 
@@ -999,17 +1001,17 @@ class BNNote(QObject):
         def imgMarkup(image, size=''):
             return f'<img style="{size}" src="data:image/png;base64,{base64.b64encode(bytes(qImageToPngQByteArray(image))).decode()}">'
 
-        returned=[]
+        returned = []
 
         # WStandardColorSelector.getColorName(self.__colorIndex)
 
-        if self.__title.strip()=='':
+        if self.__title.strip() == '':
             returned.append('<h1>(No title)</h1>')
         else:
             returned.append(f'<h1>{self.__title}</h1>')
 
-        if self.__description.strip()!='':
-            text=self.__description.replace("\n","<br>")
+        if self.__description.strip() != '':
+            text = self.__description.replace("\n", "<br>")
             returned.append(f'<p>{text}</p>')
 
         returned.append('<table>')
@@ -1025,34 +1027,32 @@ class BNNote(QObject):
 
         returned.append(f'<h2>{i18n("Text note")}</h2>')
 
-        if stripHtml(self.__text).strip()!='':
+        if stripHtml(self.__text).strip() != '':
             returned.append(self.__text)
         else:
-            text=i18n("Doesn't contains text note")
+            text = i18n("Doesn't contains text note")
             returned.append(f'<div><i>{text}</i><div>')
-
 
         returned.append(f'<h2>{i18n("Hand written note")}</h2>')
 
         if self.__scratchpadImage is None:
-            text=i18n("Doesn't contains hand written note")
+            text = i18n("Doesn't contains hand written note")
             returned.append(f'<p><i>{text}</i><p>')
         else:
             returned.append(f'<p><i>{i18n("Size")}: {self.__scratchpadImage.width()}x{self.__scratchpadImage.height()}px</i><p>')
             returned.append(imgMarkup(self.__scratchpadImage, 'width: 100%; object-fit: contain;'))
 
-
         returned.append(f'<h2>{i18n("Brushes notes")}</h2>')
 
-        if len(self.__brushes.idList())==0:
-            text=i18n("Doesn't contains brushes notes")
+        if len(self.__brushes.idList()) == 0:
+            text = i18n("Doesn't contains brushes notes")
             returned.append(f'<p><i>{text}</i><p>')
         else:
             returned.append('<table>')
             for brushId in self.__brushes.idList():
-                brush=self.__brushes.get(brushId)
+                brush = self.__brushes.get(brushId)
 
-                size=imgBoxSize(brush.image().size(), QSize(192, 192))
+                size = imgBoxSize(brush.image().size(), QSize(192, 192))
 
                 returned.append('<tr>')
                 returned.append(f'<th>{imgMarkup(brush.image(), f"width: {size.width()}; height: {size.height()};")}</th>')
@@ -1061,18 +1061,17 @@ class BNNote(QObject):
                 returned.append('</tr>')
             returned.append('</table>')
 
-
         returned.append(f'<h2>{i18n("Linked layers notes")}</h2>')
 
-        if len(self.__linkedLayers.idList())==0:
-            text=i18n("Doesn't contains linked layers notes")
+        if len(self.__linkedLayers.idList()) == 0:
+            text = i18n("Doesn't contains linked layers notes")
             returned.append(f'<p><i>{text}</i><p>')
         else:
             returned.append('<table>')
             for layerId in self.__linkedLayers.idList():
-                layer=self.__linkedLayers.get(layerId)
+                layer = self.__linkedLayers.get(layerId)
 
-                size=imgBoxSize(layer.thumbnail().size(), QSize(BNLinkedLayer.THUMB_SIZE, BNLinkedLayer.THUMB_SIZE))
+                size = imgBoxSize(layer.thumbnail().size(), QSize(BNLinkedLayer.THUMB_SIZE, BNLinkedLayer.THUMB_SIZE))
 
                 returned.append('<tr>')
                 returned.append(f'<th>{imgMarkup(layer.thumbnail(), f"width: {size.width()}; height: {size.height()};")}</th>')
@@ -1080,13 +1079,13 @@ class BNNote(QObject):
                 returned.append('</tr>')
             returned.append('</table>')
 
-        if len(self.__embeddedFonts.idList())==0:
-            text=i18n("Doesn't contains embedded fonts")
+        if len(self.__embeddedFonts.idList()) == 0:
+            text = i18n("Doesn't contains embedded fonts")
             returned.append(f'<p><i>{text}</i><p>')
         else:
             returned.append('<table>')
             for fontName in self.__embeddedFonts.idList():
-                text=self.__embeddedFonts.get(fontName).exportAsText('html')
+                text = self.__embeddedFonts.get(fontName).exportAsText('html')
 
                 returned.append('<tr>')
                 returned.append(f'<th>{fontName}</th>')
@@ -1097,7 +1096,6 @@ class BNNote(QObject):
         return "\n".join(returned)
 
 
-
 class BNNotes(QObject):
     """Collection of notes"""
     updated = Signal(BNNote, str)
@@ -1106,7 +1104,7 @@ class BNNotes(QObject):
     updateRemoved = Signal(list)
     updateMoved = Signal()
 
-    MIME_TYPE='application/x-kritaplugin-bulinotes'
+    MIME_TYPE = 'application/x-kritaplugin-bulinotes'
 
     def __init__(self):
         """Initialize object"""
@@ -1117,14 +1115,14 @@ class BNNotes(QObject):
         # value = BNNotes
         self.__notes = {}
 
-        self.__enabled=False
-        self.__temporaryDisabled=False
+        self.__enabled = False
+        self.__temporaryDisabled = False
 
         # list of added hash
-        self.__updateAdd=[]
-        self.__updateRemove=[]
+        self.__updateAdd = []
+        self.__updateRemove = []
 
-        self.__document=None
+        self.__document = None
 
     def __repr__(self):
         return f"<BNNotes()>"
@@ -1145,8 +1143,8 @@ class BNNotes(QObject):
 
         An empty list mean a complete update
         """
-        items=self.__updateAdd.copy()
-        self.__updateAdd=[]
+        items = self.__updateAdd.copy()
+        self.__updateAdd = []
         if not self.__temporaryDisabled:
             self.updateAdded.emit(items)
 
@@ -1155,8 +1153,8 @@ class BNNotes(QObject):
 
         An empty list mean a complete update
         """
-        items=self.__updateRemove.copy()
-        self.__updateRemove=[]
+        items = self.__updateRemove.copy()
+        self.__updateRemove = []
         if not self.__temporaryDisabled:
             self.updateRemoved.emit(items)
 
@@ -1172,7 +1170,7 @@ class BNNotes(QObject):
 
     def __recalculatePositionValues(self):
         """Recalculate positions values"""
-        sortedList=self.idList(True)
+        sortedList = self.idList(True)
         for position, id in enumerate(sortedList):
             self.__notes[id].setPosition(position)
         if not self.__temporaryDisabled:
@@ -1205,12 +1203,12 @@ class BNNotes(QObject):
 
     def clear(self):
         """Clear all notes"""
-        state=self.__temporaryDisabled
+        state = self.__temporaryDisabled
 
-        self.__temporaryDisabled=True
+        self.__temporaryDisabled = True
         for key in list(self.__notes.keys()):
             self.remove(self.__notes[key])
-        self.__temporaryDisabled=state
+        self.__temporaryDisabled = state
         if not self.__temporaryDisabled:
             self.__emitUpdateReset()
 
@@ -1219,7 +1217,7 @@ class BNNotes(QObject):
         if isinstance(item, BNNote):
             item.updated.connect(self.__itemUpdated)
             self.__updateAdd.append(item.id())
-            self.__notes[item.id()]=item
+            self.__notes[item.id()] = item
             self.__setAnnotation(item)
             self.__emitUpdateAdded()
             return True
@@ -1227,22 +1225,22 @@ class BNNotes(QObject):
 
     def remove(self, item):
         """Remove Note from list"""
-        removedNote=None
+        removedNote = None
 
-        if isinstance(item, list) and len(item)>0:
-            self.__temporaryDisabled=True
+        if isinstance(item, list) and len(item) > 0:
+            self.__temporaryDisabled = True
             for note in item:
                 self.remove(note)
-            self.__temporaryDisabled=False
+            self.__temporaryDisabled = False
             self.__emitUpdateRemoved()
             return True
 
         if isinstance(item, str) and item in self.__notes and not self.get(item).locked():
-            removedNote=self.__notes.pop(item, None)
+            removedNote = self.__notes.pop(item, None)
         elif isinstance(item, BNNote) and not item.locked():
-            removedNote=self.__notes.pop(item.id(), None)
+            removedNote = self.__notes.pop(item.id(), None)
 
-        if not removedNote is None:
+        if removedNote is not None:
             self.__delAnnotation(removedNote)
             removedNote.updated.disconnect(self.__itemUpdated)
             if removedNote.pinned():
@@ -1256,7 +1254,7 @@ class BNNotes(QObject):
         """Update note"""
         if isinstance(item, BNNote):
             if self.exists(item.id()):
-                self.__notes[item.id()]=item
+                self.__notes[item.id()] = item
                 self.__setAnnotation(item)
                 self.__itemUpdated(item, '*')
             return True
@@ -1264,35 +1262,35 @@ class BNNotes(QObject):
 
     def setDocument(self, document):
         """Set current document"""
-        if document!=self.__document:
-            self.__temporaryDisabled=True
+        if document != self.__document:
+            self.__temporaryDisabled = True
 
-            self.__document=document
+            self.__document = document
 
             # when document is changed, need to reload all notes
             self.clear()
 
-            if not self.__document is None:
+            if self.__document is not None:
                 for annotation in self.__document.annotationTypes():
-                    if re.match('BuliNotes/Note\([^\)]+\)', annotation):
-                        note=BNNote()
+                    if re.match(r'BuliNotes/Note\([^\)]+\)', annotation):
+                        note = BNNote()
                         note.importData(self.__document.annotation(annotation))
                         note.updated.connect(self.__itemUpdated)
                         self.__updateAdd.append(note.id())
-                        self.__notes[note.id()]=note
+                        self.__notes[note.id()] = note
                         if note.pinned():
                             note.openWindowPostIt()
 
             self.__recalculatePositionValues()
-            self.__temporaryDisabled=False
+            self.__temporaryDisabled = False
             self.__emitUpdateReset()
 
     def clipboardCopy(self, notes):
         """Copy selected notes to clipboard"""
 
-        binaryList=[]
-        htmlList=[]
-        plainTextList=[]
+        binaryList = []
+        htmlList = []
+        plainTextList = []
 
         if isinstance(notes, list):
             for note in notes:
@@ -1301,12 +1299,12 @@ class BNNotes(QObject):
                     htmlList.append(note.exportAsHtml())
                     plainTextList.append(note.exportAsText())
 
-        clipboardContent=False
+        clipboardContent = False
         clipboard = QGuiApplication.clipboard()
-        mimeContent=QMimeData()
+        mimeContent = QMimeData()
 
-        if len(binaryList)>0:
-            dataWrite=BytesRW()
+        if len(binaryList) > 0:
+            dataWrite = BytesRW()
             dataWrite.writeUInt2(len(binaryList))
             for data in binaryList:
                 dataWrite.writeUInt4(len(data))
@@ -1314,13 +1312,13 @@ class BNNotes(QObject):
 
             mimeContent.setData(BNNotes.MIME_TYPE, QByteArray(dataWrite.getvalue()))
 
-        if len(plainTextList)>0:
+        if len(plainTextList) > 0:
             mimeContent.setData('text/plain', ("\n\n".join(plainTextList)).encode())
 
-        if len(htmlList)>0:
+        if len(htmlList) > 0:
             mimeContent.setData('text/html', ("\n\n".join(htmlList)).encode())
 
-        if len(mimeContent.formats())>0:
+        if len(mimeContent.formats()) > 0:
             clipboard.setMimeData(mimeContent)
             return True
 
@@ -1336,22 +1334,22 @@ class BNNotes(QObject):
         """Paste notes from clipboard, if any"""
         clipboardMimeContent = QGuiApplication.clipboard().mimeData(QClipboard.Clipboard)
         if clipboardMimeContent.hasFormat(BNNotes.MIME_TYPE):
-            self.__temporaryDisabled=True
-            data=bytes(clipboardMimeContent.data(BNNotes.MIME_TYPE))
+            self.__temporaryDisabled = True
+            data = bytes(clipboardMimeContent.data(BNNotes.MIME_TYPE))
 
-            dataRead=BytesRW(data)
-            nbNotes=dataRead.readUInt2()
+            dataRead = BytesRW(data)
+            nbNotes = dataRead.readUInt2()
             for noteNumber in range(nbNotes):
-                dataLength=dataRead.readUInt4()
-                dataNote=dataRead.read(dataLength)
+                dataLength = dataRead.readUInt4()
+                dataNote = dataRead.read(dataLength)
 
-                note=BNNote()
+                note = BNNote()
                 if note.importData(dataNote, False):
                     self.add(note)
                     if note.pinned():
                         note.openWindowPostIt()
 
-            self.__temporaryDisabled=False
+            self.__temporaryDisabled = False
             self.__emitUpdateReset()
 
     def clipboardPastable(self):
@@ -1362,26 +1360,26 @@ class BNNotes(QObject):
     def movePosition(self, notes, offset):
         """Move all notes position up for 1"""
         if isinstance(notes, BNNote):
-            notes=[notes]
+            notes = [notes]
 
-        if not isinstance(notes, list) or len(notes)==0 or offset==0:
+        if not isinstance(notes, list) or len(notes) == 0 or offset == 0:
             return
 
         # update positions
-        sortedList=self.idList(True)
-        if offset>0:
+        sortedList = self.idList(True)
+        if offset > 0:
             sortedList.reverse()
-        resultList=[]
+        resultList = []
 
-        currentSize=0
+        currentSize = 0
         for id in sortedList:
             if self.__notes[id] in notes:
                 resultList.insert(currentSize-abs(offset), id)
             else:
                 resultList.append(id)
-            currentSize+=1
+            currentSize += 1
 
-        if offset>0:
+        if offset > 0:
             resultList.reverse()
 
         for index, id in enumerate(resultList):
@@ -1397,7 +1395,6 @@ class BNNotes(QObject):
     def movePositionDown(self, notes):
         """Move all notes position down for 1"""
         self.movePosition(notes, 1)
-
 
 
 class BNNoteEditor(EDialog):
@@ -1424,40 +1421,40 @@ class BNNoteEditor(EDialog):
 
         BNBrushPreset.initialise()
 
-        self.__name=name
+        self.__name = name
         self.setWindowTitle(name)
         self.setSizeGripEnabled(True)
 
         if not isinstance(note, BNNote):
-            self.__note=BNNote()
+            self.__note = BNNote()
         else:
-            self.__note=note
+            self.__note = note
 
-        self.__tmpNote=BNNote.clone(self.__note)
-        self.__tmpBrushes=BNBrushes(self.__note.brushes())
-        self.__tmpLinkedLayers=BNLinkedLayers(self.__note.linkedLayers())
-        self.__tmpEmbeddedFonts=BNEmbeddedFonts(self.__note.embeddedFonts())
+        self.__tmpNote = BNNote.clone(self.__note)
+        self.__tmpBrushes = BNBrushes(self.__note.brushes())
+        self.__tmpLinkedLayers = BNLinkedLayers(self.__note.linkedLayers())
+        self.__tmpEmbeddedFonts = BNEmbeddedFonts(self.__note.embeddedFonts())
 
         # list of fonts used in document
-        self.__usedFonts=[]
+        self.__usedFonts = []
 
-        self.__ignoreMenuUpdate=False
+        self.__ignoreMenuUpdate = False
 
-        self.__activeView=Krita.instance().activeWindow().activeView()
-        self.__activeViewCurrentConfig={}
+        self.__activeView = Krita.instance().activeWindow().activeView()
+        self.__activeViewCurrentConfig = {}
 
-        self.__scratchpadHandWritting=Scratchpad(self.__activeView, QColor(Qt.white), self)
+        self.__scratchpadHandWritting = Scratchpad(self.__activeView, QColor(Qt.white), self)
         self.__scratchpadHandWritting.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
         self.__scratchpadHandWritting.linkCanvasZoom(True)
 
-        self.__currentUiBrush=BNBrush()
+        self.__currentUiBrush = BNBrush()
         self.__currentUiBrush.fromBrush()
 
-        self.__scratchpadTestBrush=Scratchpad(self.__activeView, QColor(Qt.white), self)
+        self.__scratchpadTestBrush = Scratchpad(self.__activeView, QColor(Qt.white), self)
         self.__scratchpadTestBrush.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.__scratchpadTestBrush.linkCanvasZoom(False)
         self.__scratchpadTestBrush.setModeManually(False)
-        #self.__scratchpadTestBrush.setMode('painting')
+        # self.__scratchpadTestBrush.setMode('painting')
         self.wBrushScratchpad.layout().addWidget(self.__scratchpadTestBrush)
 
         self.__saveViewConfig()
@@ -1472,15 +1469,16 @@ class BNNoteEditor(EDialog):
         self.pteDescription.setPlainText(self.__note.description())
         self.wColorIndex.setColorIndex(self.__note.colorIndex())
 
-        currentTime=time.time()
-        delayCreated=currentTime - self.__note.timestampCreated()
-        delayUpdated=currentTime - self.__note.timestampUpdated()
+        currentTime = time.time()
+        delayCreated = currentTime - self.__note.timestampCreated()
+        delayUpdated = currentTime - self.__note.timestampUpdated()
 
-        if delayCreated<1:
+        if delayCreated < 1:
             self.lblTimestampLabel.setVisible(False)
             self.lblTimestamp.setVisible(False)
         else:
-            self.lblTimestamp.setText(f'{tsToStr(self.__note.timestampCreated())} ({secToStrTime(delayCreated)} ago)\n{tsToStr(self.__note.timestampUpdated())} ({secToStrTime(delayUpdated)} ago)')
+            self.lblTimestamp.setText(f'{tsToStr(self.__note.timestampCreated())} ({secToStrTime(delayCreated)} ago)\n'
+                                      f'{tsToStr(self.__note.timestampUpdated())} ({secToStrTime(delayUpdated)} ago)')
 
         self.btOk.clicked.connect(self.__accept)
         self.btCancel.clicked.connect(self.__reject)
@@ -1488,34 +1486,35 @@ class BNNoteEditor(EDialog):
         self.tabWidget.setCurrentIndex(0)
         self.tabWidget.currentChanged.connect(self.__tabChanged)
 
-
         # -- TEXT Note properties
-        self.wteText.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+        self.wteText.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR | WTextEditBtBarOption.STYLE_STRIKETHROUGH | WTextEditBtBarOption.STYLE_COLOR_BG)
         self.wteText.setHtml(self.__note.text())
         self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
         self.wteText.colorMenuUiChanged.connect(BNSettings.setTxtColorPickerLayout)
 
         # -- HAND WRITTEN Note properties
-        img=self.__note.scratchpadImage()
-        if not img is None:
+        img = self.__note.scratchpadImage()
+        if img is not None:
             self.__scratchpadHandWritting.loadScratchpadImage(img)
 
-        layout=self.tabScratchpad.layout()
+        layout = self.tabScratchpad.layout()
         layout.setSpacing(0)
-        layout.setContentsMargins(QMargins(6,6,6,6))
+        layout.setContentsMargins(QMargins(6, 6, 6, 6))
         layout.addWidget(self.__scratchpadHandWritting)
 
-        layout=self.wToolBar.layout()
+        layout = self.wToolBar.layout()
         layout.setSpacing(6)
-        layout.setContentsMargins(QMargins(0,0,0,0))
+        layout.setContentsMargins(QMargins(0, 0, 0, 0))
 
-        self.__actionSelectDefaultBrush=QAction(QIcon(QPixmap.fromImage(BNBrushPreset.getPreset().image())), i18n('Default note brush'), self)
+        self.__actionSelectDefaultBrush = QAction(QIcon(QPixmap.fromImage(BNBrushPreset.getPreset().image())), i18n('Default note brush'), self)
         self.__actionSelectDefaultBrush.triggered.connect(self.__actionScratchpadSetBrushDefault)
-        self.__actionSelectCurrentBrush=QAction(QIcon(QPixmap.fromImage(self.__activeViewCurrentConfig['brushPreset'].image())), i18n(f"Current painting brush ({self.__activeViewCurrentConfig['brushPreset'].name()})"), self)
+        self.__actionSelectCurrentBrush = QAction(QIcon(QPixmap.fromImage(self.__activeViewCurrentConfig['brushPreset'].image())),
+                                                  i18n(f"Current painting brush ({self.__activeViewCurrentConfig['brushPreset'].name()})"),
+                                                  self)
         self.__actionSelectCurrentBrush.triggered.connect(self.__actionScratchpadSetBrushCurrent)
-        self.__actionSelectBrush=WMenuBrushesPresetSelector()
+        self.__actionSelectBrush = WMenuBrushesPresetSelector()
         self.__actionSelectBrush.presetChooser().presetClicked.connect(self.__actionScratchpadSetBrushPreset)
-        self.__actionSelectColor=WMenuColorPicker()
+        self.__actionSelectColor = WMenuColorPicker()
         self.__actionSelectColor.colorPicker().colorUpdated.connect(self.__actionScratchpadSetColor)
         self.__actionSelectColor.colorPicker().setOptionCompactUi(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT))
         self.__actionSelectColor.colorPicker().setOptionShowColorPalette(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE))
@@ -1533,23 +1532,23 @@ class BNNoteEditor(EDialog):
         self.__actionSelectColor.colorPicker().setOptionShowColorHSL(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE))
         self.__actionSelectColor.colorPicker().setOptionDisplayAsPctColorHSL(BNSettings.get(BNSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT))
         self.__actionSelectColor.colorPicker().setOptionShowColorAlpha(False)
-        self.__actionSelectColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.__actionSelectColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL & ~WColorPicker.OPTION_MENU_ALPHA)
         self.__actionSelectColor.colorPicker().uiChanged.connect(self.__selectColorMenuChanged)
 
-        self.__actionImportFromFile=QAction(i18n('Import from file...'), self)
+        self.__actionImportFromFile = QAction(i18n('Import from file...'), self)
         self.__actionImportFromFile.triggered.connect(self.__actionScratchpadImportFromFile)
-        self.__actionImportFromClipboard=QAction(i18n('Import from clipboard'), self)
+        self.__actionImportFromClipboard = QAction(i18n('Import from clipboard'), self)
         self.__actionImportFromClipboard.triggered.connect(self.__actionScratchpadImportFromClipboard)
-        self.__actionImportFromLayer=QAction(i18n('Import from layer...'), self)
+        self.__actionImportFromLayer = QAction(i18n('Import from layer...'), self)
         self.__actionImportFromLayer.triggered.connect(self.__actionScratchpadImportFromLayer)
-        self.__actionImportFromDocument=QAction(i18n('Import from current document'), self)
+        self.__actionImportFromDocument = QAction(i18n('Import from current document'), self)
         self.__actionImportFromDocument.triggered.connect(self.__actionScratchpadImportFromDocument)
 
-        self.__actionExportToFile=QAction(i18n('Export to file...'), self)
+        self.__actionExportToFile = QAction(i18n('Export to file...'), self)
         self.__actionExportToFile.triggered.connect(self.__actionScratchpadExportToFile)
-        self.__actionExportToClipboard=QAction(i18n('Export to clipboard'), self)
+        self.__actionExportToClipboard = QAction(i18n('Export to clipboard'), self)
         self.__actionExportToClipboard.triggered.connect(self.__actionScratchpadExportToClipboard)
-        self.__actionExportToLayer=QAction(i18n('Export as new layer'), self)
+        self.__actionExportToLayer = QAction(i18n('Export as new layer'), self)
         self.__actionExportToLayer.triggered.connect(self.__actionScratchpadExportToLayer)
 
         menuImport = QMenu(self.tbImport)
@@ -1582,12 +1581,11 @@ class BNNoteEditor(EDialog):
         self.hsBrushOpacity.valueChanged.connect(self.__actionScratchpadSetBrushOpacity)
         self.hsZoom.valueChanged.connect(self.__actionScratchpadSetZoom)
 
-
         # -- BRUSHES Note properties
-        self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
+        self.__actionSelectBrushScratchpadColor = WMenuColorPicker()
         self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
         self.__actionSelectBrushScratchpadColor.colorPicker().setOptionLayout(self.__actionSelectColor.colorPicker().optionLayout())
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
+        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL & ~WColorPicker.OPTION_MENU_ALPHA)
         self.__actionSelectBrushScratchpadColor.colorPicker().uiChanged.connect(self.__selectBrushScratchpadColorMenuChanged)
 
         menuBrushScratchpadColor = QMenu(self.tbColor)
@@ -1667,7 +1665,7 @@ class BNNoteEditor(EDialog):
 
     def __updateImportMenuUi(self):
         """Menu import is about to be displayed"""
-        clipboard=QGuiApplication.clipboard()
+        clipboard = QGuiApplication.clipboard()
         self.__actionImportFromClipboard.setEnabled(clipboard.mimeData().hasImage())
 
     def __tabChanged(self, index):
@@ -1675,15 +1673,15 @@ class BNNoteEditor(EDialog):
 
         Given `index` is current index
         """
-        # 0=text
+        # 0 = text
 
-        if index==1:
+        if index == 1:
             # handwritten note
             self.__actionScratchpadSetBrushScratchpad()
-        elif index==2:
+        elif index == 2:
             # brushes notes
-            selectedBrushes=self.tvBrushes.selectedItems()
-            if len(selectedBrushes)==1:
+            selectedBrushes = self.tvBrushes.selectedItems()
+            if len(selectedBrushes) == 1:
                 selectedBrushes[0].toBrush()
             else:
                 self.__currentUiBrush.toBrush()
@@ -1691,16 +1689,16 @@ class BNNoteEditor(EDialog):
 
     def __updateBrushUi(self):
         """Update brushes UI (enable/disable buttons...)"""
-        nbSelectedBrush=self.tvBrushes.nbSelectedItems()
+        nbSelectedBrush = self.tvBrushes.nbSelectedItems()
         self.tbBrushAdd.setEnabled(self.__tmpBrushes.getFromFingerPrint(self.__currentUiBrush.fingerPrint()) is None)
-        self.tbBrushEdit.setEnabled(nbSelectedBrush==1)
-        self.tbBrushDelete.setEnabled(nbSelectedBrush==1)
+        self.tbBrushEdit.setEnabled(nbSelectedBrush == 1)
+        self.tbBrushDelete.setEnabled(nbSelectedBrush == 1)
 
     def __updateLinkedLayersUi(self):
         """Update linked layers UI (enable/disable buttons...)"""
-        nbSelectedLinkedLayers=self.tvLinkedLayers.nbSelectedItems()
-        self.tbLinkedLayerEdit.setEnabled(nbSelectedLinkedLayers==1)
-        self.tbLinkedLayerDelete.setEnabled(nbSelectedLinkedLayers>=1)
+        nbSelectedLinkedLayers = self.tvLinkedLayers.nbSelectedItems()
+        self.tbLinkedLayerEdit.setEnabled(nbSelectedLinkedLayers == 1)
+        self.tbLinkedLayerDelete.setEnabled(nbSelectedLinkedLayers >= 1)
 
     def __updateFontsUi(self):
         """Update fonts UI according to selected item in font list"""
@@ -1709,19 +1707,19 @@ class BNNoteEditor(EDialog):
 
         def addFontDefinition(fontInfo, font, fontFamily=None):
             # many files can define one font
-            familyName=font.property(Font.PROPERTY_TYPO_FAMILY_NAME)
-            subFamilyName=font.property(Font.PROPERTY_TYPO_SUBFAMILY_NAME)
+            familyName = font.property(Font.PROPERTY_TYPO_FAMILY_NAME)
+            subFamilyName = font.property(Font.PROPERTY_TYPO_SUBFAMILY_NAME)
 
             if fontFamily:
                 if familyName:
-                    if fontFamily!=familyName:
+                    if fontFamily != familyName:
                         return 0
                 else:
-                    if fontFamily!=font.property(Font.PROPERTY_FAMILY_NAME):
+                    if fontFamily != font.property(Font.PROPERTY_FAMILY_NAME):
                         return 0
 
             if familyName is None or subFamilyName is None:
-                subName=font.property(Font.PROPERTY_SUBFAMILY_NAME)
+                subName = font.property(Font.PROPERTY_SUBFAMILY_NAME)
                 if subName is None:
                     fontInfo.addRow([TextTableCell(f"<h1>{font.property(Font.PROPERTY_FULLNAME)}</h1>", colspan=2)])
                 else:
@@ -1729,8 +1727,7 @@ class BNNoteEditor(EDialog):
             else:
                 fontInfo.addRow([TextTableCell(f"<h1>{familyName} <i>({subFamilyName})</i></h1>", colspan=2)])
 
-
-            embeddingState=font.embeddingState()
+            embeddingState = font.embeddingState()
             if selectedItems[0].embeddable():
                 fontInfo.addRow(["<b>Embeddable</b>", asMonospace(i18n("Yes"))])
             else:
@@ -1739,84 +1736,91 @@ class BNNoteEditor(EDialog):
             fontInfo.addRow(["<b>Embeddability type</b>", asMonospace(embeddingState[1])])
             if embeddingState[0] in (0, 2, 8):
                 fontInfo.addRow(["", asMonospace(embeddingState[2].replace("\n", "<br>"))])
-            elif embeddingState[0]==4:
-                fontInfo.addRow(["", asMonospace((embeddingState[2]+'<i>'+i18n("\n\n⇨ As it's not possible to open a Krita document in read-only mode and ensure that no new document can be created from current one, plugin doesn't allows to embed font.\nAccording to font license, you may -or may not- be able to copy font file aside your Krita document.")+"</i>").replace("\n", "<br>"))])
+            elif embeddingState[0] == 4:
+                fontInfo.addRow(["",
+                                 asMonospace((embeddingState[2]+'<i>'+i18n("\n\n⇨ As it's not possible to open a Krita document in read-only mode and ensure that no new "
+                                                                           "document can be created from current one, plugin doesn't allows to embed font.\n"
+                                                                           "According to font license, you may -or may not- be able to copy font file aside your Krita document.") +
+                                              "</i>").replace("\n", "<br>"))])
             else:
-                fontInfo.addRow(["", asMonospace((embeddingState[2]+'<i>'+i18n("\n\n⇨ As it's not possible to determinate font embeddability, plugin doesn't allows to embedd font.\nAccording to font license, you may -or may not- be able to copy font file aside your Krita document.")+"</i>").replace("\n", "<br>"))])
+                fontInfo.addRow(["",
+                                 asMonospace((embeddingState[2]+'<i>'+i18n("\n\n⇨ As it's not possible to determinate font embeddability, plugin doesn't allows to embedd font.\n"
+                                                                           "According to font license, you may -or may not- be able to copy font file aside your Krita document.") +
+                                              "</i>").replace("\n", "<br>"))])
 
             fontInfo.addSeparator()
 
             if not available and embedded:
-                fileName=os.path.basename(font.fileName().replace('\\', '/'))
+                fileName = os.path.basename(font.fileName().replace('\\', '/'))
                 fontInfo.addRow(["<b>File location</b>", asMonospace(f"[Embedded] {fileName}")])
             else:
                 fontInfo.addRow(["<b>File location</b>", asMonospace(font.fileName())])
             fontInfo.addRow(["<b>File type</b>", asMonospace(font.type())])
 
-            if value:=font.property(Font.PROPERTY_FILE_SIZE):
+            if value := font.property(Font.PROPERTY_FILE_SIZE):
                 fontInfo.addRow(["<b>File size</b>", asMonospace(f"{bytesSizeToStr(value)} ({value} bytes)")])
-            if value:=font.property(Font.PROPERTY_FILE_DATE):
+            if value := font.property(Font.PROPERTY_FILE_DATE):
                 fontInfo.addRow(["<b>File date</b>", asMonospace(f"{tsToStr(value)}")])
 
             fontInfo.addSeparator()
-            lastProperty=None
+            lastProperty = None
             for property in propertyList:
-                if property==-1:
-                    if lastProperty!=-1:
+                if property == -1:
+                    if lastProperty != -1:
                         fontInfo.addSeparator()
-                        lastProperty=property
-                elif value:=font.property(property):
+                        lastProperty = property
+                elif value := font.property(property):
                     if property in (Font.PROPERTY_URLDESIGNER, Font.PROPERTY_URLVENDOR, Font.PROPERTY_LICENSE_NFOURL):
-                        value=f"<a href='{value}'>{value}</a>"
+                        value = f"<a href='{value}'>{value}</a>"
                     fontInfo.addRow([f"<b>{Font.PROPERTY_NAMES[property]}</b>", asMonospace(value.replace('\n', '<br>'))])
-                    lastProperty=property
+                    lastProperty = property
 
             fontInfo.addSeparator()
             return 1
 
-        embeddable=False
-        embedded=False
-        available=False
-        loadEnabled=False
-        saveEnabled=False
-        selectedItems=self.tvFontsList.selectedItems()
-        if len(selectedItems)>0:
-            propertyList=[
+        embeddable = False
+        embedded = False
+        available = False
+        loadEnabled = False
+        saveEnabled = False
+        selectedItems = self.tvFontsList.selectedItems()
+        if len(selectedItems) > 0:
+            propertyList = [
                 Font.PROPERTY_FULLNAME,
                 Font.PROPERTY_TYPO_FAMILY_NAME,
                 Font.PROPERTY_TYPO_SUBFAMILY_NAME,
                 Font.PROPERTY_PSNAME,
                 Font.PROPERTY_UNIQUEID,
-                -1, # separator
+                -1,  # separator
                 Font.PROPERTY_VERSION,
-                -1, # separator
+                -1,  # separator
                 Font.PROPERTY_MANUFACTURER_NAME,
                 Font.PROPERTY_URLVENDOR,
                 Font.PROPERTY_TRADEMARK,
-                -1, # separator
+                -1,  # separator
                 Font.PROPERTY_DESIGNER,
                 Font.PROPERTY_URLDESIGNER,
-                -1, # separator
+                -1,  # separator
                 Font.PROPERTY_COPYRIGHT,
                 Font.PROPERTY_LICENSE_DESCRIPTION,
                 Font.PROPERTY_LICENSE_NFOURL,
-                -1, # separator
+                -1,  # separator
                 Font.PROPERTY_DESCRIPTION
             ]
 
             # normally only one item is returned...
-            embeddable=selectedItems[0].embeddable()
-            embedded=selectedItems[0].embedded()
-            available=selectedItems[0].available()
+            embeddable = selectedItems[0].embeddable()
+            embedded = selectedItems[0].embedded()
+            available = selectedItems[0].available()
 
             # update buttons state & tooltip
             if embedded:
                 self.tbEmbbededFontState.setToolTip(i18n('Embbeded font'))
 
                 # embedded font
-                if selectedItems[0].embeddable(False)==0:
+                if selectedItems[0].embeddable(False) == 0:
                     # Installable font
-                    saveEnabled=True
+                    saveEnabled = True
                     self.tbSaveFonts.setToolTip(i18n("Extract embedded font files to disk"))
                 else:
                     self.tbSaveFonts.setToolTip(i18n("Font is not installable and can't be extracted"))
@@ -1833,42 +1837,43 @@ class BNNoteEditor(EDialog):
 
             if available:
                 self.tbLoadFont.setToolTip(i18n("Font is already available for Krita"))
-                embeddedFont=selectedItems[0].fonts()
+                embeddedFont = selectedItems[0].fonts()
             else:
                 # font not available
                 if embedded:
                     # ==> font is embedded
-                    loadEnabled=True
+                    loadEnabled = True
                     self.tbLoadFont.setToolTip(i18n("Load font for current Krita session"))
-                    embeddedFont=self.__tmpEmbeddedFonts.get(selectedItems[0].name())
+                    embeddedFont = self.__tmpEmbeddedFonts.get(selectedItems[0].name())
                     if embeddedFont:
-                        embeddedFont=embeddedFont.fonts()
+                        embeddedFont = embeddedFont.fonts()
                     else:
-                        embeddedFont=[]
+                        embeddedFont = []
                 else:
                     self.tbLoadFont.setToolTip(i18n("Font is not embedded, can't load it"))
-                    embeddedFont=[]
+                    embeddedFont = []
 
-            palette=QApplication.palette()
-            html=["<html>",
-                  "<style>",
-                  f"h1 {{ background: {palette.alternateBase().color().name()}; }}",
-                  "td { padding: 0 8 0 0; }",
-                  "</style>"]
+            palette = QApplication.palette()
+            html = ["<html>",
+                    "<style>",
+                    f"h1 {{ background: {palette.alternateBase().color().name()}; }}",
+                    "td { padding: 0 8 0 0; }",
+                    "</style>"
+                    ]
 
-            if len(embeddedFont)>0:
-                nbFonts=0
+            if len(embeddedFont) > 0:
+                nbFonts = 0
 
-                fontInfo=TextTable()
+                fontInfo = TextTable()
                 for font in sorted(embeddedFont, key=lambda fnt: fnt.property(Font.PROPERTY_FULLNAME) or ''):
-                    if collection:=font.property(Font.PROPERTY_COLLECTION_FONTS):
+                    if collection := font.property(Font.PROPERTY_COLLECTION_FONTS):
                         for fnt in collection:
-                            nbFonts+=addFontDefinition(fontInfo, fnt, selectedItems[0].name())
+                            nbFonts += addFontDefinition(fontInfo, fnt, selectedItems[0].name())
                     else:
-                        nbFonts+=addFontDefinition(fontInfo, font)
+                        nbFonts += addFontDefinition(fontInfo, font)
 
-                tableSettings=TextTableSettingsTextHtml()
-                if nbFonts>1:
+                tableSettings = TextTableSettingsTextHtml()
+                if nbFonts > 1:
                     html.append(i18n(f"<i>Font files in collection: {nbFonts}</i>"))
                 html.append(fontInfo.asHtml(tableSettings))
             else:
@@ -1884,8 +1889,8 @@ class BNNoteEditor(EDialog):
         self.tbLoadFont.setEnabled(loadEnabled)
         self.tbSaveFonts.setEnabled(saveEnabled)
 
-        embeddableNfo=self.tvFontsList.model().embeddable()
-        embeddedNfo=self.tvFontsList.model().embedded()
+        embeddableNfo = self.tvFontsList.model().embeddable()
+        embeddedNfo = self.tvFontsList.model().embedded()
         self.lblFntNfoNb.setText(i18n(f"Fonts: {self.tvFontsList.model().rowCount()}"))
         self.lblFntNfoNbEmbeddable.setText(i18n(f"Embeddable: {embeddableNfo[0]} ({bytesSizeToStr(embeddableNfo[1])})"))
         self.lblFntNfoNbEmbedded.setText(i18n(f"Embedded: {embeddedNfo[0]} ({bytesSizeToStr(embeddedNfo[1])})"))
@@ -1893,8 +1898,8 @@ class BNNoteEditor(EDialog):
     def __brushesSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
         self.__updateBrushUi()
-        selectedBrushes=self.tvBrushes.selectedItems()
-        if len(selectedBrushes)==1:
+        selectedBrushes = self.tvBrushes.selectedItems()
+        if len(selectedBrushes) == 1:
             if selectedBrushes[0].found():
                 selectedBrushes[0].toBrush()
 
@@ -1928,23 +1933,23 @@ class BNNoteEditor(EDialog):
 
     def __saveViewConfig(self):
         """Save current Krita active view properties"""
-        self.__activeViewCurrentConfig['brushSize']=self.__activeView.brushSize()
-        self.__activeViewCurrentConfig['brushPreset']=BNBrushPreset.getPreset(self.__activeView.currentBrushPreset())
+        self.__activeViewCurrentConfig['brushSize'] = self.__activeView.brushSize()
+        self.__activeViewCurrentConfig['brushPreset'] = BNBrushPreset.getPreset(self.__activeView.currentBrushPreset())
 
-        self.__activeViewCurrentConfig['fgColor']=self.__activeView.foregroundColor()
-        self.__activeViewCurrentConfig['bgColor']=self.__activeView.backgroundColor()
+        self.__activeViewCurrentConfig['fgColor'] = self.__activeView.foregroundColor()
+        self.__activeViewCurrentConfig['bgColor'] = self.__activeView.backgroundColor()
 
-        self.__activeViewCurrentConfig['blendingMode']=self.__activeView.currentBlendingMode()
-        #self.__activeViewCurrentConfig['gradient']=self.__activeView.currentGradient()
-        #self.__activeViewCurrentConfig['pattern']=self.__activeView.currentPattern()
+        self.__activeViewCurrentConfig['blendingMode'] = self.__activeView.currentBlendingMode()
+        # self.__activeViewCurrentConfig['gradient'] = self.__activeView.currentGradient()
+        # self.__activeViewCurrentConfig['pattern'] = self.__activeView.currentPattern()
 
-        self.__activeViewCurrentConfig['paintingOpacity']=self.__activeView.paintingOpacity()
-        self.__activeViewCurrentConfig['paintingFlow']=self.__activeView.paintingFlow()
+        self.__activeViewCurrentConfig['paintingOpacity'] = self.__activeView.paintingOpacity()
+        self.__activeViewCurrentConfig['paintingFlow'] = self.__activeView.paintingFlow()
 
         # don't know why, but zoomLevel() and setZoomLevel() don't use same value
         # https://krita-artists.org/t/canvas-class-what-does-zoomlevel-returns-compared-to-setzoomlevel-manual-link-inside/15702/3?u=grum999
         # need to apply a factor to be sure to reapply the right zoom
-        self.__activeViewCurrentConfig['zoom']=self.__activeView.canvas().zoomLevel()/(self.__activeView.document().resolution()*1/72)
+        self.__activeViewCurrentConfig['zoom'] = self.__activeView.canvas().zoomLevel()/(self.__activeView.document().resolution()*1/72)
 
     def __initViewConfig(self):
         """Initialise view for Scratchpad"""
@@ -1967,8 +1972,8 @@ class BNNoteEditor(EDialog):
 
         self.__activeView.setCurrentBlendingMode(self.__activeViewCurrentConfig['blendingMode'])
         # crash on gradient?
-        #self.__activeView.setCurrentGradient(self.__activeViewCurrentConfig['gradient'])
-        #self.__activeView.setCurrentPattern(self.__activeViewCurrentConfig['pattern'])
+        # self.__activeView.setCurrentGradient(self.__activeViewCurrentConfig['gradient'])
+        # self.__activeView.setCurrentPattern(self.__activeViewCurrentConfig['pattern'])
 
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
@@ -1992,7 +1997,7 @@ class BNNoteEditor(EDialog):
         self.__note.setLinkedLayers(self.__tmpLinkedLayers)
         self.__note.setEmbeddedFonts(self.__tmpEmbeddedFonts)
 
-        img=self.__scratchpadHandWritting.copyScratchpadImageData()
+        img = self.__scratchpadHandWritting.copyScratchpadImageData()
         self.__note.setScratchpadImage(self.__scratchpadHandWritting.copyScratchpadImageData())
 
         self.__restoreViewConfig()
@@ -2075,62 +2080,62 @@ class BNNoteEditor(EDialog):
 
     def __actionScratchpadImportFromFile(self):
         """Import scratchpad content from a file"""
-        fDialog=WEFileDialog(self,
-                             i18n("Import from file"),
-                             "",
-                             i18n("All images (*.png *.jpg *.jpeg);;Portable Network Graphics (*.png);;JPEG Image (*.jpg *.jpeg)"))
+        fDialog = WEFileDialog(self,
+                               i18n("Import from file"),
+                               "",
+                               i18n("All images (*.png *.jpg *.jpeg);;Portable Network Graphics (*.png);;JPEG Image (*.jpg *.jpeg)"))
         fDialog.setFileMode(WEFileDialog.ExistingFile)
         if fDialog.exec() == WEFileDialog.Accepted:
-            pixmap=QPixmap()
+            pixmap = QPixmap()
             if pixmap.load(fDialog.file()):
                 self.__scratchpadHandWritting.loadScratchpadImage(pixmap.toImage())
 
     def __actionScratchpadImportFromClipboard(self):
         """Import scratchpad content from clipboard"""
-        clipboard=QGuiApplication.clipboard()
+        clipboard = QGuiApplication.clipboard()
         if clipboard.mimeData().hasImage():
             self.__scratchpadHandWritting.loadScratchpadImage(clipboard.image())
 
     def __actionScratchpadImportFromLayer(self):
         """Import scratchpad content from a layer"""
-        document=Krita.instance().activeDocument()
-        nodeId=WDocNodesViewDialog.show(i18n(f"{self.__name}::Import from layer::Select layer to import"), document)
+        document = Krita.instance().activeDocument()
+        nodeId = WDocNodesViewDialog.show(i18n(f"{self.__name}::Import from layer::Select layer to import"), document)
         if nodeId:
-            node=document.nodeByUniqueID(nodeId)
+            node = document.nodeByUniqueID(nodeId)
             self.__scratchpadHandWritting.loadScratchpadImage(EKritaNode.toQImage(node))
 
     def __actionScratchpadImportFromDocument(self):
         """Import scratchpad content from document"""
-        document=Krita.instance().activeDocument()
-        bounds=document.bounds()
+        document = Krita.instance().activeDocument()
+        bounds = document.bounds()
         self.__scratchpadHandWritting.loadScratchpadImage(document.projection(bounds.x(), bounds.y(), bounds.width(), bounds.height()))
 
     def __actionScratchpadExportToFile(self):
         """Export scratchpad content to a file"""
-        fDialog=WEFileDialog(self,
-                             i18n("Export to file"),
-                             "",
-                             i18n("Portable Network Graphics (*.png);;JPEG Image (*.jpg *jpeg)"))
+        fDialog = WEFileDialog(self,
+                               i18n("Export to file"),
+                               "",
+                               i18n("Portable Network Graphics (*.png);;JPEG Image (*.jpg *jpeg)"))
         fDialog.setFileMode(WEFileDialog.AnyFile)
         fDialog.setAcceptMode(WEFileDialog.AcceptSave)
         if fDialog.exec() == WEFileDialog.Accepted:
-            image=self.__scratchpadHandWritting.copyScratchpadImageData()
+            image = self.__scratchpadHandWritting.copyScratchpadImageData()
             image.save(fDialog.file())
 
     def __actionScratchpadExportToClipboard(self):
         """Export scratchpad content to clipboard"""
-        clipboard=QGuiApplication.clipboard()
+        clipboard = QGuiApplication.clipboard()
         clipboard.setImage(self.__scratchpadHandWritting.copyScratchpadImageData())
 
     def __actionScratchpadExportToLayer(self):
         """Export scratchpad content as a new layer"""
-        document=Krita.instance().activeDocument()
+        document = Krita.instance().activeDocument()
 
-        title=self.leTitle.text()
-        if title!='':
-            title=f"{title.strip()} "
+        title = self.leTitle.text()
+        if title != '':
+            title = f"{title.strip()} "
 
-        node=document.createNode(i18n(f"{title}(From Buli Notes hand written note)"), 'paintlayer')
+        node = document.createNode(i18n(f"{title}(From Buli Notes hand written note)"), 'paintlayer')
         EKritaNode.fromQImage(node, self.__scratchpadHandWritting.copyScratchpadImageData())
         document.rootNode().addChildNode(node, None)
 
@@ -2140,8 +2145,8 @@ class BNNoteEditor(EDialog):
 
     def __actionBrushAdd(self):
         """Add current brush definition to brushes list"""
-        result=BNBrushesEditor.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "")
-        if not result is None:
+        result = BNBrushesEditor.edit(f"{self.__name}::Brush comment [{self.__currentUiBrush.name()}]", "")
+        if result is not None:
             self.__currentUiBrush.setComments(result)
             self.__tmpBrushes.add(self.__currentUiBrush)
             self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
@@ -2149,18 +2154,18 @@ class BNNoteEditor(EDialog):
 
     def __actionBrushEdit(self):
         """Edit comment for current selected brush"""
-        selection=self.tvBrushes.selectedItems()
-        if len(selection)==1:
-            result=BNBrushesEditor.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments())
-            if not result is None:
+        selection = self.tvBrushes.selectedItems()
+        if len(selection) == 1:
+            result = BNBrushesEditor.edit(f"{self.__name}::Brush description [{selection[0].name()}]", selection[0].comments())
+            if result is not None:
                 selection[0].setComments(result)
                 self.wteText.setColorPickerLayout(BNSettings.getTxtColorPickerLayout())
                 self.__updateBrushUi()
 
     def __actionBrushDelete(self):
         """Add current brush definition to brushes list"""
-        selection=self.tvBrushes.selectedItems()
-        if len(selection)>0:
+        selection = self.tvBrushes.selectedItems()
+        if len(selection) > 0:
             self.__tmpBrushes.remove(selection)
             self.__updateBrushUi()
 
@@ -2170,9 +2175,9 @@ class BNNoteEditor(EDialog):
 
     def __actionLinkedLayerAdd(self):
         """Add layer to linked layer list"""
-        linkedLayers=BNLinkedLayerEditor.edit(None, i18n(f"{self.__name}::Add linked layer"))
+        linkedLayers = BNLinkedLayerEditor.edit(None, i18n(f"{self.__name}::Add linked layer"))
 
-        if len(linkedLayers)>0:
+        if len(linkedLayers) > 0:
             self.__tmpLinkedLayers.beginUpdate()
             for linkedLayer in linkedLayers:
                 self.__tmpLinkedLayers.add(linkedLayer)
@@ -2182,14 +2187,14 @@ class BNNoteEditor(EDialog):
 
     def __actionLinkedLayerEdit(self):
         """Edit layer from linked layer list"""
-        selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
+        selectedLinkedLayers = self.tvLinkedLayers.selectedItems()
 
-        if len(selectedLinkedLayers)==1:
-            linkedLayers=BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
+        if len(selectedLinkedLayers) == 1:
+            linkedLayers = BNLinkedLayerEditor.edit(selectedLinkedLayers[0], i18n(f"{self.__name}::Edit linked layer"))
 
-            if len(linkedLayers)==1:
-                linkedLayer=linkedLayers[0]
-                if linkedLayer.id()==selectedLinkedLayers[0].id():
+            if len(linkedLayers) == 1:
+                linkedLayer = linkedLayers[0]
+                if linkedLayer.id() == selectedLinkedLayers[0].id():
                     self.__tmpLinkedLayers.update(linkedLayer)
                 else:
                     self.__tmpLinkedLayers.remove(selectedLinkedLayers[0])
@@ -2200,9 +2205,9 @@ class BNNoteEditor(EDialog):
 
     def __actionLinkedLayerDelete(self):
         """Remove layer from linked layer list"""
-        selectedLinkedLayers=self.tvLinkedLayers.selectedItems()
+        selectedLinkedLayers = self.tvLinkedLayers.selectedItems()
 
-        if len(selectedLinkedLayers)>0:
+        if len(selectedLinkedLayers) > 0:
             self.__tmpLinkedLayers.remove(selectedLinkedLayers)
             self.__updateLinkedLayersUi()
 
@@ -2220,74 +2225,74 @@ class BNNoteEditor(EDialog):
     def __actionEmbeddedFontExtract(self):
         """Extract files for embedded font"""
 
-        selectedItems=self.tvFontsList.selectedItems()
-        if len(selectedItems)>0:
-            fontName=selectedItems[0].name()
+        selectedItems = self.tvFontsList.selectedItems()
+        if len(selectedItems) > 0:
+            fontName = selectedItems[0].name()
 
             if selectedItems[0].available():
-                embeddedFonts=selectedItems[0].fonts()
+                embeddedFonts = selectedItems[0].fonts()
             elif selectedItems[0].embedded():
-                embeddedFonts=self.__tmpEmbeddedFonts.get(selectedItems[0].name())
+                embeddedFonts = self.__tmpEmbeddedFonts.get(selectedItems[0].name())
                 if embeddedFonts:
-                    embeddedFonts=embeddedFonts.fonts()
+                    embeddedFonts = embeddedFonts.fonts()
                 else:
-                    embeddedFonts=[]
+                    embeddedFonts = []
             else:
-                embeddedFonts=[]
+                embeddedFonts = []
 
-            nbFonts=len(embeddedFonts)
-            if nbFonts>0:
-                message=[]
+            nbFonts = len(embeddedFonts)
+            if nbFonts > 0:
+                message = []
 
-                totalSize=0
-                fileList=''
+                totalSize = 0
+                fileList = ''
 
                 for number, font in enumerate(sorted(embeddedFonts, key=lambda fnt: fnt.property(Font.PROPERTY_FULLNAME) or '')):
-                    fontName=font.property(Font.PROPERTY_FULLNAME)
-                    fileName=os.path.basename(font.fileName())
-                    fileSize=font.property(Font.PROPERTY_FILE_SIZE)
+                    fontName = font.property(Font.PROPERTY_FULLNAME)
+                    fileName = os.path.basename(font.fileName())
+                    fileSize = font.property(Font.PROPERTY_FILE_SIZE)
 
-                    totalSize+=fileSize
-                    fileList+=f"<tr><td><i>{number+1}.</i></td><td><b>{fontName}</b></td><td style='font-family: monospace'>{fileName}</li></td><td align=right><i>({bytesSizeToStr(fileSize)})</i></td></tr>"
+                    totalSize += fileSize
+                    fileList += f"<tr><td><i>{number+1}.</i></td><td><b>{fontName}</b></td><td style='font-family: monospace'>{fileName}</li></td>"\
+                                f"<td align=right><i>({bytesSizeToStr(fileSize)})</i></td></tr>"
 
-                if nbFonts>1:
-                    message=i18n(f"The following files ({nbFonts}, {bytesSizeToStr(totalSize)}) will be extracted, please choose a place to save them")
+                if nbFonts > 1:
+                    message = i18n(f"The following files ({nbFonts}, {bytesSizeToStr(totalSize)}) will be extracted, please choose a place to save them")
                 else:
-                    message=i18n(f"The following file ({bytesSizeToStr(totalSize)}) will be extracted, please choose a place to save it")
+                    message = i18n(f"The following file ({bytesSizeToStr(totalSize)}) will be extracted, please choose a place to save it")
 
-
-                fileDialog=WEFileDialog(i18n("Extract embedded font"), "",
-                                        i18n("All files (*.*);;Supported font files (*.ttf *.ttc *.otf *.otc *.pfb)"),
-                                        f"<html><style>td {{ padding: 0 8 0 0; }}</style><b>{message}</b><hr><table>{fileList}</table></html>",
-                                        False)
+                fileDialog = WEFileDialog(i18n("Extract embedded font"), "",
+                                          i18n("All files (*.*);;Supported font files (*.ttf *.ttc *.otf *.otc *.pfb)"),
+                                          f"<html><style>td {{ padding: 0 8 0 0; }}</style><b>{message}</b><hr><table>{fileList}</table></html>",
+                                          False)
                 fileDialog.setAcceptMode(QFileDialog.AcceptSave)
                 fileDialog.setFileMode(QFileDialog.Directory)
 
                 if fileDialog.exec():
-                    targetDirectory=fileDialog.selectedFiles()[0]
+                    targetDirectory = fileDialog.selectedFiles()[0]
                 else:
                     return
 
-                nbKo=0
+                nbKo = 0
 
                 for font in sorted(embeddedFonts, key=lambda fnt: fnt.property(Font.PROPERTY_FULLNAME)):
-                    targetFileName=os.path.join(targetDirectory, os.path.basename(font.fileName()))
+                    targetFileName = os.path.join(targetDirectory, os.path.basename(font.fileName()))
 
                     try:
                         with open(targetFileName, 'wb') as file:
                             file.write(font.getFileContent())
                     except Exception as e:
-                        nbKo+=1
+                        nbKo += 1
 
-                if nbKo==0:
-                    if nbFonts>1:
-                        message=i18n(f"Files extracted!")
+                if nbKo == 0:
+                    if nbFonts > 1:
+                        message = i18n(f"Files extracted!")
                     else:
-                        message=i18n(f"File extracted!")
-                elif nbKo==nbFonts:
-                    message=i18n(f"No file has been extracted")
+                        message = i18n(f"File extracted!")
+                elif nbKo == nbFonts:
+                    message = i18n(f"No file has been extracted")
                 else:
-                    message=i18n(f"Some files have not been extracted")
+                    message = i18n(f"Some files have not been extracted")
 
                 WDialogMessage.display("Extract embedded font", message)
                 return
@@ -2296,23 +2301,23 @@ class BNNoteEditor(EDialog):
 
     def __actionEmbeddedFontLoad(self):
         """Load font files for current session"""
-        selectedItems=self.tvFontsList.selectedItems()
-        if len(selectedItems)>0:
-            fontName=selectedItems[0].name()
+        selectedItems = self.tvFontsList.selectedItems()
+        if len(selectedItems) > 0:
+            fontName = selectedItems[0].name()
 
             if selectedItems[0].available():
-                embeddedFonts=selectedItems[0].fonts()
+                embeddedFonts = selectedItems[0].fonts()
             elif selectedItems[0].embedded():
-                embeddedFonts=self.__tmpEmbeddedFonts.get(selectedItems[0].name())
+                embeddedFonts = self.__tmpEmbeddedFonts.get(selectedItems[0].name())
                 if embeddedFonts:
-                    embeddedFonts=embeddedFonts.fonts()
+                    embeddedFonts = embeddedFonts.fonts()
                 else:
-                    embeddedFonts=[]
+                    embeddedFonts = []
             else:
-                embeddedFonts=[]
+                embeddedFonts = []
 
-            nbFonts=len(embeddedFonts)
-            if nbFonts>0:
+            nbFonts = len(embeddedFonts)
+            if nbFonts > 0:
                 for font in embeddedFonts:
                     QFontDatabase.addApplicationFontFromData(font.getFileContent())
 
@@ -2321,12 +2326,12 @@ class BNNoteEditor(EDialog):
             # doesn't work to refresh shapes:
             #   document=Krita.instance().activeDocument().refreshProjection()
             # then update each shapes...
-            vectorNodes=self.__getVectorNodes(Krita.instance().activeDocument().rootNode())
+            vectorNodes = self.__getVectorNodes(Krita.instance().activeDocument().rootNode())
             for vectorNode in vectorNodes:
                 for shape in vectorNode.shapes():
-                    svgContent=shape.toSvg()
+                    svgContent = shape.toSvg()
 
-                    names=re.findall(r'font-family="([^"]+)"', svgContent)
+                    names = re.findall(r'font-family="([^"]+)"', svgContent)
                     if fontName in names:
                         shape.update()
 
@@ -2334,67 +2339,66 @@ class BNNoteEditor(EDialog):
         """option for color menu 'handwritten notes' has been modified"""
         if self.__ignoreMenuUpdate:
             return
-        self.__ignoreMenuUpdate=True
+        self.__ignoreMenuUpdate = True
         self.__actionSelectBrushScratchpadColor.colorPicker().setOptionLayout(self.__actionSelectColor.colorPicker().optionLayout())
-        self.__ignoreMenuUpdate=False
+        self.__ignoreMenuUpdate = False
 
     def __selectBrushScratchpadColorMenuChanged(self):
         """option for color menu 'brushes notes' has been modified"""
         if self.__ignoreMenuUpdate:
             return
-        self.__ignoreMenuUpdate=True
+        self.__ignoreMenuUpdate = True
         self.__actionSelectColor.colorPicker().setOptionLayout(self.__actionSelectBrushScratchpadColor.colorPicker().optionLayout())
-        self.__ignoreMenuUpdate=False
+        self.__ignoreMenuUpdate = False
 
     def __getVectorNodes(self, node):
         """return a list of vector nodes"""
-        returned=None
+        returned = None
         if isinstance(node, GroupLayer):
-            returned=[]
+            returned = []
             for child in node.childNodes():
-                found=self.__getVectorNodes(child)
+                found = self.__getVectorNodes(child)
                 if found:
-                    returned+=found
+                    returned += found
         elif isinstance(node, VectorLayer):
-            returned=[node]
+            returned = [node]
         return returned
 
     def __loadUsedFonts(self):
         """Parse current document and generate a list of current used fonts"""
-        self.__usedFonts=[]
-        document=Krita.instance().activeDocument()
+        self.__usedFonts = []
+        document = Krita.instance().activeDocument()
 
         # get fonts from vector layers
-        vectorNodes=self.__getVectorNodes(document.rootNode())
+        vectorNodes = self.__getVectorNodes(document.rootNode())
         for vectorNode in vectorNodes:
             for shape in vectorNode.shapes():
-                svgContent=shape.toSvg()
+                svgContent = shape.toSvg()
 
-                names=re.findall(r'font-family="([^"]+)"', svgContent)
+                names = re.findall(r'font-family="([^"]+)"', svgContent)
                 for fontName in names:
                     # need to check if font is available on system
                     # if not, need to check if embedded
                     #   if yes, need to use embedded font instead of system font
-                    embeddedFonts=self.__tmpEmbeddedFonts.get(fontName)
+                    embeddedFonts = self.__tmpEmbeddedFonts.get(fontName)
                     if embeddedFonts:
-                        embeddedFonts=embeddedFonts.fonts()
+                        embeddedFonts = embeddedFonts.fonts()
                     else:
-                        embeddedFonts=[]
+                        embeddedFonts = []
 
                     self.__usedFonts.append(BNFont(fontName, True, embeddedFonts))
 
         # get fonts from current note (and not anymore in document)
         for fontName in self.__tmpEmbeddedFonts.idList():
-            if not fontName in self.__usedFonts:
-                embeddedFonts=self.__tmpEmbeddedFonts.get(fontName)
+            if fontName not in self.__usedFonts:
+                embeddedFonts = self.__tmpEmbeddedFonts.get(fontName)
                 if embeddedFonts:
-                    embeddedFonts=embeddedFonts.fonts()
+                    embeddedFonts = embeddedFonts.fonts()
                 else:
-                    embeddedFonts=[]
+                    embeddedFonts = []
                 self.__usedFonts.append(BNFont(fontName, False, embeddedFonts))
 
-        self.__usedFonts=sorted(self.__usedFonts, key=lambda x: x.name())
-
+        self.__usedFonts = sorted(self.__usedFonts, key=lambda x: x.name())
 
     def closeEvent(self, event):
         """Dialog is about to be closed..."""

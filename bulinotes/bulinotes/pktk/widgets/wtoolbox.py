@@ -1,24 +1,23 @@
-#-----------------------------------------------------------------------------
-# PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# PyKritaToolKit
+# Copyright (C) 2019-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# The wtoolbox module provides widgets to manage windows like post-it(r)
+#
+# Main class from this module
+#
+# - WToolBox:
+#       Widget
+#
+# -----------------------------------------------------------------------------
 
 import PyQt5.uic
 from PyQt5.Qt import *
@@ -30,6 +29,7 @@ from ..modules.timeutils import Timer
 from .wstandardcolorselector import WStandardColorSelector
 from ..pktk import *
 
+
 class WToolBox(QWidget):
     """The widget toolbox is a dialog box that can be used as a tool box
 
@@ -37,14 +37,13 @@ class WToolBox(QWidget):
 
     Also provide a bottom toolbar with sizegrip
     """
-    compactModeUpdated=Signal(bool) # when color is changed from user interface
-    compactModeChanged=Signal(bool) # when color is changed programmatically
-    pinnedModeUpdated=Signal(bool) # when pinned mode is changed programmatically
-    pinnedModeChanged=Signal(bool) # when pinned mode is changed programmatically
-    geometryUpdated=Signal(QRect)   # when geometry has been modified (no tracking)
+    compactModeUpdated = Signal(bool)   # when color is changed from user interface
+    compactModeChanged = Signal(bool)   # when color is changed programmatically
+    pinnedModeUpdated = Signal(bool)    # when pinned mode is changed programmatically
+    pinnedModeChanged = Signal(bool)    # when pinned mode is changed programmatically
+    geometryUpdated = Signal(QRect)     # when geometry has been modified (no tracking)
 
-
-    __BBAR_TOOLBUTTON_CSS="""
+    __BBAR_TOOLBUTTON_CSS = """
 QToolButton {
 border-radius: 2px;
 }
@@ -57,10 +56,9 @@ border: none;
 background-color: rgba(0,0,0,50);
 }            """
 
-
     def __init__(self, parent=None):
         if parent is None:
-            parent=Krita.instance().activeWindow().qwindow()
+            parent = Krita.instance().activeWindow().qwindow()
 
         super(WToolBox, self).__init__(parent)
 
@@ -68,38 +66,37 @@ background-color: rgba(0,0,0,50);
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint)
 
         self.__globalPos = None
-        self.__moving=False
-        self.__moved=False
-        self.__factor=0.85
-        self.__isCompact=False
-        self.__isPinned=False
-        self.__colorIndex=WStandardColorSelector.COLOR_NONE
-        self.__centralDefaultWidget=QLabel(self)
-        self.__centralWidget=self.__centralDefaultWidget
+        self.__moving = False
+        self.__moved = False
+        self.__factor = 0.85
+        self.__isCompact = False
+        self.__isPinned = False
+        self.__colorIndex = WStandardColorSelector.COLOR_NONE
+        self.__centralDefaultWidget = QLabel(self)
+        self.__centralWidget = self.__centralDefaultWidget
 
         self.__buildUi()
 
     def __buildUi(self):
         """Build window interface"""
-        self.__layoutMain=QVBoxLayout(self)
-        self.__layoutMain.setContentsMargins(0,0,0,0)
+        self.__layoutMain = QVBoxLayout(self)
+        self.__layoutMain.setContentsMargins(0, 0, 0, 0)
         self.__layoutMain.setSpacing(1)
 
-        self.__layoutBBar=QHBoxLayout(self)
-        self.__layoutBBar.setContentsMargins(1,1,1,1)
+        self.__layoutBBar = QHBoxLayout(self)
+        self.__layoutBBar.setContentsMargins(1, 1, 1, 1)
         self.__layoutBBar.setSpacing(1)
 
-
-        self.__titleBar=WToolBoxTitleBar(self, self.__isCompact)
+        self.__titleBar = WToolBoxTitleBar(self, self.__isCompact)
         self.__titleBar.compactModeUpdated.connect(self.__setCompact)
         self.__titleBar.pinnedModeUpdated.connect(self.__setPinned)
 
-        self.__sizeGrip=QSizeGrip(self)
+        self.__sizeGrip = QSizeGrip(self)
         self.__sizeGrip.installEventFilter(self)
 
-        self.__layoutBBar.addWidget(self.__sizeGrip, 0, Qt.AlignBottom|Qt.AlignRight)
+        self.__layoutBBar.addWidget(self.__sizeGrip, 0, Qt.AlignBottom | Qt.AlignRight)
 
-        self.__bottomBar=QWidget(self)
+        self.__bottomBar = QWidget(self)
         self.__bottomBar.setLayout(self.__layoutBBar)
         self.__bottomBar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
@@ -114,38 +111,38 @@ background-color: rgba(0,0,0,50);
 
     def __setCompact(self, value):
         """Slot from title bar compactModeUpdated()"""
-        if isinstance(value, bool) and value!=self.__isCompact:
-            self.__isCompact=value
+        if isinstance(value, bool) and value != self.__isCompact:
+            self.__isCompact = value
             self.__updateUi()
             self.compactModeUpdated.emit(value)
 
     def __setPinned(self, value):
         """Slot from title bar pinnedModeUpdated()"""
-        if isinstance(value, bool) and value!=self.__isPinned:
-            self.__isPinned=value
+        if isinstance(value, bool) and value != self.__isPinned:
+            self.__isPinned = value
             self.pinnedModeUpdated.emit(value)
 
     def __updateUi(self):
-        #self.__bottomBar.resize(self.__bottomBar.width(), self.__titleBar.height())
+        # self.__bottomBar.resize(self.__bottomBar.width(), self.__titleBar.height())
         self.__bottomBar.setFixedHeight(self.__titleBar.height())
 
     def eventFilter(self, source, event):
-        if source==self.__sizeGrip and isinstance(event, QMouseEvent):
-            if event.type()==QEvent.MouseButtonRelease:
+        if source == self.__sizeGrip and isinstance(event, QMouseEvent):
+            if event.type() == QEvent.MouseButtonRelease:
                 self.geometryUpdated.emit(self.geometry())
 
         return super(WToolBox, self).eventFilter(source, event)
 
     def mousePressEvent(self, event):
         """User press anywhere on note window, so enter on drag mode"""
-        self.__globalPos=event.globalPos()
-        self.__moved=False
+        self.__globalPos = event.globalPos()
+        self.__moved = False
         self.setCursor(Qt.ClosedHandCursor)
 
     def mouseMoveEvent(self, event):
         """If in drag mode, move current note window"""
         if self.__globalPos and not self.__moving:
-            self.__moving=True
+            self.__moving = True
             delta = QPoint(event.globalPos() - self.__globalPos)
 
             # -- the really dirty trick...
@@ -160,16 +157,16 @@ background-color: rgba(0,0,0,50);
 
             self.move(self.x() + delta.x(), self.y() + delta.y())
             self.__globalPos = event.globalPos()
-            self.__moving=False
-            self.__moved=True
+            self.__moving = False
+            self.__moved = True
 
     def mouseReleaseEvent(self, event):
         """Exit drag mode"""
         if self.__moved:
-            self.__moved=False
+            self.__moved = False
             self.geometryUpdated.emit(self.geometry())
 
-        self.__globalPos=None
+        self.__globalPos = None
         self.setCursor(Qt.ArrowCursor)
 
     def setCenteredPosition(self):
@@ -186,8 +183,8 @@ background-color: rgba(0,0,0,50);
 
     def setCompact(self, value):
         """Set compact mode"""
-        if isinstance(value, bool) and value!=self.__isCompact:
-            self.__isCompact=value
+        if isinstance(value, bool) and value != self.__isCompact:
+            self.__isCompact = value
             self.__titleBar.setCompact(value)
             self.__updateUi()
             self.compactModeChanged.emit(value)
@@ -198,8 +195,8 @@ background-color: rgba(0,0,0,50);
 
     def setPinned(self, value):
         """Set pinned mode"""
-        if isinstance(value, bool) and value!=self.__isPinned:
-            self.__isPinned=value
+        if isinstance(value, bool) and value != self.__isPinned:
+            self.__isPinned = value
             self.__titleBar.setPinned(value)
             self.pinnedModeChanged.emit(value)
 
@@ -210,37 +207,37 @@ background-color: rgba(0,0,0,50);
     def setCentralWidget(self, widget):
         """Set central widget for window"""
         if widget is None:
-            if self.__centralWidget!=self.__centralDefaultWidget:
+            if self.__centralWidget != self.__centralDefaultWidget:
                 self.__layoutMain.replaceWidget(self.__centralWidget, self.__centralDefaultWidget)
-                self.__centralWidget=None
+                self.__centralWidget = None
         elif isinstance(widget, QWidget):
-            if self.__centralWidget!=widget:
+            if self.__centralWidget != widget:
                 self.__layoutMain.replaceWidget(self.__centralWidget, widget)
-                self.__centralWidget=widget
+                self.__centralWidget = widget
 
     def bottomBarClear(self):
         """Remove all items in bottom bar (except size grip)"""
-        while self.__layoutBBar.count()>1:
+        while self.__layoutBBar.count() > 1:
             self.__layoutBBar.removeItem(self.self.__layoutBBar.itemAt(0))
 
     def bottomBarAddWidget(self, widget, applyCss=True):
         """Add a widget in bottom bar"""
         if isinstance(widget, QToolButton):
-            if applyCss==True:
+            if applyCss is True:
                 widget.setStyleSheet(WToolBox.__BBAR_TOOLBUTTON_CSS)
             elif isinstance(applyCss, str):
                 widget.setStyleSheet(applyCss)
-            # do not use addWidget() because of resize item
+            # do not use addWidget() because of resize item
             self.__layoutBBar.insertWidget(self.__layoutBBar.count()-1, widget)
         elif isinstance(widget, QWidget):
             if isinstance(applyCss, str):
                 widget.setStyleSheet(applyCss)
-            # do not use addWidget() because of resize item
+            # do not use addWidget() because of resize item
             self.__layoutBBar.insertWidget(self.__layoutBBar.count()-1, widget)
 
     def bottomBarAddStretch(self, stretch=0):
         """Add a stretch in bottom bar"""
-        # do not use addStretch() because of resize item
+        # do not use addStretch() because of resize item
         self.__layoutBBar.insertStretch(self.__layoutBBar.count()-1, stretch)
 
     def title(self):
@@ -257,50 +254,50 @@ background-color: rgba(0,0,0,50);
 
     def setColorIndex(self, colorIndex):
         """Set title color index content"""
-        if WStandardColorSelector.isValidColorIndex(colorIndex) and colorIndex!=self.__colorIndex:
-            self.__colorIndex=colorIndex
+        if WStandardColorSelector.isValidColorIndex(colorIndex) and colorIndex != self.__colorIndex:
+            self.__colorIndex = colorIndex
             self.__titleBar.setColorIndex(self.__colorIndex)
 
 
 class WToolBoxTitleBar(QWidget):
-    compactModeUpdated=Signal(bool) # when compact mode is changed from user interface
-    pinnedModeUpdated=Signal(bool) # when pinned mode is changed programmatically
+    compactModeUpdated = Signal(bool)   # when compact mode is changed from user interface
+    pinnedModeUpdated = Signal(bool)    # when pinned mode is changed programmatically
 
-    __TOOLBUTTON_CSS="""
+    __TOOLBUTTON_CSS = """
 QToolButton {
 border-radius: 2px;
 }
 QToolButton:hover {
 border: none;
-background-color: rgba(255,255,255,50);
+background-color: rgba(255, 255, 255, 50);
 }
         """
 
     def __init__(self, parent, compact=False, pinned=False):
         super(WToolBoxTitleBar, self).__init__(parent)
-        self.__parent=parent
-        self.__layoutMain=QHBoxLayout()
-        self.__layoutMain.setContentsMargins(1,1,1,1)
+        self.__parent = parent
+        self.__layoutMain = QHBoxLayout()
+        self.__layoutMain.setContentsMargins(1, 1, 1, 1)
         self.__layoutMain.setSpacing(1)
 
-        self.__inInit=True
+        self.__inInit = True
 
-        self.__factor=0.95
-        self.__height=0
-        self.__compact=None
-        self.__pinned=None
+        self.__factor = 0.95
+        self.__height = 0
+        self.__compact = None
+        self.__pinned = None
 
-        self.__colorIndex=WStandardColorSelector.COLOR_NONE
+        self.__colorIndex = WStandardColorSelector.COLOR_NONE
 
         self.__lblTitle = QLabel("")
         self.__lblTitle.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.__lblTitle.minimumSizeHint=self.minimumSizeHint
+        self.__lblTitle.minimumSizeHint = self.minimumSizeHint
 
         self.__font = self.font()
-        self.__originalFontSizePt=self.__font.pointSizeF()
-        self.__originalFontSizePx=self.__font.pixelSize()
+        self.__originalFontSizePt = self.__font.pointSizeF()
+        self.__originalFontSizePx = self.__font.pixelSize()
 
-        self.__fntMetric=QFontMetrics(self.__font)
+        self.__fntMetric = QFontMetrics(self.__font)
 
         self.__btClose = QToolButton()
         self.__btClose.clicked.connect(self.__parent.close)
@@ -328,8 +325,8 @@ background-color: rgba(255,255,255,50);
         self.__btPinned.setCheckable(True)
         self.__btPinned.setStyleSheet(WToolBoxTitleBar.__TOOLBUTTON_CSS)
 
-        self.__title=''
-        self.__color=None
+        self.__title = ''
+        self.__color = None
 
         self.setCompact(compact)
         self.setPinned(pinned)
@@ -342,55 +339,55 @@ background-color: rgba(255,255,255,50);
         self.setCompact(False)
 
         self.setLayout(self.__layoutMain)
-        self.__inInit=False
+        self.__inInit = False
 
     def minimumSizeHint(self):
         return QSize(0, self.__height)
 
     def setCompact(self, value):
-        if value==self.__compact:
+        if value == self.__compact:
             return
 
-        self.__compact=value
+        self.__compact = value
 
         if value:
-            self.__factor=0.65
+            self.__factor = 0.65
             self.__btCompact.setChecked(True)
             self.__btCompact.setIcon(QIcon(':/pktk/images-white/normal/compact_off'))
             self.__btCompact.setToolTip(i18n('Normal view'))
         else:
-            self.__factor=0.95
+            self.__factor = 0.95
             self.__btCompact.setChecked(False)
             self.__btCompact.setIcon(QIcon(':/pktk/images-white/normal/compact_on'))
             self.__btCompact.setToolTip(i18n('Compact view'))
 
-        if self.__originalFontSizePt>-1:
+        if self.__originalFontSizePt > -1:
             self.__font.setPointSizeF(self.__originalFontSizePt*self.__factor)
         else:
             self.__font.setPixelSize(int(self.__originalFontSizePx*self.__factor))
 
-        self.__fntMetric=QFontMetrics(self.__font)
-        self.__height=self.__fntMetric.height()
+        self.__fntMetric = QFontMetrics(self.__font)
+        self.__height = self.__fntMetric.height()
 
         self.setMinimumSize(1, self.__height)
 
         self.__lblTitle.setFont(self.__font)
         self.__btClose.setFixedSize(self.__height, self.__height)
-        self.__btClose.setIconSize(QSize(self.__height-2,self.__height-2))
+        self.__btClose.setIconSize(QSize(self.__height-2, self.__height-2))
         self.__btCompact.setFixedSize(self.__height, self.__height)
-        self.__btCompact.setIconSize(QSize(self.__height-2,self.__height-2))
+        self.__btCompact.setIconSize(QSize(self.__height-2, self.__height-2))
         self.__btPinned.setFixedSize(self.__height, self.__height)
-        self.__btPinned.setIconSize(QSize(self.__height-2,self.__height-2))
+        self.__btPinned.setIconSize(QSize(self.__height-2, self.__height-2))
 
         if not self.__inInit:
             self.compactModeUpdated.emit(value)
 
     def setPinned(self, value):
         """Set toolbox pinned"""
-        if value==self.__pinned:
+        if value == self.__pinned:
             return
 
-        self.__pinned=value
+        self.__pinned = value
 
         if value:
             self.__btPinned.setChecked(True)
@@ -414,8 +411,8 @@ background-color: rgba(255,255,255,50);
 
     def setTitle(self, title):
         """Set title bar content"""
-        if isinstance(title, str) and title!=self.__title:
-            self.__title=title
+        if isinstance(title, str) and title != self.__title:
+            self.__title = title
             self.__lblTitle.setText(title)
 
     def colorIndex(self):
@@ -424,13 +421,13 @@ background-color: rgba(255,255,255,50);
 
     def setColorIndex(self, colorIndex):
         """Set title color index content"""
-        if WStandardColorSelector.isValidColorIndex(colorIndex) and colorIndex!=self.__colorIndex:
-            self.__colorIndex=colorIndex
+        if WStandardColorSelector.isValidColorIndex(colorIndex) and colorIndex != self.__colorIndex:
+            self.__colorIndex = colorIndex
 
-            if colorIndex==WStandardColorSelector.COLOR_NONE:
+            if colorIndex == WStandardColorSelector.COLOR_NONE:
                 self.setAutoFillBackground(False)
             else:
-                palette=self.__lblTitle.palette()
+                palette = self.__lblTitle.palette()
                 self.setAutoFillBackground(True)
                 palette.setColor(QPalette.Window, WStandardColorSelector.getColor(colorIndex).darker(200))
                 palette.setColor(QPalette.WindowText, Qt.white)

@@ -1,4 +1,4 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Buli Notes
 # Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
@@ -37,9 +37,8 @@ from PyQt5.QtCore import (
     )
 
 if __name__ != '__main__':
-     # script is executed from Krita, loaded as a module
+    # script is executed from Krita, loaded as a module
     __PLUGIN_EXEC_FROM__ = 'KRITA'
-
 
     from .pktk.pktk import (
             EInvalidStatus,
@@ -76,10 +75,10 @@ else:
 
 
 EXTENSION_ID = 'pykrita_bulinotes'
-PLUGIN_VERSION = '0.4.0b'
+PLUGIN_VERSION = '1.0.0'
 PLUGIN_MENU_ENTRY = 'Buli Notes'
 
-REQUIRED_KRITA_VERSION = (5, 0, 0)
+REQUIRED_KRITA_VERSION = (5, 1, 0)
 
 
 class BuliNotesDocker(DockWidget):
@@ -87,11 +86,11 @@ class BuliNotesDocker(DockWidget):
 
     def __init__(self):
         super(BuliNotesDocker, self).__init__()
-        self.__ui=None
+        self.__ui = None
 
         self.setWindowTitle(PLUGIN_MENU_ENTRY)
         if checkKritaVersion(*REQUIRED_KRITA_VERSION):
-            self.__ui=BNUiDocker(self, PLUGIN_MENU_ENTRY, EXTENSION_ID, PLUGIN_VERSION)
+            self.__ui = BNUiDocker(self, PLUGIN_MENU_ENTRY, EXTENSION_ID, PLUGIN_VERSION)
             self.setWidget(self.__ui)
         else:
             self.setWidget(QLabel('Current version of Krita is not supported\nPlugin require Krita 5'))

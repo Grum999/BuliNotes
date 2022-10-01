@@ -1,23 +1,29 @@
-#-----------------------------------------------------------------------------
-# Buli Notes
-# Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Buli Notes
+# Copyright (C) 2021-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
 # -----------------------------------------------------------------------------
 # A Krita plugin designed to manage notes
 # -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# The bnwbrushes module provides widget used to manage brushes list
+#
+# Main classes from this module
+#
+# - BNBrushesModel:
+#       Model to manage brushes
+#
+# - BNWBrushes
+#       View to manage brushes
+#
+# - BNBrushesEditor
+#       Editor for brushes properties
+# -----------------------------------------------------------------------------
+
 import re
 
 from bulinotes.pktk import *
@@ -53,12 +59,12 @@ class BNBrushesModel(QAbstractTableModel):
     def __init__(self, brushes, parent=None):
         """Initialise list"""
         super(BNBrushesModel, self).__init__(parent)
-        self.__brushes=brushes
+        self.__brushes = brushes
         self.__brushes.updated.connect(self.__dataUpdated)
         self.__brushes.updateReset.connect(self.__dataUpdateReset)
         self.__brushes.updateAdded.connect(self.__dataUpdatedAdd)
         self.__brushes.updateRemoved.connect(self.__dataUpdateRemove)
-        self.__items=self.__brushes.idList()
+        self.__items = self.__brushes.idList()
 
     def __repr__(self):
         return f'<BNBrushesModel()>'
@@ -72,26 +78,26 @@ class BNBrushesModel(QAbstractTableModel):
 
     def __dataUpdateReset(self):
         """Data has entirely been changed (reset/reload)"""
-        self.__items=self.__brushes.idList()
+        self.__items = self.__brushes.idList()
         self.modelReset.emit()
         self.updateWidth.emit()
 
     def __dataUpdatedAdd(self, items):
         # if nb items is the same, just update... ?
         print('TODO: need to update only for added items')
-        self.__items=self.__brushes.idList()
+        self.__items = self.__brushes.idList()
         self.modelReset.emit()
         self.updateWidth.emit()
 
     def __dataUpdateRemove(self, items):
         # if nb items is the same, just update... ?
         print('TODO: need to update only for removed items')
-        self.__items=self.__brushes.idList()
+        self.__items = self.__brushes.idList()
         self.modelReset.emit()
 
     def __dataUpdated(self, item, property):
-        indexS=self.createIndex(self.__idRow(item.id()), 0)
-        indexE=self.createIndex(self.__idRow(item.id()), BNBrushesModel.COLNUM_LAST)
+        indexS = self.createIndex(self.__idRow(item.id()), 0)
+        indexE = self.createIndex(self.__idRow(item.id()), BNBrushesModel.COLNUM_LAST)
         self.dataChanged.emit(indexS, indexE, [Qt.DisplayRole])
 
     def columnCount(self, parent=QModelIndex()):
@@ -105,44 +111,44 @@ class BNBrushesModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         """Return data for index+role"""
         column = index.column()
-        row=index.row()
+        row = index.row()
 
         if role == Qt.DecorationRole:
-            id=self.__items[row]
+            id = self.__items[row]
             item = self.__brushes.get(id)
 
             if item:
-                if column==BNBrushesModel.COLNUM_ICON:
+                if column == BNBrushesModel.COLNUM_ICON:
                     # QIcon
                     return QIcon(QPixmap.fromImage(item.image()))
         elif role == Qt.ToolTipRole:
-            id=self.__items[row]
+            id = self.__items[row]
             item = self.__brushes.get(id)
 
             if item:
                 if not item.found():
                     return i18n(f"Brush <i><b>{item.name()}</b></i> is not installed and/or activated on this Krita installation")
         elif role == Qt.DisplayRole:
-            id=self.__items[row]
+            id = self.__items[row]
             item = self.__brushes.get(id)
 
             if item:
-                if column==BNBrushesModel.COLNUM_BRUSH:
+                if column == BNBrushesModel.COLNUM_BRUSH:
                     return item.name()
-                elif column==BNBrushesModel.COLNUM_COMMENT:
+                elif column == BNBrushesModel.COLNUM_COMMENT:
                     return item.comments()
         elif role == BNBrushesModel.ROLE_ID:
             return self.__items[row]
         elif role == BNBrushesModel.ROLE_BRUSH:
-            id=self.__items[row]
+            id = self.__items[row]
             return self.__brushes.get(id)
-        #elif role == Qt.SizeHintRole:
+        # elif role == Qt.SizeHintRole:
         #    if column==BNBrushesModel.COLNUM_ICON:
         #        return
         return None
 
     def headerData(self, section, orientation, role):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal and section>0:
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal and section > 0:
             return BNBrushesModel.HEADERS[section]
         return None
 
@@ -164,25 +170,25 @@ class BNWBrushes(QTreeView):
         self.setAutoScroll(False)
         self.setAlternatingRowColors(True)
 
-        self.__parent=parent
+        self.__parent = parent
         self.__model = None
         self.__proxyModel = None
-        self.__fontSize=self.font().pointSizeF()
-        if self.__fontSize==-1:
-            self.__fontSize=-self.font().pixelSize()
+        self.__fontSize = self.font().pointSizeF()
+        if self.__fontSize == -1:
+            self.__fontSize = -self.font().pixelSize()
 
-        self.__isCompact=False
+        self.__isCompact = False
 
         self.__iconSize = IconSizes([32, 64, 96, 128, 192])
         self.setIconSizeIndex(3)
 
-        self.__contextMenu=QMenu()
+        self.__contextMenu = QMenu()
         self.__initMenu()
 
-        self.__delegate=BNBrushesModelDelegate(self)
+        self.__delegate = BNBrushesModelDelegate(self)
         self.setItemDelegate(self.__delegate)
 
-        header=self.header()
+        header = self.header()
         header.sectionResized.connect(self.__sectionResized)
         self.resizeColumns()
 
@@ -197,13 +203,13 @@ class BNWBrushes(QTreeView):
 
     def __sectionResized(self, index, oldSize, newSize):
         """When section is resized, update rows height"""
-        if index==BNBrushesModel.COLNUM_COMMENT and not self.isColumnHidden(BNBrushesModel.COLNUM_COMMENT):
+        if index == BNBrushesModel.COLNUM_COMMENT and not self.isColumnHidden(BNBrushesModel.COLNUM_COMMENT):
             # update height only if comment section is resized
             self.__delegate.setCSize(newSize)
             for rowNumber in range(self.__model.rowCount()):
                 # need to recalculate height for all rows
                 self.__delegate.sizeHintChanged.emit(self.__model.createIndex(rowNumber, index))
-        elif index==BNBrushesModel.COLNUM_BRUSH and self.isColumnHidden(BNBrushesModel.COLNUM_COMMENT):
+        elif index == BNBrushesModel.COLNUM_BRUSH and self.isColumnHidden(BNBrushesModel.COLNUM_COMMENT):
             self.__delegate.setNSize(newSize)
             for rowNumber in range(self.__model.rowCount()):
                 # need to recalculate height for all rows
@@ -265,11 +271,11 @@ class BNWBrushes(QTreeView):
 
     def selectedItems(self):
         """Return a list of selected brushes items"""
-        returned=[]
+        returned = []
         if self.selectionModel():
             for item in self.selectionModel().selectedRows(BNBrushesModel.COLNUM_BRUSH):
-                brush=item.data(BNBrushesModel.ROLE_BRUSH)
-                if not brush is None:
+                brush = item.data(BNBrushesModel.ROLE_BRUSH)
+                if brush is not None:
                     returned.append(brush)
         return returned
 
@@ -283,17 +289,17 @@ class BNWBrushes(QTreeView):
 
     def setCompact(self, value):
         """Set compact mode"""
-        if isinstance(value, bool) and value!=self.__isCompact:
-            self.__isCompact=value
+        if isinstance(value, bool) and value != self.__isCompact:
+            self.__isCompact = value
             self.__delegate.setCompact(value)
-            font=self.font()
+            font = self.font()
             if value:
-                if self.__fontSize<0:
+                if self.__fontSize < 0:
                     font.setPixelSize(abs(self.__fontSize)*0.8)
                 else:
                     font.setPointSizeF(abs(self.__fontSize)*0.8)
             else:
-                if self.__fontSize<0:
+                if self.__fontSize < 0:
                     font.setPixelSize(abs(self.__fontSize))
                 else:
                     font.setPointSizeF(abs(self.__fontSize))
@@ -306,50 +312,50 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         """Constructor, nothingspecial"""
         super(BNBrushesModelDelegate, self).__init__(parent)
-        self.__csize=0
-        self.__nsize=0
-        self.__isCompact=False
+        self.__csize = 0
+        self.__nsize = 0
+        self.__isCompact = False
 
     def __applyCompactFactor(self, subResult):
         return f'font-size: {round(0.8*int(subResult.group(1)))}pt;'
 
     def __getTextInformation(self, brush):
         """Return text for information"""
-        textDocument=QTextDocument()
+        textDocument = QTextDocument()
 
-        if self.__csize>0:
+        if self.__csize > 0:
             textDocument.setHtml(brush.information())
         else:
-            text=brush.comments()
-            if stripHtml(text)=='':
+            text = brush.comments()
+            if stripHtml(text) == '':
                 textDocument.setHtml(brush.information(False))
             else:
                 textDocument.setHtml(text)
-                cursor=QTextCursor(textDocument)
+                cursor = QTextCursor(textDocument)
                 cursor.movePosition(QTextCursor.End, QTextCursor.MoveAnchor)
                 cursor.insertHtml(f"<br><span>{brush.information(False)}</span>")
 
         if self.__isCompact:
-            text=textDocument.toHtml()
-            text=re.sub(r"font-size\s*:\s*(\d+)pt;", self.__applyCompactFactor, text)
+            text = textDocument.toHtml()
+            text = re.sub(r"font-size\s*:\s*(\d+)pt;", self.__applyCompactFactor, text)
             textDocument.setHtml(text)
 
         return textDocument
 
     def setCSize(self, value):
         """Force size for comments column"""
-        self.__csize=value
-        self.__nsize=0
+        self.__csize = value
+        self.__nsize = 0
 
     def setNSize(self, value):
         """Force size for comments column"""
-        self.__nsize=value
-        self.__csize=0
+        self.__nsize = value
+        self.__csize = 0
 
     def setCompact(self, value):
         """Set compact mode"""
-        if isinstance(value, bool) and value!=self.__isCompact:
-            self.__isCompact=value
+        if isinstance(value, bool) and value != self.__isCompact:
+            self.__isCompact = value
 
     def paint(self, painter, option, index):
         """Paint list item"""
@@ -357,14 +363,14 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             # render brush information
             self.initStyleOption(option, index)
 
-            brush=index.data(BNBrushesModel.ROLE_BRUSH)
+            brush = index.data(BNBrushesModel.ROLE_BRUSH)
             rectTxt = QRect(option.rect.left() + 1, option.rect.top()+4, option.rect.width()-4, option.rect.height()-1)
 
             painter.save()
 
             if not brush.found():
                 if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
-                    option.state&=~QStyle.State_Selected
+                    option.state &= ~QStyle.State_Selected
                 painter.fillRect(option.rect, warningAreaBrush())
 
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
@@ -373,16 +379,16 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             else:
                 painter.setPen(QPen(option.palette.color(QPalette.Text)))
 
-            textDocument=self.__getTextInformation(brush)
+            textDocument = self.__getTextInformation(brush)
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)
-            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
+            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }")
             textDocument.setPageSize(QSizeF(rectTxt.size()))
 
             painter.translate(QPointF(rectTxt.topLeft()))
-            textDocument.drawContents(painter, QRectF(QPointF(0,0), QSizeF(rectTxt.size()) ))
+            textDocument.drawContents(painter, QRectF(QPointF(0, 0), QSizeF(rectTxt.size())))
 
-            #painter.drawText(rectTxt, Qt.AlignLeft|Qt.AlignTop, brush.name())
+            # painter.drawText(rectTxt, Qt.AlignLeft | Qt.AlignTop, brush.name())
 
             painter.restore()
             return
@@ -390,10 +396,10 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
             # render comment
             self.initStyleOption(option, index)
 
-            brush=index.data(BNBrushesModel.ROLE_BRUSH)
+            brush = index.data(BNBrushesModel.ROLE_BRUSH)
             rectTxt = QRect(option.rect.left(), option.rect.top(), option.rect.width(), option.rect.height())
 
-            textDocument=QTextDocument()
+            textDocument = QTextDocument()
             textDocument.setDocumentMargin(1)
             textDocument.setHtml(brush.comments())
             textDocument.setPageSize(QSizeF(rectTxt.size()))
@@ -403,7 +409,7 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
 
             if not brush.found():
                 if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
-                    option.state&=~QStyle.State_Selected
+                    option.state &= ~QStyle.State_Selected
                 painter.fillRect(option.rect, warningAreaBrush())
 
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
@@ -413,7 +419,7 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
                 painter.setPen(QPen(option.palette.color(QPalette.Text)))
 
             painter.translate(QPointF(rectTxt.topLeft()))
-            textDocument.drawContents(painter, QRectF(QPointF(0,0), QSizeF(rectTxt.size()) ))
+            textDocument.drawContents(painter, QRectF(QPointF(0, 0), QSizeF(rectTxt.size())))
 
             painter.restore()
             return
@@ -436,26 +442,26 @@ class BNBrushesModelDelegate(QStyledItemDelegate):
         if index.column() == BNBrushesModel.COLNUM_ICON:
             return option.decorationSize
         elif index.column() == BNBrushesModel.COLNUM_BRUSH:
-            brush=index.data(BNBrushesModel.ROLE_BRUSH)
-            textDocument=self.__getTextInformation(brush)
+            brush = index.data(BNBrushesModel.ROLE_BRUSH)
+            textDocument = self.__getTextInformation(brush)
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)
-            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }");
-            textDocument.setPageSize(QSizeF(4096, 1000)) # set 1000px size height arbitrary
-            if self.__nsize>0:
-                textDocument.setPageSize(QSizeF(self.__nsize, 1000)) # set 1000px size height arbitrary
+            textDocument.setDefaultStyleSheet("td { white-space: nowrap; }")
+            textDocument.setPageSize(QSizeF(4096, 1000))  # set 1000px size height arbitrary
+            if self.__nsize > 0:
+                textDocument.setPageSize(QSizeF(self.__nsize, 1000))  # set 1000px size height arbitrary
             else:
-                textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000)) # set 1000px size height arbitrary
-            size=textDocument.size().toSize()+QSize(8, 8)
+                textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000))  # set 1000px size height arbitrary
+            size = textDocument.size().toSize()+QSize(8, 8)
         elif index.column() == BNBrushesModel.COLNUM_COMMENT:
             # size for comments cell (width is forced, calculate height of rich text)
-            brush=index.data(BNBrushesModel.ROLE_BRUSH)
-            textDocument=QTextDocument()
+            brush = index.data(BNBrushesModel.ROLE_BRUSH)
+            textDocument = QTextDocument()
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)
             textDocument.setHtml(brush.comments())
-            textDocument.setPageSize(QSizeF(self.__csize, 1000)) # set 1000px size height arbitrary
-            size=QSize(self.__csize, textDocument.size().toSize().height())
+            textDocument.setPageSize(QSizeF(self.__csize, 1000))  # set 1000px size height arbitrary
+            size = QSize(self.__csize, textDocument.size().toSize().height())
 
         return size
 

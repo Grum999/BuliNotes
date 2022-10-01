@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Build .qrc files from SVG files 
+# Build .qrc files from SVG files
 
 
 import os.path
@@ -15,7 +15,7 @@ CONFIG={
                 'white/32dp':          'pktk/images-white/normal',
                 'white/32dp-disabled': 'pktk/images-white/disabled'
             },
-        
+
         'TARGETS':{
                 'FILES': {
                         'dark': 'dark_icons.qrc',
@@ -24,40 +24,47 @@ CONFIG={
                 'PATH': CURRENT_PATH
             }
     }
- 
+
 
 def main():
     """main process"""
-    
+
     for fileKey in CONFIG['TARGETS']['FILES']:
-        fileContent=['<RCC>']
-        
+        fileContent=['<!DOCTYPE RCC><RCC version="1.0">']
+
+
         for srcLink in CONFIG['LINKS']:
             fileContent.append(f'''  <qresource prefix="{CONFIG['LINKS'][srcLink]}">''')
-            
+
             directoryToProcess=os.path.join(CURRENT_PATH, fileKey, srcLink)
-            
+
             directoryContent=os.listdir(directoryToProcess)
-            
+
+            fileList=[]
+
             for fileName in directoryContent:
                 fullPathFileName=os.path.join(directoryToProcess, fileName)
-                
+
                 if os.path.isfile(fullPathFileName):
                     fName=re.search("(.*)\.svg$", fileName)
-                    
+
                     if fName:
-                        fileContent.append(f'    <file alias="{fName.groups()[0]}">{fileKey}/{srcLink}/{fileName}</file>')
-            
+                        fileList.append(fileName)
+
+            for fileName in sorted(fileList):
+                fName=re.search("(.*)\.svg$", fileName)
+                fileContent.append(f'    <file alias="{fName.groups()[0]}">{fileKey}/{srcLink}/{fileName}</file>')
+
             fileContent.append(f'  </qresource>')
-            
+
         fileContent.append('</RCC>')
-        
+
         targetFileName=os.path.join(CONFIG['TARGETS']['PATH'], CONFIG['TARGETS']['FILES'][fileKey])
         print(targetFileName)
         with open(targetFileName, 'w') as fHandle:
             fHandle.write("\n".join(fileContent))
-            
-            
+
+
 
 if __name__ == "__main__":
     main()

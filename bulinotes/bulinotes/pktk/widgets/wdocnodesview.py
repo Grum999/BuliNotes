@@ -1,27 +1,35 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
-
-
 # -----------------------------------------------------------------------------
+# The wdocnodesview module provides a treeview widget dedicated to render
+# nodes tree of a krita document (using a model/view implementation)
+#
+# Main class from this module
+#
+# - WDocNodesView:
+#       Widget
+#       The main treeview widget
+#
+# - DocNodesModel:
+#       Model for view, automatically defined from given Krita document
+#
+# - WDocNodesViewTBar:
+#       A toolbar widget with basic functionalities to manage document view
+#
+# - WDocNodesViewDialog:
+#       A basic dialog box for quick access to document nodes
+#
+# -----------------------------------------------------------------------------
+
 import re
 
 from krita import (
@@ -34,11 +42,13 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 
+from ..modules.utils import replaceLineEditClearButton
 from ..modules.imgutils import (buildIcon, checkerBoardBrush)
 from ..modules.ekrita import EKritaNode
 from ..modules.iconsizes import IconSizes
 from .wstandardcolorselector import WStandardColorSelector
 from ..pktk import *
+
 
 class DocNodeUuid:
     """Maintain document tree nodes with unique id
@@ -56,29 +66,28 @@ class DocNodeUuid:
     def __init__(self, node, parent=None):
         """Initialise layer node"""
         # parent is a DocNodeUuid
-        if not parent is None and not isinstance(parent, DocNodeUuid):
+        if parent is not None and not isinstance(parent, DocNodeUuid):
             raise EInvalidType("Given `parent` must be a <DocNodeUuid>")
         if not (isinstance(node, Node) or isinstance(node, Document)):
             raise EInvalidType("Given `node` must be a <Node> or a <Document>")
 
-        self.__parent=parent
+        self.__parent = parent
 
         if isinstance(node, Document):
             # Initialise node childs
-            node=node.rootNode()
+            node = node.rootNode()
 
         # note: create a new instance of QUuid() otherwise value returned from
         #       node doesn't exist anymore and Krita crash with a segment fault
-        self.__uuid=QUuid(node.uniqueId())
-
+        self.__uuid = QUuid(node.uniqueId())
 
         # Initialise node childs
-        nbChilds=len(node.childNodes())
-        self.__childs=[None] * nbChilds
-        nbChilds-=1
+        nbChilds = len(node.childNodes())
+        self.__childs = [None] * nbChilds
+        nbChilds -= 1
         for childNode in node.childNodes():
-            self.__childs[nbChilds]=DocNodeUuid(childNode, self)
-            nbChilds-=1
+            self.__childs[nbChilds] = DocNodeUuid(childNode, self)
+            nbChilds -= 1
 
     def childs(self):
         """Return list of children"""
@@ -86,7 +95,7 @@ class DocNodeUuid:
 
     def child(self, row):
         """Return child at given position"""
-        if row<0 or row>=len(self.__childs):
+        if row < 0 or row >= len(self.__childs):
             return None
         return self.__childs[row]
 
@@ -103,12 +112,12 @@ class DocNodeUuid:
 
     def row(self):
         """Return position is parent's children list"""
-        returned=0
+        returned = 0
         if self.__parent:
-            returned=self.__parent.childRow(self)
-            if returned<0:
+            returned = self.__parent.childRow(self)
+            if returned < 0:
                 # need to check if -1 can be used
-                returned=0
+                returned = 0
         return returned
 
     def childRow(self, node):
@@ -118,13 +127,12 @@ class DocNodeUuid:
         """
         try:
             return self.__childs.index(node)
-        except:
+        except Exception:
             return -1
 
     def parent(self):
         """Return current parent"""
         return self.__parent
-
 
     def uuid(self):
         return self.__uuid
@@ -150,9 +158,8 @@ class DocNodesModel(QAbstractItemModel):
     ROLE_NODE_COLORINDEX = Qt.UserRole + 3
     ROLE_NODE_COLLAPSED = Qt.UserRole + 4
 
-    ICON_SIZE=16
-    THUMB_SIZE=64
-
+    ICON_SIZE = 16
+    THUMB_SIZE = 64
 
     def __init__(self, document, parent=None):
         """Initialise data model
@@ -163,9 +170,9 @@ class DocNodesModel(QAbstractItemModel):
         """
         super(DocNodesModel, self).__init__(parent)
 
-        self.__rootItem=None
-        self.__document=None
-        self.__cachedThumb={}
+        self.__rootItem = None
+        self.__document = None
+        self.__cachedThumb = {}
 
         self.setDocument(document)
 
@@ -178,13 +185,13 @@ class DocNodesModel(QAbstractItemModel):
 
     def rowCount(self, parent=QModelIndex()):
         """Return total number of rows for index"""
-        if parent.column()>0:
+        if parent.column() > 0:
             return 0
 
         if not parent.isValid():
-            parentItem=self.__rootItem
+            parentItem = self.__rootItem
         else:
-            parentItem=parent.internalPointer()
+            parentItem = parent.internalPointer()
 
         return parentItem.childCount()
 
@@ -193,28 +200,28 @@ class DocNodesModel(QAbstractItemModel):
         if not index.isValid():
             return None
 
-        kraDocNodeUuid=index.internalPointer()
-        if role==DocNodesModel.ROLE_NODE_ID:
+        kraDocNodeUuid = index.internalPointer()
+        if role == DocNodesModel.ROLE_NODE_ID:
             return kraDocNodeUuid.uuid()
 
-        item=self.__document.nodeByUniqueID(kraDocNodeUuid.uuid())
+        item = self.__document.nodeByUniqueID(kraDocNodeUuid.uuid())
         if item is None:
             return None
 
         if role == Qt.DecorationRole:
-            if index.column()==DocNodesModel.COLNUM_ICON_VISIBLE:
+            if index.column() == DocNodesModel.COLNUM_ICON_VISIBLE:
                 if item.visible():
                     return QIcon(':/pktk/images/normal/visibility_on')
                 else:
                     return QIcon(':/pktk/images/disabled/visibility_off')
-            elif index.column()==DocNodesModel.COLNUM_ICON_TYPE:
+            elif index.column() == DocNodesModel.COLNUM_ICON_TYPE:
                 return item.icon()
-            elif index.column()==DocNodesModel.COLNUM_ICON_PINNED:
+            elif index.column() == DocNodesModel.COLNUM_ICON_PINNED:
                 if item.isPinnedToTimeline():
                     return QIcon(':/pktk/images/normal/pinned')
                 else:
                     return QIcon(':/pktk/images/disabled/pinned')
-            elif index.column()==DocNodesModel.COLNUM_ICON_ANIMATED:
+            elif index.column() == DocNodesModel.COLNUM_ICON_ANIMATED:
                 # ideally:
                 #   - no animation: return None
                 #   - animated: return Krita.instance().icon('onionOff', QIcon.Disabled)
@@ -224,18 +231,18 @@ class DocNodesModel(QAbstractItemModel):
                     return QIcon(':/pktk/images/normal/animation')
                 else:
                     return QIcon(':/pktk/images/disabled/animation')
-            elif index.column()==DocNodesModel.COLNUM_ICON_LOCK:
+            elif index.column() == DocNodesModel.COLNUM_ICON_LOCK:
                 if item.locked():
                     return Krita.instance().icon('layer-locked')
                 else:
                     return Krita.instance().icon('layer-unlocked')
-            elif index.column()==DocNodesModel.COLNUM_ICON_INHERITALPHA:
+            elif index.column() == DocNodesModel.COLNUM_ICON_INHERITALPHA:
                 if item.inheritAlpha():
                     return Krita.instance().icon('transparency-disabled')
                 else:
                     return Krita.instance().icon('transparency-enabled')
-            elif index.column()==DocNodesModel.COLNUM_ICON_ALPHALOCK:
-                if item.type()=='grouplayer':
+            elif index.column() == DocNodesModel.COLNUM_ICON_ALPHALOCK:
+                if item.type() == 'grouplayer':
                     if item.passThroughMode():
                         return Krita.instance().icon('passthrough-enabled')
                     else:
@@ -244,30 +251,30 @@ class DocNodesModel(QAbstractItemModel):
                     return Krita.instance().icon('transparency-locked')
                 else:
                     return Krita.instance().icon('transparency-unlocked')
-        elif role==Qt.DisplayRole:
-            if index.column()==DocNodesModel.COLNUM_NAME:
+        elif role == Qt.DisplayRole:
+            if index.column() == DocNodesModel.COLNUM_NAME:
                 return item.name()
-        elif role==DocNodesModel.ROLE_NODE_THUMB:
+        elif role == DocNodesModel.ROLE_NODE_THUMB:
             # returned thumbnail doesn't respect ratio...
-            #return QPixmap.fromImage(item.thumbnail(DocNodesModel.THUMB_SIZE, DocNodesModel.THUMB_SIZE))
-            uid=item.uniqueId()
-            if not uid in self.__cachedThumb:
-                pixmap=EKritaNode.toQPixmap(item)
+            # return QPixmap.fromImage(item.thumbnail(DocNodesModel.THUMB_SIZE, DocNodesModel.THUMB_SIZE))
+            uid = item.uniqueId()
+            if uid not in self.__cachedThumb:
+                pixmap = EKritaNode.toQPixmap(item)
                 if pixmap:
                     if pixmap.isNull():
-                        self.__cachedThumb[uid]=None
+                        self.__cachedThumb[uid] = None
                     else:
                         # store in cache a pixmap of 256x256 pixel, should never need higher thumbnail size
-                        self.__cachedThumb[uid]=pixmap.scaled(QSize(256,256), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        self.__cachedThumb[uid] = pixmap.scaled(QSize(256, 256), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 else:
-                    self.__cachedThumb[uid]=None
+                    self.__cachedThumb[uid] = None
             return self.__cachedThumb[uid]
-        elif role==DocNodesModel.ROLE_NODE_COLORINDEX:
+        elif role == DocNodesModel.ROLE_NODE_COLORINDEX:
             return item.colorLabel()
-        elif role==DocNodesModel.ROLE_NODE_COLLAPSED:
+        elif role == DocNodesModel.ROLE_NODE_COLLAPSED:
             return item.collapsed()
-        elif role == Qt.SizeHintRole and index.column()==DocNodesModel.COLNUM_THUMB:
-            return QSize(DocNodesModel.THUMB_SIZE,DocNodesModel.THUMB_SIZE)
+        elif role == Qt.SizeHintRole and index.column() == DocNodesModel.COLNUM_THUMB:
+            return QSize(DocNodesModel.THUMB_SIZE, DocNodesModel.THUMB_SIZE)
 
         return None
 
@@ -279,7 +286,7 @@ class DocNodesModel(QAbstractItemModel):
         if not isinstance(parent, QModelIndex) or not self.hasIndex(row, column, parent):
             return QModelIndex()
 
-        child=None
+        child = None
         if not parent.isValid():
             parentNode = self.__rootItem
         else:
@@ -297,10 +304,10 @@ class DocNodesModel(QAbstractItemModel):
         if not index or not index.isValid():
             return QModelIndex()
 
-        childItem=index.internalPointer()
-        childParent=childItem.parent()
+        childItem = index.internalPointer()
+        childParent = childItem.parent()
 
-        if childParent is None or childParent==self.__rootItem:
+        if childParent is None or childParent == self.__rootItem:
             return QModelIndex()
 
         return self.createIndex(childParent.row(), 0, childParent)
@@ -311,36 +318,36 @@ class DocNodesModel(QAbstractItemModel):
 
     def setDocument(self, document):
         """Add a document to model"""
-        self.__document=document
-        self.__rootItem=DocNodeUuid(document)
+        self.__document = document
+        self.__rootItem = DocNodeUuid(document)
         self.modelReset.emit()
-        self.__cachedThumb={}
+        self.__cachedThumb = {}
 
 
 class WDocNodesView(QTreeView):
     """A simple widget to display list of layers in given document"""
     thumbSizeIndexChanged = Signal(int, QSize)
 
-    SCROLLTO_FIRST=0
-    SCROLLTO_LAST=1
+    SCROLLTO_FIRST = 0
+    SCROLLTO_LAST = 1
 
     def __init__(self, parent=None):
         super(WDocNodesView, self).__init__(parent)
 
-        self.__document=None
-        self.__model=None
+        self.__document = None
+        self.__model = None
 
         self.setAutoScroll(False)
         self.setUniformRowHeights(True)
-        self.setIconSize(QSize(DocNodesModel.ICON_SIZE,DocNodesModel.ICON_SIZE))
+        self.setIconSize(QSize(DocNodesModel.ICON_SIZE, DocNodesModel.ICON_SIZE))
 
         self.setHeaderHidden(True)
         self.setAllColumnsShowFocus(True)
 
-        self.__delegate=WDocNodesModelDelegate(self)
+        self.__delegate = WDocNodesModelDelegate(self)
         self.setItemDelegate(self.__delegate)
 
-        header=self.header()
+        header = self.header()
         header.sectionResized.connect(self.__sectionResized)
 
         self.__thumbSize = IconSizes([24, 32, 64, 96, 128, 192])
@@ -349,8 +356,8 @@ class WDocNodesView(QTreeView):
     def setDocument(self, document=None):
         """Set document for nodes treeview"""
         if isinstance(document, Document):
-            self.__document=document
-            self.__model=DocNodesModel(self.__document)
+            self.__document = document
+            self.__model = DocNodesModel(self.__document)
 
             self.setModel(self.__model)
             header = self.header()
@@ -374,17 +381,17 @@ class WDocNodesView(QTreeView):
             header.resizeSection(DocNodesModel.COLNUM_ICON_INHERITALPHA, DocNodesModel.ICON_SIZE+2)
             header.resizeSection(DocNodesModel.COLNUM_ICON_ALPHALOCK, DocNodesModel.ICON_SIZE+2)
         else:
-            self.__document=None
-            self.__model=None
+            self.__document = None
+            self.__model = None
             self.setModel(self.__model)
 
     def selectedItems(self):
         """Return a list of selected linkedLayers items"""
-        returned=[]
+        returned = []
         if self.selectionModel():
             for item in self.selectionModel().selectedRows(DocNodesModel.COLNUM_NAME):
-                layerId=item.data(DocNodesModel.ROLE_NODE_ID)
-                if not layerId is None:
+                layerId = item.data(DocNodesModel.ROLE_NODE_ID)
+                if layerId is not None:
                     returned.append(layerId)
         return returned
 
@@ -395,27 +402,27 @@ class WDocNodesView(QTreeView):
     def expandTo(self, item):
         """Expand tree to given item"""
         while item != self.rootIndex():
-            item=item.parent()
+            item = item.parent()
             self.expand(item)
 
     def applyDocumentExpandCollapse(self):
         """When called, will expand/collapse items to match current document's layer expand/collapse state"""
         def processNode(item):
-            nbChild=self.__model.rowCount(item)
+            nbChild = self.__model.rowCount(item)
 
-            if nbChild>0:
-                model=self.model()
+            if nbChild > 0:
+                model = self.model()
                 if isinstance(model, QSortFilterProxyModel):
-                    index=self.model().mapFromSource(item)
+                    index = self.model().mapFromSource(item)
                 else:
-                    index=item
+                    index = item
 
                 # Need to use 'mapFromSource()' due to model() is using a proxy
                 self.setExpanded(index, not item.data(DocNodesModel.ROLE_NODE_COLLAPSED))
 
                 for row in range(nbChild):
-                    childItem=self.__model.index(row, 0, item)
-                    if self.__model.rowCount(childItem)>0:
+                    childItem = self.__model.index(row, 0, item)
+                    if self.__model.rowCount(childItem) > 0:
                         processNode(childItem)
 
         if self.__model is None:
@@ -433,44 +440,44 @@ class WDocNodesView(QTreeView):
         If no item is found, current selection is cleared
         """
         def selectItem(itemToSelect, rootIndex):
-            found=[]
+            found = []
 
             if isinstance(itemToSelect, Node):
-                itemToSelect=QUuid(itemToSelect.uniqueId())
+                itemToSelect = QUuid(itemToSelect.uniqueId())
 
             if isinstance(itemToSelect, QUuid):
                 for rowNumber in range(self.model().rowCount(rootIndex)):
                     childIndex = self.model().index(rowNumber, 0, rootIndex)
-                    if itemToSelect==self.model().data(childIndex, DocNodesModel.ROLE_NODE_ID):
+                    if itemToSelect == self.model().data(childIndex, DocNodesModel.ROLE_NODE_ID):
                         found.append(childIndex)
-                    if self.model().rowCount(childIndex)>0:
-                        found+=selectItem(itemToSelect, childIndex)
+                    if self.model().rowCount(childIndex) > 0:
+                        found += selectItem(itemToSelect, childIndex)
 
             return found
 
         # clear selection before trying to apply selection...
         self.selectionModel().clear()
-        found=[]
+        found = []
         if isinstance(items, list) or isinstance(items, tuple):
             for item in items:
-                found+=selectItem(item, self.rootIndex())
+                found += selectItem(item, self.rootIndex())
         else:
-            found=selectItem(items, self.rootIndex())
+            found = selectItem(items, self.rootIndex())
 
-        if len(found)>0:
-            scrolled=False
+        if len(found) > 0:
+            scrolled = False
             if scrollTo is None:
-                scrollTo=WDocNodesView.SCROLLTO_FIRST
+                scrollTo = WDocNodesView.SCROLLTO_FIRST
 
-            model=self.model()
+            model = self.model()
             for itemFound in found:
-                self.selectionModel().select(itemFound, QItemSelectionModel.SelectCurrent|QItemSelectionModel.Rows)
+                self.selectionModel().select(itemFound, QItemSelectionModel.SelectCurrent | QItemSelectionModel.Rows)
                 self.expandTo(itemFound)
-                if scrollTo==WDocNodesView.SCROLLTO_FIRST and not scrolled:
-                    scrolled=True
+                if scrollTo == WDocNodesView.SCROLLTO_FIRST and not scrolled:
+                    scrolled = True
                     self.scrollTo(itemFound, QAbstractItemView.EnsureVisible)
 
-            if scrollTo==WDocNodesView.SCROLLTO_LAST and not scrolled:
+            if scrollTo == WDocNodesView.SCROLLTO_LAST and not scrolled:
                 self.scrollTo(found[-1], QAbstractItemView.EnsureVisible)
 
     def __sectionResized(self, index, oldSize, newSize):
@@ -509,15 +516,15 @@ class WDocNodesViewTBar(QWidget):
 
     def __init__(self, parent=None):
         super(WDocNodesViewTBar, self).__init__(parent)
-        self.__nodesView=None
-        self.__filter=''
+        self.__nodesView = None
+        self.__filter = ''
 
-        self.__layout=QHBoxLayout(self)
-        self.__proxyModel=None
+        self.__layout = QHBoxLayout(self)
+        self.__proxyModel = None
 
-        self.__btExpandAll=QToolButton(self)
-        self.__btCollapseAll=QToolButton(self)
-        self.__leFilter=QLineEdit(self)
+        self.__btExpandAll = QToolButton(self)
+        self.__btCollapseAll = QToolButton(self)
+        self.__leFilter = QLineEdit(self)
 
         self.__layout.addWidget(self.__btExpandAll)
         self.__layout.addWidget(self.__btCollapseAll)
@@ -542,9 +549,9 @@ class WDocNodesViewTBar(QWidget):
         self.__btCollapseAll.setToolTip(i18n('Collapse all'))
         self.__leFilter.setToolTip(i18n('Filter by layer name\nStart filter with "re:"" or "re/i:"" for regular expression filter'))
 
-        self.__layout.setContentsMargins(0,0,0,0)
+        self.__layout.setContentsMargins(0, 0, 0, 0)
+        replaceLineEditClearButton(self.__leFilter)
 
-        self.__leFilter.findChild(QToolButton).setIcon(QIcon(":/pktk/images/normal/edit_text_clear"))
         self.setLayout(self.__layout)
 
     def __setFilter(self, filter=''):
@@ -558,10 +565,10 @@ class WDocNodesViewTBar(QWidget):
 
         self.__filter = filter
 
-        if reFilter:=re.search('^re:(.*)', self.__filter):
+        if reFilter := re.search('^re:(.*)', self.__filter):
             self.__proxyModel.setFilterCaseSensitivity(Qt.CaseSensitive)
             self.__proxyModel.setFilterRegExp(reFilter.groups()[0])
-        elif reFilter:=re.search('^re\/i:(.*)', self.__filter):
+        elif reFilter := re.search(r'^re\/i:(.*)', self.__filter):
             self.__proxyModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
             self.__proxyModel.setFilterRegExp(reFilter.groups()[0])
         else:
@@ -597,17 +604,17 @@ class WDocNodesViewTBar(QWidget):
     def setNodesView(self, nodesView):
         """Set node view to be linked with tool bar"""
         if nodesView is None:
-            if not self.__nodesView is None:
+            if self.__nodesView is not None:
                 # unlink
 
                 # restore model
                 self.__nodesView.setModel(self.__proxyModel.sourceModel())
-                self.__nodesView=None
-                self.__proxyModel=None
+                self.__nodesView = None
+                self.__proxyModel = None
         elif isinstance(nodesView, WDocNodesView):
             # link
             self.setNodesView(None)
-            self.__nodesView=nodesView
+            self.__nodesView = nodesView
 
             self.__proxyModel = QSortFilterProxyModel(self)
             self.__proxyModel.setSourceModel(self.__nodesView.model())
@@ -626,31 +633,30 @@ class WDocNodesModelDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         """Constructor, nothingspecial"""
         super(WDocNodesModelDelegate, self).__init__(parent)
-        self.__thumbSize=QSize(64, 64)
+        self.__thumbSize = QSize(64, 64)
 
     def setThumbSize(self, value):
-        self.__thumbSize=QSize(value, value)
+        self.__thumbSize = QSize(value, value)
         self.sizeHintChanged.emit(self.parent().model().createIndex(0, DocNodesModel.COLNUM_THUMB))
 
     def paint(self, painter, option, index):
         """Paint list item"""
-        colorIndex=index.data(DocNodesModel.ROLE_NODE_COLORINDEX)
-        if colorIndex and colorIndex>0:
-            color=WStandardColorSelector.getColor(colorIndex)
+        colorIndex = index.data(DocNodesModel.ROLE_NODE_COLORINDEX)
+        if colorIndex and colorIndex > 0:
+            color = WStandardColorSelector.getColor(colorIndex)
             color.setAlphaF(0.20)
             painter.fillRect(option.rect, QBrush(color))
 
         if index.column() == DocNodesModel.COLNUM_THUMB:
-            image=index.data(DocNodesModel.ROLE_NODE_THUMB)
+            image = index.data(DocNodesModel.ROLE_NODE_THUMB)
 
             if image:
-                image=image.scaled(option.rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                image = image.scaled(option.rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 painter.save()
                 if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                     painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
 
-                topLeft=QPoint(option.rect.left()+(option.rect.width() - image.width())//2, option.rect.top()+(option.rect.height() - image.height())//2)
-
+                topLeft = QPoint(option.rect.left()+(option.rect.width() - image.width())//2, option.rect.top()+(option.rect.height() - image.height())//2)
 
                 painter.fillRect(QRect(topLeft, image.size()), checkerBoardBrush())
                 painter.drawPixmap(topLeft, image)
@@ -685,7 +691,7 @@ class WDocNodesViewDialog(QDialog):
         self.__dbbxOkCancel.accepted.connect(self.accept)
         self.__dbbxOkCancel.rejected.connect(self.reject)
 
-        self.__tbar=WDocNodesViewTBar()
+        self.__tbar = WDocNodesViewTBar()
         self.__tbar.setNodesView(self.__tvNodes)
 
         layout = QVBoxLayout(self)
@@ -695,17 +701,17 @@ class WDocNodesViewDialog(QDialog):
 
         # after toolbar because toolbat modify the selection model...
         self.__tvNodes.selectionModel().selectionChanged.connect(self.__selectionChanged)
-        self.__selectedUuid=None
+        self.__selectedUuid = None
         self.__dbbxOkCancel.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def __selectionChanged(self, selected, deselected):
-        if selected.count()==0:
-            self.__selectedUuid=None
+        if selected.count() == 0:
+            self.__selectedUuid = None
             self.__dbbxOkCancel.button(QDialogButtonBox.Ok).setEnabled(False)
         else:
             self.__dbbxOkCancel.button(QDialogButtonBox.Ok).setEnabled(True)
             for index in selected.indexes():
-                self.__selectedUuid=QUuid(index.data(DocNodesModel.ROLE_NODE_ID))
+                self.__selectedUuid = QUuid(index.data(DocNodesModel.ROLE_NODE_ID))
                 return
 
     def selectedNodeId(self):
