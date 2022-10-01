@@ -197,7 +197,7 @@ def loadXmlUi(fileName, parent):
 
     # Parse XML file and retrieve all object for which an icon is set
     tree = ET.parse(fileName)
-    for nodeParent in tree.getiterator():
+    for nodeParent in tree.iter():
         for nodeChild in nodeParent:
             if 'name' in nodeChild.attrib and nodeChild.attrib['name'] == 'icon':
                 nodeIconSet = nodeChild.find("iconset")
