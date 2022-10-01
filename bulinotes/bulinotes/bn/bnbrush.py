@@ -338,7 +338,7 @@ class BNBrush(QObject):
 
     def setFlow(self, value):
         """Set flow"""
-        if isinstance(value, (int, float)) and value>=0 and value<=0 and self.__flow!=value:
+        if isinstance(value, (int, float)) and value>=0 and value<=1.0 and self.__flow!=value:
             self.__flow=value
             self.__fingerPrint=''
             self.__updated('flow')
@@ -349,7 +349,7 @@ class BNBrush(QObject):
 
     def setOpacity(self, value):
         """Set opacity"""
-        if isinstance(value, (int, float)) and value>=0 and value<=0 and self.__opacity!=value:
+        if isinstance(value, (int, float)) and value>=0 and value<=1.0 and self.__opacity!=value:
             self.__opacity=value
             self.__fingerPrint=''
             self.__updated('opacity')

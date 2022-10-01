@@ -1,26 +1,17 @@
-#-----------------------------------------------------------------------------
-# PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# PyKritaToolKit
+# Copyright (C) 2019-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-# Time utilities
+# The imgutils module provides miscellaneous date&time functions
+#
 # -----------------------------------------------------------------------------
 
 from math import floor
@@ -49,6 +40,7 @@ def tsToStr(value, pattern=None, valueNone=''):
     else:
         return time.strftime(pattern, time.localtime(value))
 
+
 def strToTs(value):
     """Convert a string to timestamp
 
@@ -66,8 +58,8 @@ def strToTs(value):
     if isinstance(value, float) or isinstance(value, int):
         return value
 
-    fmt = re.match("^(\d{4}-\d{2}-\d{2})?\s*(\d{2}:\d{2}:\d{2})?$", value)
-    if not fmt is None:
+    fmt = re.match(r"^(\d{4}-\d{2}-\d{2})?\s*(\d{2}:\d{2}:\d{2})?$", value)
+    if fmt is not None:
         if fmt.group(1) is None:
             value = time.strftime('%Y-%m-%d ') + value
         if fmt.group(2) is None:
@@ -77,14 +69,16 @@ def strToTs(value):
 
     return 0
 
+
 def frToStrTime(nbFrames, frameRate):
     """Convert a number of frame to duration"""
-    returned_ss=int(nbFrames/frameRate)
-    returned_ff=nbFrames - returned_ss * frameRate
-    returned_mn=int(returned_ss/60)
-    returned_ss=returned_ss - returned_mn * 60
+    returned_ss = int(nbFrames/frameRate)
+    returned_ff = nbFrames - returned_ss * frameRate
+    returned_mn = int(returned_ss/60)
+    returned_ss = returned_ss - returned_mn * 60
 
     return f"{returned_mn:02d}:{returned_ss:02d}.{returned_ff:02d}"
+
 
 def secToStrTime(nbSeconds):
     """Convert a number of seconds to duration (Days, H:M:S)"""
@@ -94,7 +88,7 @@ def secToStrTime(nbSeconds):
         nbSeconds = nbSeconds - nbDays * 86400
         returned = f'{nbDays}D, '
 
-    returned+=time.strftime('%H:%M:%S', time.gmtime(nbSeconds))
+    returned += time.strftime('%H:%M:%S', time.gmtime(nbSeconds))
 
     return returned
 
@@ -117,9 +111,14 @@ class Stopwatch(object):
     __current = {}
 
     @staticmethod
-    def reset():
+    def reset(reKey=None):
         """Reset all Stopwatches"""
-        Stopwatch.__current = {}
+        if reKey is None:
+            Stopwatch.__current = {}
+        else:
+            for key in list(Stopwatch.__current.keys()):
+                if re.search(reKey, key):
+                    Stopwatch.__current.pop(key)
 
     @staticmethod
     def start(name):
@@ -129,7 +128,7 @@ class Stopwatch(object):
         """
         Stopwatch.__current[name] = {'start': time.time(),
                                      'stop': None
-                                }
+                                     }
 
     @staticmethod
     def stop(name):
@@ -152,3 +151,16 @@ class Stopwatch(object):
                 return time.time() - Stopwatch.__current[name]['start']
             else:
                 return Stopwatch.__current[name]['stop'] - Stopwatch.__current[name]['start']
+
+    @staticmethod
+    def list():
+        """Return all stopwatch durations with a list of tuple(key, duration in seconds)
+
+        If stopwatch doesn't exist, return None
+        If stopwatch is not stopped, return current duration from start time
+        """
+        returned = []
+        for name in Stopwatch.__current:
+            returned.append((name, Stopwatch.duration(name)))
+
+        return returned

@@ -1,27 +1,24 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
-
-
 # -----------------------------------------------------------------------------
+# The about module provides a generic "About" dialog box
+#
+# Main class from this module
+#
+# - AboutWindow:
+#       A generic "About" dialog box
+#
+# -----------------------------------------------------------------------------
+
 import os
 import re
 
@@ -36,6 +33,8 @@ from ..pktk import *
 from .edialog import EDialog
 
 # -----------------------------------------------------------------------------
+
+
 class AboutWindow(EDialog):
     """A generic 'about' window
 
@@ -53,33 +52,34 @@ class AboutWindow(EDialog):
         super(AboutWindow, self).__init__(os.path.join(os.path.dirname(__file__), '..', 'resources', 'about.ui'), parent)
 
         self.setWindowTitle(i18n(f'{name}::About'))
-        self.setWindowFlags(Qt.Dialog|Qt.WindowTitleHint)
-        self.setWindowFlags(self.windowFlags()&~Qt.WindowMinMaxButtonsHint)
+        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinMaxButtonsHint)
         self.lblName.setText(name)
         self.lblVersion.setText(f'v{version}')
 
-        if not image is None:
+        if image is not None:
             if isinstance(image, QImage):
                 self.lblImg.setPixmap(QPixmap.fromImage(image))
             elif isinstance(image, str):
                 # path/filename to image
                 self.lblImg.setPixmap(QPixmap.fromImage(QImage(image)))
 
-        if not madeWith is None:
+        if madeWith is not None:
             self.lblMadeWith.setText(madeWith)
 
-        licenseAndSource=''
+        licenseAndSource = ''
 
-        if not license is None:
-            licenseAndSource=license
+        if license is not None:
+            licenseAndSource = license
         else:
-            licenseAndSource=f'<p>{name} is released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License (version 3 or any later version)</a></p>'
+            licenseAndSource = f'<p>{name} is released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html">'\
+                               f'GNU General Public License (version 3 or any later version)</a></p>'
 
-        if not sourceCode is None:
+        if sourceCode is not None:
             if re.match(':', sourceCode):
-                licenseAndSource+=f'<p>Get source code on <a href="https://github.com/Grum999/{sourceCode[1:]}">github/{sourceCode[1:]}</a></p>'
+                licenseAndSource += f'<p>Get source code on <a href="https://github.com/Grum999/{sourceCode[1:]}">github/{sourceCode[1:]}</a></p>'
             else:
-                licenseAndSource+=sourceCode
+                licenseAndSource += sourceCode
 
         self.lblLicenseAndSource.setText(licenseAndSource)
 

@@ -1,27 +1,33 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
-
-
-
+# -----------------------------------------------------------------------------
+# The wconsole module provides a console like output widget
+# Note: it's not a TTY console!
+#
+# Main class from this module
+#
+# - WConsole:
+#       Widget
+#       The main console widget
+#
+# - WConsoleType:
+#       Information type for console output line
+#
+# - WConsoleUserData:
+#       User data associated with an output line
+#
+# - WConsoleGutterArea:
+#       Widget to render console gutter
+#
 # -----------------------------------------------------------------------------
 
 from enum import Enum
@@ -64,7 +70,7 @@ class WConsoleType(Enum):
 
     @staticmethod
     def toStr(value):
-        values={
+        values = {
                 WConsoleType.VALID: 'valid',
                 WConsoleType.INFO: 'info',
                 WConsoleType.WARNING: 'warning',
@@ -76,7 +82,7 @@ class WConsoleType(Enum):
 
     @staticmethod
     def fromStr(value):
-        values={
+        values = {
                 'valid': WConsoleType.VALID,
                 'info': WConsoleType.INFO,
                 'warning': WConsoleType.WARNING,
@@ -87,11 +93,10 @@ class WConsoleType(Enum):
         return WConsoleType.NORMAL
 
 
-
 class WConsole(QPlainTextEdit):
     """A console output (no input...)"""
 
-    __TYPE_COLOR_ALPHA=30
+    __TYPE_COLOR_ALPHA = 30
 
     @staticmethod
     def escape(text):
@@ -102,6 +107,7 @@ class WConsole(QPlainTextEdit):
         """
         return re.sub(r'([\*\$#])', r'$\1', text)
 
+    @staticmethod
     def unescape(text):
         """unescape characters used to format data in console:
             '*'
@@ -109,20 +115,19 @@ class WConsole(QPlainTextEdit):
         """
         return re.sub(r'(?:\$([\*\$#]))', r'\1', text)
 
-
     def __init__(self, parent=None):
         super(WConsole, self).__init__(parent)
 
         self.setReadOnly(True)
 
-        self.__typeColors={
+        self.__typeColors = {
                 WConsoleType.VALID: QColor('#39b54a'),
                 WConsoleType.INFO: QColor('#006fb8'),
                 WConsoleType.WARNING: QColor('#ffc706'),
                 WConsoleType.ERROR: QColor('#de382b')
             }
 
-        self.__styleColors={
+        self.__styleColors = {
                 'r':  QColor("#de382b"),
                 'g':  QColor("#39b54a"),
                 'b':  QColor("#006fb8"),
@@ -141,23 +146,22 @@ class WConsole(QPlainTextEdit):
                 'lw': QColor("#ffffff")
             }
 
-
         # Gutter colors
-        # maybe font size/type/style can be modified
-        self.__optionGutterText=QTextCharFormat()
+        # maybe font size/type/style can be modified
+        self.__optionGutterText = QTextCharFormat()
         self.__optionGutterText.setBackground(QColor('#282c34'))
 
         # show gutter with Warning/Error/... message type
-        self.__optionShowGutter=True
+        self.__optionShowGutter = True
 
         # allows key bindings
-        self.__optionWheelSetFontSize=True
+        self.__optionWheelSetFontSize = True
 
         # filtered
-        self.__optionFilteredTypes=[]
+        self.__optionFilteredTypes = []
 
-        # search object
-        self.__search=SearchFromPlainTextEdit(self)
+        # search object
+        self.__search = SearchFromPlainTextEdit(self)
 
         # ---- Set default font (monospace, 10pt)
         font = QFont()
@@ -175,9 +179,7 @@ class WConsole(QPlainTextEdit):
         # default values
         self.__updateGutterAreaWidth()
 
-
         self.setStyleSheet(f"WConsole {{ background: {self.__styleColors['k'].name()}; color: {self.__styleColors['w'].name()};}}")
-
 
     def __updateGutterArea(self, rect, deltaY):
         """Called on signal updateRequest()
@@ -188,7 +190,7 @@ class WConsole(QPlainTextEdit):
         The given `dy` holds the number of pixels the view has been scrolled vertically
         """
         if self.__optionShowGutter:
-            if deltaY>0:
+            if deltaY > 0:
                 self.__gutterArea.scroll(0, deltaY)
             else:
                 self.__gutterArea.update(0, rect.y(), self.__gutterArea.width(), rect.height())
@@ -196,11 +198,9 @@ class WConsole(QPlainTextEdit):
             if rect.contains(self.viewport().rect()):
                 self.__updateGutterAreaWidth(0)
 
-
     def __updateGutterAreaWidth(self, dummy=None):
         """Update viewport margins, taking in account gutter visibility"""
         self.setViewportMargins(self.gutterAreaWidth(), 0, 0, 0)
-
 
     def __formatText(self, text):
         """Return a HTML formatted text from a markdown like text
@@ -229,19 +229,17 @@ class WConsole(QPlainTextEdit):
 
         #xxxxxx#XXX# => Color #xxxxxx
 
-
-
         [c:nn]XXX[/c] => color 'nn'
         """
         def replaceColor(regResult):
-            colorCode=regResult.groups()[0]
+            colorCode = regResult.groups()[0]
             if colorCode in self.__styleColors:
-                color=self.__styleColors[colorCode].name()
+                color = self.__styleColors[colorCode].name()
             else:
                 try:
-                    color=QColor(f'#{colorCode}').name()
+                    color = QColor(f'#{colorCode}').name()
                 except Exception as e:
-                    color=None
+                    color = None
             if color is None:
                 return regResult.groups()[1]
             else:
@@ -254,60 +252,56 @@ class WConsole(QPlainTextEdit):
             return f'<i>{WConsole.unescape(regResult.groups()[0])}</i>'
 
         def formatText(text):
-            text=re.sub(r'(?<!\$)\*\*(([^*]|\$\*)+)(?<!\$)\*\*', r'<b>\1</b>', text)
-            text=re.sub(r'(?<!\$)\*(([^*]|\$\*)+)(?<!\$)\*', r'<i>\1</i>', text)
-            text=re.sub(r'(?<!\$)#(l?[rgbcmykw]|[A-F0-9]{6})(?<!\$)#(([^#]|\$#)+)(?<!\$)#', replaceColor, text)
+            text = re.sub(r'(?<!\$)\*\*(([^*]|\$\*)+)(?<!\$)\*\*', r'<b>\1</b>', text)
+            text = re.sub(r'(?<!\$)\*(([^*]|\$\*)+)(?<!\$)\*', r'<i>\1</i>', text)
+            text = re.sub(r'(?<!\$)#(l?[rgbcmykw]|[A-F0-9]{6})(?<!\$)#(([^#]|\$#)+)(?<!\$)#', replaceColor, text)
             return WConsole.unescape(text)
 
-        texts=text.split("\n")
-        returned=[]
+        texts = text.split("\n")
+        returned = []
         for text in texts:
             returned.append(formatText(text))
 
         return returned
 
-
     def __getFontMarkup(self, text, formatOptions):
         """Return an html formatted `text`, taking in account `formatOptions`"""
-        options=[]
-        text=html.escape(text)
+        options = []
+        text = html.escape(text)
 
         if formatOptions & WConsoleTextStyle.FONT_BOLD == WConsoleTextStyle.FONT_BOLD:
-            options+='font-weight: bold;'
+            options += 'font-weight: bold;'
         if formatOptions & WConsoleTextStyle.FONT_ITALIC == WConsoleTextStyle.FONT_ITALIC:
-            options+='font-style: italic;'
+            options += 'font-style: italic;'
         if formatOptions & 0xFF != WConsoleTextStyle.COLOR_DEFAULT:
-            color='#00ffff'
-            options+=f'color: {color};'
+            color = '#00ffff'
+            options += f'color: {color};'
 
-        if len(options)>0:
-            fmtOptions=''.join(options)
+        if len(options) > 0:
+            fmtOptions = ''.join(options)
             return f'<span style="{fmtOptions}">{text}</span>'
         else:
             return text
 
-
     def __isTypeFiltered(self, type):
         """Return True if given `type` is filtered"""
         return (type in self.__optionFilteredTypes)
-
 
     def __updateFilteredTypes(self):
         """Update current filtered types"""
         block = self.document().firstBlock()
 
         while block.isValid():
-            colorLevel=WConsoleType.NORMAL
+            colorLevel = WConsoleType.NORMAL
 
-            blockData=block.userData()
+            blockData = block.userData()
             if blockData:
-                colorLevel=block.userData().type()
+                colorLevel = block.userData().type()
 
             block.setVisible(not self.__isTypeFiltered(colorLevel))
             block = block.next()
 
         self.update()
-
 
     # region: event overload ---------------------------------------------------
 
@@ -322,15 +316,14 @@ class WConsole(QPlainTextEdit):
             contentRect = self.contentsRect()
             self.__gutterArea.setGeometry(QRect(contentRect.left(), contentRect.top(), self.gutterAreaWidth(), contentRect.height()))
 
-
     def gutterAreaPaintEvent(self, event):
         """Paint gutter content"""
-        # initialise painter on WCELineNumberArea
-        painter=QPainter(self.__gutterArea)
+        # initialise painter on WCELineNumberArea
+        painter = QPainter(self.__gutterArea)
         painter.setRenderHint(QPainter.Antialiasing)
 
         # set background
-        rect=event.rect()
+        rect = event.rect()
         painter.fillRect(rect, self.__optionGutterText.background())
 
         painter.setPen(QPen(Qt.transparent))
@@ -342,9 +335,9 @@ class WConsole(QPlainTextEdit):
 
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
         bottom = top + self.blockBoundingRect(block).height()
-        dx=self.__gutterArea.width()//2
-        dy=self.fontMetrics().height()//2
-        radius=(dy - 4)//2
+        dx = self.__gutterArea.width()//2
+        dy = self.fontMetrics().height()//2
+        radius = (dy - 4)//2
 
         # Loop through all visible lines and paint the line numbers in the extra area for each line.
         # Note: in a plain text edit each line will consist of one QTextBlock
@@ -353,31 +346,29 @@ class WConsole(QPlainTextEdit):
             # Check if the block is visible in addition to check if it is in the areas viewport
             #   a block can, for example, be hidden by a window placed over the text edit
             if block.isVisible() and bottom >= event.rect().top():
-                colorLevel=WConsoleType.NORMAL
+                colorLevel = WConsoleType.NORMAL
 
-                blockData=block.userData()
+                blockData = block.userData()
                 if blockData:
-                    colorLevel=block.userData().type()
+                    colorLevel = block.userData().type()
 
-                if colorLevel!=WConsoleType.NORMAL:
-                    color=QColor(self.__typeColors[colorLevel])
-                    center=QPoint(dx, top+dx)
+                if colorLevel != WConsoleType.NORMAL:
+                    color = QColor(self.__typeColors[colorLevel])
+                    center = QPoint(dx, top+dx)
                     painter.setBrush(QBrush(color))
                     painter.drawEllipse(center, radius, radius)
 
-                    h=bottom - center.y() - dy
-                    if h>dy:
+                    h = bottom - center.y() - dy
+                    if h > dy:
                         painter.drawRoundedRect(dx-2, center.y(), 4, h, 2, 2)
 
                     color.setAlpha(WConsole.__TYPE_COLOR_ALPHA)
                     painter.fillRect(QRect(rect.left(), top, rect.width(), self.blockBoundingRect(block).height()), QBrush(color))
 
-
             block = block.next()
             top = bottom
             bottom = top + self.blockBoundingRect(block).height()
-            blockNumber+=1
-
+            blockNumber += 1
 
     def wheelEvent(self, event):
         """CTRL + wheel os used to zoom in/out font size"""
@@ -389,7 +380,6 @@ class WConsole(QPlainTextEdit):
                 self.zoomIn()
         else:
             super(WConsole, self).wheelEvent(event)
-
 
     def paintEvent(self, event):
         """Customize painting for block types"""
@@ -403,7 +393,6 @@ class WConsole(QPlainTextEdit):
         # initialise painter to editor's viewport
         painter = QPainter(self.viewport())
 
-
         block = self.firstVisibleBlock()
 
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
@@ -414,14 +403,14 @@ class WConsole(QPlainTextEdit):
             #   a block can, for example, be hidden by a window placed over the text edit
             if block.isVisible() and bottom >= event.rect().top():
 
-                colorLevel=WConsoleType.NORMAL
+                colorLevel = WConsoleType.NORMAL
 
-                blockData=block.userData()
+                blockData = block.userData()
                 if blockData:
-                    colorLevel=block.userData().type()
+                    colorLevel = block.userData().type()
 
-                if colorLevel!=WConsoleType.NORMAL:
-                    color=QColor(self.__typeColors[colorLevel])
+                if colorLevel != WConsoleType.NORMAL:
+                    color = QColor(self.__typeColors[colorLevel])
                     color.setAlpha(WConsole.__TYPE_COLOR_ALPHA)
                     painter.fillRect(QRect(rect.left(), top, rect.width(), self.blockBoundingRect(block).height()), QBrush(color))
 
@@ -431,9 +420,7 @@ class WConsole(QPlainTextEdit):
 
         super(WConsole, self).paintEvent(event)
 
-
     # endregion: event overload ------------------------------------------------
-
 
     def gutterAreaWidth(self):
         """Calculate width for gutter area
@@ -446,16 +433,14 @@ class WConsole(QPlainTextEdit):
             return 3 + self.fontMetrics().width('9') * 2
         return 0
 
-
     def optionShowGutter(self):
         """Return if gutter is visible or not"""
         return self.__optionShowGutter
 
-
     def setOptionShowGutter(self, value):
         """Set if gutter is visible or not"""
         if isinstance(value, bool) and value != self.__optionShowGutter:
-            self.__optionShowGutter=value
+            self.__optionShowGutter = value
             if value:
                 self.__gutterArea = WConsoleGutterArea(self)
             else:
@@ -465,17 +450,14 @@ class WConsole(QPlainTextEdit):
             self.__updateGutterAreaWidth()
             self.update()
 
-
     def optionAllowWheelSetFontSize(self):
         """Return if CTRL+WHEEL allows to change font size"""
         return self.__optionWheelSetFontSize
 
-
     def setOptionAllowWheelSetFontSize(self, value):
         """Set if CTRL+WHEEL allows to change font size"""
         if isinstance(value, bool) and value != self.__optionWheelSetFontSize:
-            self.__optionWheelSetFontSize=value
-
+            self.__optionWheelSetFontSize = value
 
     def setHeight(self, numberOfRows=None):
         """Set height according to given number of rows"""
@@ -483,35 +465,30 @@ class WConsole(QPlainTextEdit):
         if numberOfRows is None:
             self.setminimumHeight(0)
             self.setMaximumHeight(16777215)
-        elif isinstance(numberOfRows, int) and numberOfRows>0:
+        elif isinstance(numberOfRows, int) and numberOfRows > 0:
             doc = self.document()
-            fontMetrics=QFontMetrics(doc.defaultFont())
+            fontMetrics = QFontMetrics(doc.defaultFont())
             margins = self.contentsMargins()
 
-            self.setFixedHeight(fontMetrics.lineSpacing() * numberOfRows + (doc.documentMargin() + self.frameWidth()) * 2 + margins.top () + margins.bottom())
-
+            self.setFixedHeight(fontMetrics.lineSpacing() * numberOfRows + (doc.documentMargin() + self.frameWidth()) * 2 + margins.top() + margins.bottom())
 
     def optionBufferSize(self):
         """Return maximum buffer size for console"""
         return self.maximumBlockCount()
 
-
     def setOptionBufferSize(self, value):
         """Set maximum buffer size for console"""
         return self.setMaximumBlockCount(value)
-
 
     def optionFilteredTypes(self):
         """Return list of filtered types"""
         return self.__optionFilteredTypes
 
-
     def setOptionFilteredTypes(self, filteredTypes):
         """Set list of filtered types"""
         if isinstance(filteredTypes, list):
-            self.__optionFilteredTypes=[]
+            self.__optionFilteredTypes = []
             self.setOptionAddFilteredTypes(filteredTypes)
-
 
     def setOptionAddFilteredTypes(self, filteredTypes):
         """Add filtered types
@@ -519,15 +496,14 @@ class WConsole(QPlainTextEdit):
         Given `filteredTypes` can be a <WConsoleType> or a <list>
         """
         if isinstance(filteredTypes, WConsoleType):
-            filteredTypes=[filteredTypes]
+            filteredTypes = [filteredTypes]
 
         if isinstance(filteredTypes, list):
             for filteredType in filteredTypes:
-                if isinstance(filteredType, WConsoleType) and not filteredType in self.__optionFilteredTypes:
+                if isinstance(filteredType, WConsoleType) and filteredType not in self.__optionFilteredTypes:
                     self.__optionFilteredTypes.append(filteredType)
 
             self.__updateFilteredTypes()
-
 
     def setOptionRemoveFilteredTypes(self, filteredTypes):
         """Remove filtered types
@@ -535,49 +511,47 @@ class WConsole(QPlainTextEdit):
         Given `filteredTypes` can be a <WConsoleType> or a <list>
         """
         if isinstance(filteredTypes, WConsoleType):
-            filteredTypes=[filteredTypes]
+            filteredTypes = [filteredTypes]
 
         if isinstance(filteredTypes, list):
-            current=self.__optionFilteredTypes
-            self.__optionFilteredTypes=[]
+            current = self.__optionFilteredTypes
+            self.__optionFilteredTypes = []
             for filteredType in current:
-                if not filteredType in filteredTypes:
+                if filteredType not in filteredTypes:
                     self.__optionFilteredTypes.append(filteredType)
 
             self.__updateFilteredTypes()
 
-
     # ---
-
 
     def appendLine(self, text, type=WConsoleType.NORMAL, data=None):
         """Append a new line to console
 
-        Given `style` is a combination of WConsoleTextStyle
-            Example: WConsoleTextStyle.FONT_BOLD|WConsoleTextStyle.COLOR_RED
-
         Given `type` is a WConsoleType value
         """
-        lines=self.__formatText(text)
+        if isinstance(text, list):
+            text = "\n".join(text)
+
+        lines = self.__formatText(text)
         for line in lines:
             self.appendHtml(line)
 
-            lastBlock=self.document().lastBlock()
+            lastBlock = self.document().lastBlock()
             if lastBlock:
                 lastBlock.setUserData(WConsoleUserData(type, data))
                 lastBlock.setVisible(not self.__isTypeFiltered(type))
 
-
     def append(self, text):
         """Append to current line"""
+        if isinstance(text, list):
+            text = "\n".join(text)
 
-        texts=self.__formatText(text)
+        texts = self.__formatText(text)
 
         for text in texts:
             self.moveCursor(QTextCursor.End)
             self.textCursor().insertHtml(text)
             self.moveCursor(QTextCursor.End)
-
 
     # ---
 
@@ -586,13 +560,12 @@ class WConsole(QPlainTextEdit):
         return self.__search
 
 
-
 class WConsoleUserData(QTextBlockUserData):
 
     def __init__(self, type=None, data={}):
         QTextBlockUserData.__init__(self)
-        self.__type=type
-        self.__data=data
+        self.__type = type
+        self.__data = data
 
     def type(self):
         return self.__type
