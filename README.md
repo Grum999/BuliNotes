@@ -16,35 +16,35 @@ As notes are embedded into *.kra* file, you're sure to never loose them :-)
 
 *A screenshot of Krita with* Buli Notes *docker and a note displayed as post-it*
 
-![Pinned note on interface](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_fullscreen_example-text.jpg)
+![Pinned note on interface](./screenshots/r0-1-0a_fullscreen_example-text.jpg)
 
 | *Hand written informations post-it* | *Brushes list post-it* |
 |---|---|
-| ![Handwritten note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_fullscreen_example-handwritten.jpg) | ![Brushes note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_fullscreen_example-brushes.jpg) |
+| ![Handwritten note](./screenshots/r0-1-0a_fullscreen_example-handwritten.jpg) | ![Brushes note](./screenshots/r0-1-0a_fullscreen_example-brushes.jpg) |
 | ***Linked layers informations post-it*** |  |
-| ![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-2-0a_fullscreen_example-linked_layers.jpg) |  |
+| ![Linked layers note](./screenshots/r0-2-0a_fullscreen_example-linked_layers.jpg) |  |
 
 
 *Editor - Text note*
 
-![Text note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note-text.jpg)
+![Text note](./screenshots/r0-1-0a_edit_note-text.jpg)
 
 *Editor - Hand written note*
 
-![Handwritten note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note-handwritten.jpg)
+![Handwritten note](./screenshots/r0-1-0a_edit_note-handwritten.jpg)
 
 
 *Editor - Brushes note*
 
-![Handwritten note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note-brushes.jpg)
+![Handwritten note](./screenshots/r0-1-0a_edit_note-brushes.jpg)
 
 *Editor - Linked layers note*
 
-![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-2-0a_edit_note-linked_layers.jpg)
+![Linked layers note](./screenshots/r0-2-0a_edit_note-linked_layers.jpg)
 
 *Editor - Embedded fonts*
 
-![Linked layers note](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-4-0b_edit_note-embeddedfonts.jpg)
+![Linked layers note](./screenshots/r0-4-0b_edit_note-embeddedfonts.jpg)
 
 
 
@@ -94,11 +94,11 @@ Could be interesting to draw small schema to illustrate ideas for example.
 Hand written notes allows:
 - To draw using all available Krita's preset brushes
 
-  ![Handwritten note brushes](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note-handwritten-brushes.jpg)
+  ![Handwritten note brushes](./screenshots/r0-1-0a_edit_note-handwritten-brushes.jpg)
 - To change brush size
 - To change brush color
 
-  ![Handwritten note color](https://github.com/Grum999/BuliNotes/raw/main/screenshots/r0-1-0a_edit_note-handwritten-color.jpg)
+  ![Handwritten note color](./screenshots/r0-1-0a_edit_note-handwritten-color.jpg)
 - To reset content
 
 To use scratchpad:
@@ -192,22 +192,22 @@ Plugin has been tested with Krita 5.1.0 (appimage) on Linux
 
 ### What's new?
 
-_[2022-10-03] Version 1.0.1_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-1.0.1.md)
+_[2022-10-03] Version 1.0.1_ [>> Show detailed release content <<](./releases-notes/RELEASE-1.0.1.md)
 - Bug Fix - Note Editor - *Drawing note export/import raise a Python exception*
 
-_[2022-10-01] Version 1.0.0_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-1.0.0.md)
+_[2022-10-01] Version 1.0.0_ [>> Show detailed release content <<](./releases-notes/RELEASE-1.0.0.md)
 - Bug fix - *Crash when multiples windows are opened*
 - Bug fix - *Exception on startup*
 - Bug fix - *Unhashable type: 'Resource'*
 - Code review - *PEP8 recommendation*
 - Code review - *SPDX license headers*
 
-_[2021-10-24] Version 0.4.0b_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.4.0b.md)
+_[2021-10-24] Version 0.4.0b_ [>> Show detailed release content <<](./releases-notes/RELEASE-0.4.0b.md)
 - *Embedded fonts* - allows to embed used fonts in notes
 - *Miscellaneous* - improve UI, fix bugs
 
 
-_[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.3.0a.md)
+_[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](./releases-notes/RELEASE-0.3.0a.md)
 - *Post-it mode* - allows to change linked layers properties
 - *Color picker* - improve color picker for text/hand written notes
 - *Docker* - add mime type "text/plain" and "text/html" for copy/paste action
@@ -216,7 +216,7 @@ _[2021-04-18] Version 0.3.0a_ [>> Show detailed release content <<](https://gith
 - *Miscellaneous* - improve UI, improve performances, fix bugs
 
 
-_[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.2.0a.md)
+_[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](./releases-notes/RELEASE-0.2.0a.md)
 - *Linked layers notes* - implement functionality
 - *Text notes* - implement strikethrough & bg colors styles
 - *Text notes* - implement shortcuts
@@ -224,7 +224,7 @@ _[2021-04-04] Version 0.2.0a_ [>> Show detailed release content <<](https://gith
 - *Hand written notes* - implement import/export
 - *Brushes notes* - improve post-it mode
 
-_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-0.1.0a.md)
+_[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](./releases-notes/RELEASE-0.1.0a.md)
 - First implemented/released version
 
 
