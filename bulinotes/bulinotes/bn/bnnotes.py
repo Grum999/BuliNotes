@@ -2080,8 +2080,7 @@ class BNNoteEditor(EDialog):
 
     def __actionScratchpadImportFromFile(self):
         """Import scratchpad content from a file"""
-        fDialog = WEFileDialog(self,
-                               i18n("Import from file"),
+        fDialog = WEFileDialog(i18n("Import from file"),
                                "",
                                i18n("All images (*.png *.jpg *.jpeg);;Portable Network Graphics (*.png);;JPEG Image (*.jpg *.jpeg)"))
         fDialog.setFileMode(WEFileDialog.ExistingFile)
@@ -2112,8 +2111,7 @@ class BNNoteEditor(EDialog):
 
     def __actionScratchpadExportToFile(self):
         """Export scratchpad content to a file"""
-        fDialog = WEFileDialog(self,
-                               i18n("Export to file"),
+        fDialog = WEFileDialog(i18n("Export to file"),
                                "",
                                i18n("Portable Network Graphics (*.png);;JPEG Image (*.jpg *jpeg)"))
         fDialog.setFileMode(WEFileDialog.AnyFile)

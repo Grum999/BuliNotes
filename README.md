@@ -162,7 +162,7 @@ This can be useful to store font in a document for the following reasons:
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v1.0.0](https://github.com/Grum999/BuliNotes/releases/download/1.0.0/bulinotes.zip)**
++ **[ZIP ARCHIVE - v1.0.1](https://github.com/Grum999/BuliNotes/releases/download/1.0.1/bulinotes.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliNotes)**
 
 
@@ -191,6 +191,9 @@ Plugin has been tested with Krita 5.1.0 (appimage) on Linux
 ## Plugin's life
 
 ### What's new?
+
+_[2022-10-03] Version 1.0.1_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-1.0.1.md)
+- Bug Fix - Note Editor - *Drawing note export/import raise a Python exception*
 
 _[2022-10-01] Version 1.0.0_ [>> Show detailed release content <<](https://github.com/Grum999/BuliNotes/blob/main/releases-notes/RELEASE-1.0.0.md)
 - Bug fix - *Crash when multiples windows are opened*
@@ -230,8 +233,6 @@ _[2021-03-16] Version 0.1.0a_ [>> Show detailed release content <<](https://gith
 ### Bugs
 
 There's probably some bugs...
-
-Please note that according to this [Krita bug](https://bugs.kde.org/show_bug.cgi?id=441704) (not yet fixed with Krita 5.0.0-beta2) you may loose some notes modifications if document is not in *modified* state.
 
 
 

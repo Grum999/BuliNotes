@@ -68,7 +68,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>1</number>
      </property>
      <property name="iconSize">
       <size>
@@ -190,9 +190,9 @@
              <string>...</string>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>:/pktk/images/normal/save</normaloff>
-              <disabledoff>:/pktk/images/disabled/save</disabledoff>:/pktk/images/normal/save</iconset>
+             <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+              <normaloff>:/pktk/images/normal/file_save</normaloff>
+              <disabledoff>:/pktk/images/disabled/file_save</disabledoff>:/pktk/images/normal/file_save</iconset>
             </property>
             <property name="popupMode">
              <enum>QToolButton::InstantPopup</enum>
@@ -798,7 +798,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,0">
           <property name="spacing">
-           <number>-1</number>
+           <number>9</number>
           </property>
           <property name="leftMargin">
            <number>0</number>
@@ -998,7 +998,7 @@
         <widget class="QWidget" name="widget_9" native="true">
          <layout class="QVBoxLayout" name="verticalLayout_11">
           <property name="spacing">
-           <number>-1</number>
+           <number>9</number>
           </property>
           <property name="leftMargin">
            <number>0</number>
