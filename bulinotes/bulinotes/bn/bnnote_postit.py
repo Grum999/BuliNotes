@@ -566,7 +566,7 @@ class BNWLabelScratch(QLabel):
             self.__nWidth = self.height()*self.__ratio
             return self.height()
         else:
-            return self.__pixmap.height()*width/self.__pixmap.width()
+            return round(self.__pixmap.height()*width/self.__pixmap.width())
 
     def __scaledPixmap(self):
         """Scale pixmap to current size"""

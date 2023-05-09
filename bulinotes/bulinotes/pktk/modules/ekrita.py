@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-# The e module provides extended classes and method for Krita
+# The ekrita module provides extended classes and method for Krita
 #
 # Main classes from this module
 #
@@ -209,8 +209,12 @@ class EKritaBrushPreset:
         """
         if EKritaBrushPreset.__presetChooserWidget is None:
             window = Krita.instance().activeWindow().qwindow()
-            widget = window.findChild(QWidget, 'ResourceChooser')
-            EKritaBrushPreset.__presetChooserWidget = widget.findChild(QListView, 'ResourceItemview')
+            widget = window.findChild(QWidget, 'wdgPresetChooser')
+            if widget is None:
+                # from krita 5.2 (5.1.5?), name has been changed; if working on previous version, try with original name
+                widget = window.findChild(QWidget, 'ResourceChooser')
+
+                EKritaBrushPreset.__presetChooserWidget = widget.findChild(QListView, 'ResourceItemview')
 
         return EKritaBrushPreset.__presetChooserWidget
 

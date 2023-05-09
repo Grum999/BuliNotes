@@ -153,14 +153,13 @@ class Stopwatch(object):
                 return Stopwatch.__current[name]['stop'] - Stopwatch.__current[name]['start']
 
     @staticmethod
-    def list():
+    def list(pattern=None):
         """Return all stopwatch durations with a list of tuple(key, duration in seconds)
 
         If stopwatch doesn't exist, return None
         If stopwatch is not stopped, return current duration from start time
         """
-        returned = []
-        for name in Stopwatch.__current:
-            returned.append((name, Stopwatch.duration(name)))
-
-        return returned
+        if isinstance(pattern, str):
+            return [(name, Stopwatch.duration(name)) for name in sorted(Stopwatch.__current.keys()) if re.match(pattern, name)]
+        else:
+            return [(name, Stopwatch.duration(name)) for name in sorted(Stopwatch.__current.keys())]
