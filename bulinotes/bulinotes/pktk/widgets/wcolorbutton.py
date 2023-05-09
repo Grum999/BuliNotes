@@ -75,6 +75,7 @@ class WColorButton(QToolButton):
         self.__color = QEColor(Qt.white)
         self.__brush = QBrush(self.__color, Qt.SolidPattern)
         self.__cbBrush = checkerBoardBrush(16)
+        self.__cbBrushDiagPat = QBrush(QColor("#88888888"), Qt.BDiagPattern)
         self.__pen = QPen(QColor("#88888888"))
         self.__pen.setWidth(1)
 
@@ -121,7 +122,7 @@ class WColorButton(QToolButton):
     def paintEvent(self, event):
         super(WColorButton, self).paintEvent(event)
 
-        margin = ceil(self.height()/2)//2
+        margin = 5  # ceil(self.height()/2)//3
         margin2 = margin << 1
         if not self.icon().isNull():
             rect = QRect(margin, self.height() - margin//2 - 4, self.width() - margin2, margin//2)
@@ -133,6 +134,8 @@ class WColorButton(QToolButton):
         if not self.__color.isNone():
             painter.fillRect(rect, self.__cbBrush)
             painter.setBrush(self.__brush)
+        else:
+            painter.fillRect(rect, self.__cbBrushDiagPat)
         painter.drawRect(rect)
 
     def color(self):

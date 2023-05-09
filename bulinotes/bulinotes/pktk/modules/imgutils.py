@@ -113,13 +113,13 @@ def bullet(size=16, color=QColor(255, 255, 255), shape='square', scaleShape=1.0)
     offset = (size-shapeWidth)/2
 
     if shape == 'square':
-        canvas.fillRect(offset, offset, shapeWidth, shapeWidth, color)
+        canvas.fillRect(QRectF(offset, offset, shapeWidth, shapeWidth, color))
     elif shape == 'roundSquare':
         canvas.setBrush(color)
-        canvas.drawRoundedRect(QRect(offset, offset, shapeWidth, shapeWidth), 25, 25, Qt.RelativeSize)
+        canvas.drawRoundedRect(QRectF(offset, offset, shapeWidth, shapeWidth), 25, 25, Qt.RelativeSize)
     elif shape == 'circle':
         canvas.setBrush(color)
-        canvas.drawEllipse(offset, offset, shapeWidth, shapeWidth)
+        canvas.drawEllipse(QRectF(offset, offset, shapeWidth, shapeWidth))
     else:
         raise EInvalidValue("Given `shape` value is not valid")
 

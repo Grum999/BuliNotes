@@ -179,34 +179,18 @@ def loadXmlUi(fileName, parent):
     For each item in ui file that refers to an icon resource, update widget
     properties with icon reference
     """
-    def findByName(parent, name):
-        # return first widget for which name match to searched name
-        if parent.objectName() == name:
-            return parent
-
-        if len(parent.children()) > 0:
-            for widget in parent.children():
-                searched = findByName(widget, name)
-                if searched is not None:
-                    return searched
-
-        return None
-
     # load UI
     PyQt5.uic.loadUi(fileName, parent, PkTk.packageName())
 
     # Parse XML file and retrieve all object for which an icon is set
     tree = ET.parse(fileName)
-    for nodeParent in tree.iter():
-        for nodeChild in nodeParent:
-            if 'name' in nodeChild.attrib and nodeChild.attrib['name'] == 'icon':
-                nodeIconSet = nodeChild.find("iconset")
-                if nodeIconSet:
-                    widget = findByName(parent, nodeParent.attrib['name'])
-                    if widget is not None:
-                        for nodeIcon in list(nodeIconSet):
-                            # store on object resource path for icons
-                            widget.setProperty(f"__bcIcon_{nodeIcon.tag}", nodeIcon.text)
+    for nodeParent in tree.findall(".//property[@name='icon'].."):
+        for nodeIconSet in nodeParent.findall(".//iconset"):
+            widget = parent.findChild((QAction, QWidget), nodeParent.attrib['name'])
+            if widget is not None:
+                for nodeIcon in list(nodeIconSet):
+                    # store on object resource path for icons
+                    widget.setProperty(f"__bcIcon_{nodeIcon.tag}", nodeIcon.text)
 
 
 def cloneRect(rect):
@@ -513,7 +497,7 @@ class JsonQObjectDecoder(json.JSONDecoder):
 # ------------------------------------------------------------------------------
 
 class Debug(object):
-    """Display debug info to console if debug is enabled"""
+    """Provides some static methods to simplify debug"""
     __enabled = False
 
     @staticmethod
@@ -521,7 +505,10 @@ class Debug(object):
         """Print value to console, using argv for formatting"""
         if Debug.__enabled and isinstance(value, str):
             sys.stdout = sys.__stdout__
-            print('DEBUG:', value.format(*argv))
+            if len(argv) > 0:
+                print('DEBUG:', value.format(*argv))
+            else:
+                print('DEBUG:', value)
 
     @staticmethod
     def enabled():
