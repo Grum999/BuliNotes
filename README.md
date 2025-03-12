@@ -1,5 +1,9 @@
 # Buli Notes
 
+> Note: has been moved on Codeberg
+> 
+> https://codeberg.org/Grum999/BuliNotes/issues
+
 A plugin for [Krita](https://krita.org).
 
 
